@@ -1,0 +1,302 @@
+"""Upgrade command for analyzing and preparing migrations."""
+
+import json
+from pathlib import Path
+from typing import Optional
+
+import click
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+
+from pyresolve.knowledge_base import KnowledgeBaseLoader
+from pyresolve.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
+from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
+from pyresolve.scanner import CodeScanner, DependencyParser
+from pyresolve.utils.config import Config, ProjectConfig
+
+console = Console()
+
+
+def load_state(project_path: Path) -> Optional[dict]:
+    """Load the current migration state if it exists."""
+    state_file = project_path / ".pyresolve" / "state.json"
+    if state_file.exists():
+        try:
+            return json.loads(state_file.read_text())
+        except Exception:
+            return None
+    return None
+
+
+def save_state(project_path: Path, state: dict) -> None:
+    """Save the migration state."""
+    state_dir = project_path / ".pyresolve"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_file = state_dir / "state.json"
+    state_file.write_text(json.dumps(state, indent=2, default=str))
+
+
+@click.command()
+@click.argument("library")
+@click.option(
+    "--target", "-t",
+    required=True,
+    help="Target version to upgrade to (e.g., 2.5.0)",
+)
+@click.option(
+    "--path", "-p",
+    type=click.Path(exists=True),
+    default=".",
+    help="Path to the project to analyze",
+)
+@click.option(
+    "--file", "-f",
+    type=click.Path(exists=True),
+    help="Analyze a single file instead of the entire project",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be changed without saving state",
+)
+@click.option(
+    "--verbose", "-v",
+    is_flag=True,
+    help="Show detailed output",
+)
+def upgrade(
+    library: str,
+    target: str,
+    path: str,
+    file: Optional[str],
+    dry_run: bool,
+    verbose: bool,
+) -> None:
+    """Analyze your codebase and propose changes for a library upgrade.
+
+    \b
+    Examples:
+        pyresolve upgrade pydantic --target 2.5.0
+        pyresolve upgrade pydantic -t 2.0 --file models.py
+        pyresolve upgrade pydantic -t 2.0 --dry-run
+    """
+    project_path = Path(path).resolve()
+    project_config = ProjectConfig.from_pyproject(project_path)
+
+    config = Config(
+        project_path=project_path,
+        target_library=library,
+        target_version=target,
+        project_config=project_config,
+        dry_run=dry_run,
+        verbose=verbose,
+    )
+
+    # Load knowledge base
+    loader = KnowledgeBaseLoader()
+
+    try:
+        knowledge = loader.load(library)
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/] {e}")
+        console.print(f"\nSupported libraries: {', '.join(loader.get_supported_libraries())}")
+        raise SystemExit(1)
+
+    # Check if migration is supported
+    # For now, we'll allow any version since we're doing a general migration
+    console.print(Panel(
+        f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
+        f"{knowledge.description}\n"
+        f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
+        title="PyResolve Migration",
+    ))
+
+    # Step 1: Parse dependencies
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Checking project dependencies...", total=None)
+
+        dep_parser = DependencyParser(project_path)
+        current_dep = dep_parser.get_dependency(library)
+
+        if current_dep:
+            console.print(f"Found [cyan]{library}[/] in project dependencies: {current_dep.version_spec or 'any version'}")
+        else:
+            console.print(f"[yellow]Warning:[/] {library} not found in project dependencies")
+
+        progress.update(task, completed=True)
+
+    # Step 2: Scan for library usage
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Scanning for library usage...", total=None)
+
+        scanner = CodeScanner(library, exclude_patterns=project_config.exclude)
+
+        if file:
+            # Single file mode
+            file_path = Path(file).resolve()
+            imports, usages = scanner.scan_file(file_path)
+            scan_result_files = 1
+            scan_result_imports = imports
+            scan_result_usages = usages
+            scan_result_errors = []
+        else:
+            # Full project scan
+            scan_result = scanner.scan_directory(project_path)
+            scan_result_files = scan_result.files_scanned
+            scan_result_imports = scan_result.imports
+            scan_result_usages = scan_result.usages
+            scan_result_errors = scan_result.errors
+
+        progress.update(task, completed=True)
+
+    console.print(f"\nScanned [cyan]{scan_result_files}[/] files")
+    console.print(f"Found [cyan]{len(scan_result_imports)}[/] imports from {library}")
+    console.print(f"Found [cyan]{len(scan_result_usages)}[/] usages of {library} symbols")
+
+    if scan_result_errors:
+        console.print(f"[yellow]Warnings:[/] {len(scan_result_errors)} files could not be parsed")
+        if verbose:
+            for file_path, error in scan_result_errors:
+                console.print(f"  - {file_path}: {error}")
+
+    if not scan_result_imports:
+        console.print(f"\n[yellow]No {library} imports found in the codebase.[/]")
+        return
+
+    # Step 3: Apply transforms
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Analyzing code and proposing changes...", total=None)
+
+        # Get unique files with imports
+        files_to_transform = set()
+        for imp in scan_result_imports:
+            files_to_transform.add(imp.file_path)
+
+        results: list[TransformResult] = []
+
+        for file_path in files_to_transform:
+            try:
+                source_code = file_path.read_text()
+
+                # Select transformer based on library
+                if library == "pydantic":
+                    transformed_code, changes = transform_pydantic_v1_to_v2(source_code)
+                    # Create TransformResult from the function output
+                    result = TransformResult(
+                        file_path=file_path,
+                        status=TransformStatus.SUCCESS if changes else TransformStatus.NO_CHANGES,
+                        original_code=source_code,
+                        transformed_code=transformed_code,
+                        changes=[
+                            TransformChange(
+                                description=c.description,
+                                line_number=c.line_number,
+                                original=c.original,
+                                replacement=c.replacement,
+                                transform_name=c.transform_name,
+                                confidence=c.confidence,
+                            )
+                            for c in changes
+                        ],
+                    )
+                else:
+                    console.print(f"[yellow]Warning:[/] No transformer available for {library}")
+                    continue
+
+                if result.has_changes:
+                    results.append(result)
+
+            except Exception as e:
+                console.print(f"[red]Error processing {file_path}:[/] {e}")
+
+        progress.update(task, completed=True)
+
+    # Step 4: Show results
+    if not results:
+        console.print(f"\n[green]No changes needed![/] Your code appears to be compatible with {library} v{target}.")
+        return
+
+    console.print(f"\n[bold]Proposed Changes[/]")
+
+    table = Table()
+    table.add_column("File", style="cyan")
+    table.add_column("Changes", justify="right")
+    table.add_column("Status", justify="center")
+
+    total_changes = 0
+    for result in results:
+        status_style = {
+            TransformStatus.SUCCESS: "[green]Ready[/]",
+            TransformStatus.PARTIAL: "[yellow]Partial[/]",
+            TransformStatus.FAILED: "[red]Failed[/]",
+            TransformStatus.NO_CHANGES: "[dim]No changes[/]",
+        }
+        table.add_row(
+            str(result.file_path.relative_to(project_path)),
+            str(result.change_count),
+            status_style.get(result.status, "[dim]Unknown[/]"),
+        )
+        total_changes += result.change_count
+
+    console.print(table)
+    console.print(f"\nTotal: [cyan]{total_changes}[/] changes across [cyan]{len(results)}[/] files")
+
+    # Show detailed changes if verbose
+    if verbose:
+        console.print("\n[bold]Change Details[/]")
+        for result in results:
+            console.print(f"\n[cyan]{result.file_path.relative_to(project_path)}[/]:")
+            for change in result.changes:
+                console.print(f"  • {change.description}")
+                console.print(f"    [red]- {change.original}[/]")
+                console.print(f"    [green]+ {change.replacement}[/]")
+
+    # Save state
+    if not dry_run:
+        state = {
+            "library": library,
+            "target_version": target,
+            "project_path": str(project_path),
+            "results": [
+                {
+                    "file_path": str(r.file_path),
+                    "original_code": r.original_code,
+                    "transformed_code": r.transformed_code,
+                    "change_count": r.change_count,
+                    "status": r.status.value,
+                    "changes": [
+                        {
+                            "description": c.description,
+                            "line_number": c.line_number,
+                            "original": c.original,
+                            "replacement": c.replacement,
+                            "transform_name": c.transform_name,
+                        }
+                        for c in r.changes
+                    ],
+                }
+                for r in results
+            ],
+        }
+        save_state(project_path, state)
+
+        console.print(f"\n[dim]State saved to .pyresolve/state.json[/]")
+        console.print("\nNext steps:")
+        console.print("  [cyan]pyresolve diff[/]    - View detailed diff of proposed changes")
+        console.print("  [cyan]pyresolve apply[/]   - Apply changes to your files")
+    else:
+        console.print("\n[dim]Dry run mode - no state saved[/]")
