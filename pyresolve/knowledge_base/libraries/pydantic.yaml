@@ -1,0 +1,253 @@
+# Pydantic Knowledge Base
+# Breaking changes from v1 to v2
+
+name: pydantic
+display_name: Pydantic
+description: Data validation library using Python type annotations
+migration_guide_url: https://docs.pydantic.dev/latest/migration/
+
+supported_migrations:
+  - from: "1.0"
+    to: "2.0"
+
+breaking_changes:
+  # Config class changes
+  - symbol: "BaseModel.Config"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Inner Config class replaced with model_config class attribute using ConfigDict"
+    replacement: "model_config = ConfigDict(...)"
+    has_deterministic_transform: true
+    transform_name: config_to_configdict
+    notes: "All Config options need to be mapped to ConfigDict keys"
+
+  - symbol: "Config.orm_mode"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "orm_mode renamed to from_attributes"
+    replacement: "from_attributes = True"
+    has_deterministic_transform: true
+    transform_name: orm_mode_to_from_attributes
+
+  - symbol: "Config.allow_mutation"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "allow_mutation=False replaced with frozen=True"
+    replacement: "frozen = True"
+    has_deterministic_transform: true
+    transform_name: allow_mutation_to_frozen
+
+  # Validator changes
+  - symbol: "@validator"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "@validator decorator replaced with @field_validator"
+    replacement: "@field_validator with @classmethod"
+    has_deterministic_transform: true
+    transform_name: validator_to_field_validator
+    notes: "Requires adding @classmethod decorator"
+
+  - symbol: "@root_validator"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "@root_validator decorator replaced with @model_validator"
+    replacement: "@model_validator(mode='before') with @classmethod"
+    has_deterministic_transform: true
+    transform_name: root_validator_to_model_validator
+    notes: "pre=True maps to mode='before', otherwise mode='after'"
+
+  # Method changes
+  - symbol: ".dict()"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".dict() method renamed to .model_dump()"
+    replacement: ".model_dump()"
+    has_deterministic_transform: true
+    transform_name: dict_to_model_dump
+
+  - symbol: ".json()"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".json() method renamed to .model_dump_json()"
+    replacement: ".model_dump_json()"
+    has_deterministic_transform: true
+    transform_name: json_to_model_dump_json
+
+  - symbol: ".schema()"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".schema() class method renamed to .model_json_schema()"
+    replacement: ".model_json_schema()"
+    has_deterministic_transform: true
+    transform_name: schema_to_model_json_schema
+
+  - symbol: ".schema_json()"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".schema_json() class method renamed to .model_json_schema() with json output"
+    replacement: "json.dumps(.model_json_schema())"
+    has_deterministic_transform: true
+    transform_name: schema_json_to_model_json_schema
+
+  - symbol: ".parse_obj()"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".parse_obj() class method renamed to .model_validate()"
+    replacement: ".model_validate()"
+    has_deterministic_transform: true
+    transform_name: parse_obj_to_model_validate
+
+  - symbol: ".parse_raw()"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".parse_raw() class method renamed to .model_validate_json()"
+    replacement: ".model_validate_json()"
+    has_deterministic_transform: true
+    transform_name: parse_raw_to_model_validate_json
+
+  - symbol: ".parse_file()"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".parse_file() removed, use Path.read_text() with model_validate_json()"
+    replacement: "Model.model_validate_json(Path(file).read_text())"
+    has_deterministic_transform: false
+    notes: "Requires manual migration"
+
+  - symbol: ".copy()"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".copy() method renamed to .model_copy()"
+    replacement: ".model_copy()"
+    has_deterministic_transform: true
+    transform_name: copy_to_model_copy
+
+  - symbol: ".update_forward_refs()"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: ".update_forward_refs() renamed to .model_rebuild()"
+    replacement: ".model_rebuild()"
+    has_deterministic_transform: true
+    transform_name: update_forward_refs_to_model_rebuild
+
+  # Field changes
+  - symbol: "Field(regex=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Field regex parameter renamed to pattern"
+    replacement: "Field(pattern=...)"
+    has_deterministic_transform: true
+    transform_name: field_regex_to_pattern
+
+  - symbol: "Field(const=...)"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Field const parameter removed, use Literal type instead"
+    replacement: "Literal[value]"
+    has_deterministic_transform: false
+    notes: "Requires analyzing the const value and converting to Literal"
+
+  - symbol: "Field(min_items=...)"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Field min_items parameter renamed to min_length"
+    replacement: "Field(min_length=...)"
+    has_deterministic_transform: true
+    transform_name: field_min_items_to_min_length
+
+  - symbol: "Field(max_items=...)"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Field max_items parameter renamed to max_length"
+    replacement: "Field(max_length=...)"
+    has_deterministic_transform: true
+    transform_name: field_max_items_to_max_length
+
+  # Import changes
+  - symbol: "pydantic.validator"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "validator import renamed to field_validator"
+    replacement: "from pydantic import field_validator"
+    has_deterministic_transform: true
+    transform_name: import_validator_to_field_validator
+
+  - symbol: "pydantic.root_validator"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "root_validator import renamed to model_validator"
+    replacement: "from pydantic import model_validator"
+    has_deterministic_transform: true
+    transform_name: import_root_validator_to_model_validator
+
+  # Generic model changes
+  - symbol: "GenericModel"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "GenericModel removed, BaseModel now supports generics directly"
+    replacement: "BaseModel with Generic[T]"
+    has_deterministic_transform: true
+    transform_name: generic_model_to_basemodel
+    notes: "Simply inherit from BaseModel instead"
+
+  # Other changes
+  - symbol: "__fields__"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "__fields__ attribute renamed to model_fields"
+    replacement: "model_fields"
+    has_deterministic_transform: true
+    transform_name: dunder_fields_to_model_fields
+
+  - symbol: "__validators__"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "__validators__ attribute renamed to __pydantic_decorators__"
+    replacement: "__pydantic_decorators__"
+    has_deterministic_transform: true
+    transform_name: dunder_validators_rename

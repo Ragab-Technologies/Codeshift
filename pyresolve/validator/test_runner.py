@@ -1,0 +1,223 @@
+"""Test runner for validating migrations."""
+
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Optional
+
+
+@dataclass
+class TestResult:
+    """Result of running tests."""
+
+    success: bool
+    exit_code: int
+    stdout: str = ""
+    stderr: str = ""
+    tests_run: int = 0
+    tests_passed: int = 0
+    tests_failed: int = 0
+    tests_skipped: int = 0
+    duration: float = 0.0
+    error_message: Optional[str] = None
+
+    @property
+    def summary(self) -> str:
+        """Get a summary string of the test results."""
+        if self.success:
+            return f"✓ {self.tests_passed}/{self.tests_run} tests passed"
+        return f"✗ {self.tests_failed}/{self.tests_run} tests failed"
+
+
+class TestRunner:
+    """Runs project tests to validate migrations."""
+
+    def __init__(
+        self,
+        project_path: Path,
+        test_command: Optional[list[str]] = None,
+        timeout: int = 300,
+    ):
+        """Initialize the test runner.
+
+        Args:
+            project_path: Path to the project root
+            test_command: Custom test command. Defaults to pytest detection.
+            timeout: Maximum time in seconds to run tests
+        """
+        self.project_path = project_path
+        self.test_command = test_command or self._detect_test_command()
+        self.timeout = timeout
+
+    def _detect_test_command(self) -> list[str]:
+        """Detect the appropriate test command for the project."""
+        # Check for pytest
+        if (self.project_path / "pytest.ini").exists() or \
+           (self.project_path / "pyproject.toml").exists() or \
+           (self.project_path / "tests").exists():
+            return [sys.executable, "-m", "pytest", "-v", "--tb=short"]
+
+        # Check for unittest
+        if (self.project_path / "tests").exists():
+            return [sys.executable, "-m", "unittest", "discover", "-v"]
+
+        # Default to pytest
+        return [sys.executable, "-m", "pytest", "-v", "--tb=short"]
+
+    def run(
+        self,
+        specific_tests: Optional[list[str]] = None,
+        extra_args: Optional[list[str]] = None,
+    ) -> TestResult:
+        """Run the project tests.
+
+        Args:
+            specific_tests: List of specific test files or patterns to run
+            extra_args: Additional arguments to pass to the test runner
+
+        Returns:
+            TestResult with the outcome
+        """
+        command = self.test_command.copy()
+
+        if extra_args:
+            command.extend(extra_args)
+
+        if specific_tests:
+            command.extend(specific_tests)
+
+        try:
+            result = subprocess.run(
+                command,
+                cwd=self.project_path,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+
+            # Parse pytest output
+            tests_run, tests_passed, tests_failed, tests_skipped = self._parse_pytest_output(
+                result.stdout + result.stderr
+            )
+
+            return TestResult(
+                success=result.returncode == 0,
+                exit_code=result.returncode,
+                stdout=result.stdout,
+                stderr=result.stderr,
+                tests_run=tests_run,
+                tests_passed=tests_passed,
+                tests_failed=tests_failed,
+                tests_skipped=tests_skipped,
+            )
+
+        except subprocess.TimeoutExpired:
+            return TestResult(
+                success=False,
+                exit_code=-1,
+                error_message=f"Tests timed out after {self.timeout} seconds",
+            )
+        except FileNotFoundError as e:
+            return TestResult(
+                success=False,
+                exit_code=-1,
+                error_message=f"Test command not found: {e}",
+            )
+        except Exception as e:
+            return TestResult(
+                success=False,
+                exit_code=-1,
+                error_message=f"Error running tests: {e}",
+            )
+
+    def _parse_pytest_output(self, output: str) -> tuple[int, int, int, int]:
+        """Parse pytest output to extract test counts.
+
+        Args:
+            output: Combined stdout and stderr from pytest
+
+        Returns:
+            Tuple of (total, passed, failed, skipped)
+        """
+        import re
+
+        # Look for pytest summary line like "5 passed, 2 failed, 1 skipped"
+        # or "1 passed in 0.05s"
+        passed = 0
+        failed = 0
+        skipped = 0
+        errors = 0
+
+        # Match patterns like "5 passed", "2 failed", etc.
+        passed_match = re.search(r"(\d+) passed", output)
+        if passed_match:
+            passed = int(passed_match.group(1))
+
+        failed_match = re.search(r"(\d+) failed", output)
+        if failed_match:
+            failed = int(failed_match.group(1))
+
+        skipped_match = re.search(r"(\d+) skipped", output)
+        if skipped_match:
+            skipped = int(skipped_match.group(1))
+
+        error_match = re.search(r"(\d+) error", output)
+        if error_match:
+            errors = int(error_match.group(1))
+
+        total = passed + failed + skipped + errors
+        return total, passed, failed + errors, skipped
+
+    def run_quick_check(self) -> TestResult:
+        """Run a quick smoke test (collection only, no execution).
+
+        Returns:
+            TestResult indicating if tests can be collected
+        """
+        command = self.test_command.copy()
+        command.extend(["--collect-only", "-q"])
+
+        try:
+            result = subprocess.run(
+                command,
+                cwd=self.project_path,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+            # Count collected tests
+            tests_collected = 0
+            for line in result.stdout.splitlines():
+                if "test" in line.lower() and "::" in line:
+                    tests_collected += 1
+
+            return TestResult(
+                success=result.returncode == 0,
+                exit_code=result.returncode,
+                stdout=result.stdout,
+                stderr=result.stderr,
+                tests_run=tests_collected,
+            )
+
+        except Exception as e:
+            return TestResult(
+                success=False,
+                exit_code=-1,
+                error_message=f"Error collecting tests: {e}",
+            )
+
+
+def run_tests(project_path: Path, timeout: int = 300) -> TestResult:
+    """Convenience function to run tests for a project.
+
+    Args:
+        project_path: Path to the project
+        timeout: Maximum time in seconds
+
+    Returns:
+        TestResult with the outcome
+    """
+    runner = TestRunner(project_path, timeout=timeout)
+    return runner.run()
