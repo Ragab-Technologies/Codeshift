@@ -117,25 +117,7 @@ use_llm = true
 # Anthropic API key (can also use ANTHROPIC_API_KEY env var)
 # anthropic_api_key = "sk-..."
 ```
-
-## Development
-
-```bash
-# Clone the repository
-git clone https://github.com/youssefragab/PyResolve.git
-cd PyResolve
-
-# Install in development mode
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Run linting
-ruff check .
-black --check .
-```
-
+****
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.

@@ -555,7 +555,8 @@ class PydanticImportTransformer(BaseTransformer):
         if self._get_module_name(node.module) == "pydantic":
             self._found_pydantic_import = True
 
-            if isinstance(node.names, tuple):
+            # Check for existing imports (handle both tuple and list after transforms)
+            if not isinstance(node.names, cst.ImportStar):
                 for name in node.names:
                     if isinstance(name, cst.ImportAlias):
                         imported = self._get_name_value(name.name)
