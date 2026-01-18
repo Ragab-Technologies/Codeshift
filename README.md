@@ -108,7 +108,7 @@ PyResolve can be configured via `pyproject.toml`:
 
 ```toml
 [tool.pyresolve]
-# Path patterns to exclude from scanning
+# Path patterns to exclude from scanning (defaults: .pyresolve/*, tests/*, .venv/*, venv/*)
 exclude = ["tests/*", "migrations/*"]
 
 # Enable/disable LLM fallback
