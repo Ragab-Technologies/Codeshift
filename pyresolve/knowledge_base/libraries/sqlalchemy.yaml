@@ -1,0 +1,282 @@
+# SQLAlchemy Knowledge Base
+# Breaking changes from 1.x to 2.0
+
+name: sqlalchemy
+display_name: SQLAlchemy
+description: The Python SQL Toolkit and Object Relational Mapper
+migration_guide_url: https://docs.sqlalchemy.org/en/20/changelog/migration_20.html
+
+supported_migrations:
+  - from: "1.4"
+    to: "2.0"
+
+breaking_changes:
+  # Query API changes - most significant
+  - symbol: "session.query()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Legacy Query API deprecated in favor of select() statements"
+    replacement: "session.execute(select(Model))"
+    has_deterministic_transform: true
+    transform_name: query_to_select
+    notes: "This is the most significant change in SQLAlchemy 2.0"
+
+  - symbol: "Query.filter()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.filter() deprecated, use select().where()"
+    replacement: "select(Model).where(condition)"
+    has_deterministic_transform: true
+    transform_name: filter_to_where
+
+  - symbol: "Query.filter_by()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.filter_by() deprecated, use select().where()"
+    replacement: "select(Model).where(Model.column == value)"
+    has_deterministic_transform: true
+    transform_name: filter_by_to_where
+
+  - symbol: "Query.all()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.all() deprecated, use scalars().all()"
+    replacement: "session.execute(select(Model)).scalars().all()"
+    has_deterministic_transform: true
+    transform_name: query_all_to_scalars_all
+
+  - symbol: "Query.first()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.first() deprecated, use scalars().first()"
+    replacement: "session.execute(select(Model)).scalars().first()"
+    has_deterministic_transform: true
+    transform_name: query_first_to_scalars_first
+
+  - symbol: "Query.one()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.one() deprecated, use scalars().one()"
+    replacement: "session.execute(select(Model)).scalars().one()"
+    has_deterministic_transform: true
+    transform_name: query_one_to_scalars_one
+
+  - symbol: "Query.get()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.get(pk) deprecated, use Session.get()"
+    replacement: "session.get(Model, pk)"
+    has_deterministic_transform: true
+    transform_name: query_get_to_session_get
+
+  - symbol: "Query.count()"
+    change_type: deprecated
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.count() deprecated, use func.count()"
+    replacement: "session.execute(select(func.count()).select_from(Model)).scalar()"
+    has_deterministic_transform: true
+    transform_name: query_count_to_func_count
+
+  - symbol: "Query.join()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.join() deprecated, use select().join()"
+    replacement: "select(Model).join(OtherModel)"
+    has_deterministic_transform: true
+    transform_name: query_join_to_select_join
+
+  - symbol: "Query.outerjoin()"
+    change_type: deprecated
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Query.outerjoin() deprecated, use select().outerjoin()"
+    replacement: "select(Model).outerjoin(OtherModel)"
+    has_deterministic_transform: true
+    transform_name: query_outerjoin_to_select_outerjoin
+
+  # Engine and Connection changes
+  - symbol: "engine.execute()"
+    change_type: removed
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "engine.execute() removed, use with engine.connect()"
+    replacement: "with engine.connect() as conn: conn.execute()"
+    has_deterministic_transform: true
+    transform_name: engine_execute_to_connect
+
+  - symbol: "connection.execute(string)"
+    change_type: removed
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Raw string execution removed, use text()"
+    replacement: "connection.execute(text('SQL string'))"
+    has_deterministic_transform: true
+    transform_name: string_execute_to_text
+
+  # Declarative changes
+  - symbol: "declarative_base()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "declarative_base() deprecated in favor of DeclarativeBase class"
+    replacement: "class Base(DeclarativeBase): pass"
+    has_deterministic_transform: true
+    transform_name: declarative_base_to_class
+    notes: "Use DeclarativeBase class inheritance instead"
+
+  - symbol: "from sqlalchemy.ext.declarative import declarative_base"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Import from sqlalchemy.orm instead"
+    replacement: "from sqlalchemy.orm import DeclarativeBase"
+    has_deterministic_transform: true
+    transform_name: import_declarative_base
+
+  # Column type changes
+  - symbol: "Column()"
+    change_type: deprecated
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Column() deprecated for ORM, use mapped_column()"
+    replacement: "mapped_column()"
+    has_deterministic_transform: true
+    transform_name: column_to_mapped_column
+    notes: "Column() still valid for Core, mapped_column() preferred for ORM"
+
+  - symbol: "relationship(backref=...)"
+    change_type: deprecated
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "backref parameter deprecated, use back_populates on both sides"
+    replacement: "Use back_populates='...' on both relationship definitions"
+    has_deterministic_transform: false
+    notes: "Requires adding relationship on both sides of the relation"
+
+  # Type annotation changes
+  - symbol: "Column(Integer)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Type annotations now supported with Mapped[int]"
+    replacement: "column_name: Mapped[int] = mapped_column()"
+    has_deterministic_transform: true
+    transform_name: column_to_mapped_type
+    notes: "Provides better IDE support and type checking"
+
+  - symbol: "relationship(...)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Type annotations supported with Mapped[RelatedModel]"
+    replacement: "related: Mapped['RelatedModel'] = relationship()"
+    has_deterministic_transform: true
+    transform_name: relationship_mapped_type
+
+  # Session changes
+  - symbol: "Session.autocommit"
+    change_type: removed
+    severity: high
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "autocommit mode removed from Session"
+    replacement: "Use connection.begin() for transaction control"
+    has_deterministic_transform: false
+    notes: "Explicit transaction management now required"
+
+  - symbol: "Session.subtransactions"
+    change_type: removed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "subtransactions parameter removed"
+    replacement: "Use Session.begin_nested() for savepoints"
+    has_deterministic_transform: false
+
+  # Import changes
+  - symbol: "from sqlalchemy import create_engine"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "create_engine now requires future=True behavior by default"
+    replacement: "create_engine() (future mode is now default)"
+    has_deterministic_transform: true
+    transform_name: remove_future_flag
+
+  - symbol: "from sqlalchemy.orm import relationship, backref"
+    change_type: deprecated
+    severity: low
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "backref function deprecated, define relationships on both sides"
+    replacement: "from sqlalchemy.orm import relationship"
+    has_deterministic_transform: true
+    transform_name: remove_backref_import
+
+  # Async support changes
+  - symbol: "AsyncSession.run_sync()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "run_sync behavior improved for greenlet contexts"
+    replacement: "Ensure proper async context usage"
+    has_deterministic_transform: false
+
+  # Result handling
+  - symbol: ".fetchone()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Result.fetchone() returns Row objects, not tuples"
+    replacement: "Use result.one() or access as result.column_name"
+    has_deterministic_transform: false
+    notes: "Row objects now support named attribute access"
+
+  - symbol: ".fetchall()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "Result.fetchall() returns list of Row objects"
+    replacement: "Use result.all() for list of Rows or scalars().all() for values"
+    has_deterministic_transform: false
+
+  # Pool changes
+  - symbol: "pool_pre_ping"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.4"
+    to_version: "2.0"
+    description: "pool_pre_ping now enabled by default for most dialects"
+    replacement: "Set pool_pre_ping=False explicitly if not needed"
+    has_deterministic_transform: false
