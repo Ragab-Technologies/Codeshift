@@ -6,7 +6,9 @@ from rich.console import Console
 from pyresolve import __version__
 from pyresolve.cli.commands.apply import apply
 from pyresolve.cli.commands.diff import diff
+from pyresolve.cli.commands.scan import scan
 from pyresolve.cli.commands.upgrade import upgrade
+from pyresolve.cli.commands.upgrade_all import upgrade_all
 
 console = Console()
 
@@ -30,7 +32,9 @@ def cli(ctx: click.Context) -> None:
 
 
 # Register commands
+cli.add_command(scan)
 cli.add_command(upgrade)
+cli.add_command(upgrade_all)
 cli.add_command(diff)
 cli.add_command(apply)
 
