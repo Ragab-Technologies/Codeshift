@@ -318,3 +318,164 @@ class DependencyParser:
                 return f">={base},<{major}.{minor + 1}.0"
 
         return version
+
+    def update_dependency_version(
+        self, name: str, new_version: str
+    ) -> list[tuple[Path, bool]]:
+        """Update the version of a dependency in all source files.
+
+        Args:
+            name: Name of the dependency to update.
+            new_version: New version to set (e.g., "2.5.0").
+
+        Returns:
+            List of (file_path, success) tuples for each file updated.
+        """
+        results = []
+
+        # Try to update in pyproject.toml
+        pyproject_path = self.project_path / "pyproject.toml"
+        if pyproject_path.exists():
+            success = self._update_pyproject_toml(name, new_version)
+            results.append((pyproject_path, success))
+
+        # Try to update in requirements.txt
+        requirements_path = self.project_path / "requirements.txt"
+        if requirements_path.exists():
+            success = self._update_requirements_txt(name, new_version)
+            results.append((requirements_path, success))
+
+        # Try to update in setup.py
+        setup_path = self.project_path / "setup.py"
+        if setup_path.exists():
+            success = self._update_setup_py(name, new_version)
+            if success:
+                results.append((setup_path, success))
+
+        return results
+
+    def _update_pyproject_toml(self, name: str, new_version: str) -> bool:
+        """Update a dependency version in pyproject.toml.
+
+        Args:
+            name: Name of the dependency.
+            new_version: New version to set.
+
+        Returns:
+            True if update was successful.
+        """
+        import re
+
+        pyproject_path = self.project_path / "pyproject.toml"
+        if not pyproject_path.exists():
+            return False
+
+        try:
+            content = pyproject_path.read_text()
+            original_content = content
+
+            # Pattern for standard dependencies: "pydantic>=1.0,<2.0" or "pydantic==1.10.0"
+            # Match the package name followed by version specifiers
+            pattern = rf'("{name})((?:[><=!~]+[^"]*)?)"'
+            replacement = rf'"\1>={new_version}"'
+            content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
+
+            # Pattern for Poetry dependencies: pydantic = "^1.10" or pydantic = {version = "^1.10"}
+            # Simple string version
+            poetry_pattern = rf'(\[tool\.poetry\.(?:dev-)?dependencies\].*?{name}\s*=\s*)"([^"]*)"'
+            poetry_replacement = rf'\1"^{new_version}"'
+            content = re.sub(
+                poetry_pattern, poetry_replacement, content, flags=re.IGNORECASE | re.DOTALL
+            )
+
+            # Poetry dict version: version = "^1.10"
+            poetry_dict_pattern = rf'({name}\s*=\s*\{{[^}}]*version\s*=\s*)"([^"]*)"'
+            poetry_dict_replacement = rf'\1"^{new_version}"'
+            content = re.sub(
+                poetry_dict_pattern, poetry_dict_replacement, content, flags=re.IGNORECASE
+            )
+
+            if content != original_content:
+                pyproject_path.write_text(content)
+                return True
+
+            return False
+
+        except Exception:
+            return False
+
+    def _update_requirements_txt(self, name: str, new_version: str) -> bool:
+        """Update a dependency version in requirements.txt.
+
+        Args:
+            name: Name of the dependency.
+            new_version: New version to set.
+
+        Returns:
+            True if update was successful.
+        """
+        import re
+
+        requirements_path = self.project_path / "requirements.txt"
+        if not requirements_path.exists():
+            return False
+
+        try:
+            content = requirements_path.read_text()
+            original_content = content
+
+            # Pattern: pydantic>=1.0 or pydantic==1.10.0 or just pydantic
+            pattern = rf'^({name})([><=!~]+[^\s#]*)?(\s*#.*)?$'
+
+            def replace_line(match: re.Match) -> str:
+                pkg_name = match.group(1)
+                comment = match.group(3) or ""
+                return f"{pkg_name}>={new_version}{comment}"
+
+            content = re.sub(
+                pattern, replace_line, content, flags=re.IGNORECASE | re.MULTILINE
+            )
+
+            if content != original_content:
+                requirements_path.write_text(content)
+                return True
+
+            return False
+
+        except Exception:
+            return False
+
+    def _update_setup_py(self, name: str, new_version: str) -> bool:
+        """Update a dependency version in setup.py.
+
+        Args:
+            name: Name of the dependency.
+            new_version: New version to set.
+
+        Returns:
+            True if update was successful.
+        """
+        import re
+
+        setup_path = self.project_path / "setup.py"
+        if not setup_path.exists():
+            return False
+
+        try:
+            content = setup_path.read_text()
+            original_content = content
+
+            # Pattern for install_requires entries: "pydantic>=1.0" or 'pydantic>=1.0'
+            for quote in ['"', "'"]:
+                pattern = rf'{quote}({name})([><=!~]+[^{quote}]*)?{quote}'
+                replacement = rf'{quote}\1>={new_version}{quote}'
+                content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
+
+            if content != original_content:
+                setup_path.write_text(content)
+                return True
+
+            return False
+
+        except Exception:
+            return False
