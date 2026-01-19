@@ -1,0 +1,263 @@
+# Requests Knowledge Base
+# Breaking changes and deprecations from 2.x versions
+
+name: requests
+display_name: Requests
+description: Python HTTP library for humans
+migration_guide_url: https://requests.readthedocs.io/en/latest/community/updates/
+
+supported_migrations:
+  - from: "2.25"
+    to: "2.31"
+  - from: "2.x"
+    to: "2.32"
+
+breaking_changes:
+  # Charset fallback changes (2.28+)
+  - symbol: "Response.text"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.28"
+    description: "Response.text no longer falls back to ISO-8859-1 for text/* content types without charset"
+    replacement: "Explicitly handle encoding: response.encoding = 'utf-8' before accessing .text"
+    has_deterministic_transform: false
+    notes: "May cause UnicodeDecodeError for some responses"
+
+  - symbol: "Response.apparent_encoding"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.28"
+    description: "chardet replaced with charset_normalizer for encoding detection"
+    replacement: "Same API, different detection library"
+    has_deterministic_transform: false
+    notes: "May return different encoding guesses"
+
+  # SSL/TLS changes (2.29+)
+  - symbol: "requests.get(verify=True)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Default CA bundle updated, may reject previously accepted certificates"
+    replacement: "Update server certificates or provide custom CA bundle"
+    has_deterministic_transform: false
+    notes: "certifi package updates may affect certificate verification"
+
+  # Urllib3 2.0 compatibility (2.29+)
+  - symbol: "from requests.packages import urllib3"
+    change_type: deprecated
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Importing urllib3 from requests.packages deprecated"
+    replacement: "import urllib3"
+    has_deterministic_transform: true
+    transform_name: urllib3_import_fix
+    notes: "Import urllib3 directly instead"
+
+  - symbol: "requests.packages.urllib3.disable_warnings()"
+    change_type: deprecated
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Accessing urllib3 through requests.packages deprecated"
+    replacement: "urllib3.disable_warnings()"
+    has_deterministic_transform: true
+    transform_name: urllib3_disable_warnings_fix
+
+  # Cookie handling changes (2.30+)
+  - symbol: "Session.cookies"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.30"
+    description: "Cookie handling improvements may affect some edge cases"
+    replacement: "Same API, review cookie-dependent code"
+    has_deterministic_transform: false
+
+  # Timeout parameter changes (2.31+)
+  - symbol: "requests.get(timeout=None)"
+    change_type: behavior_changed
+    severity: high
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "None timeout warning added; explicit timeout recommended"
+    replacement: "requests.get(url, timeout=30)"
+    has_deterministic_transform: true
+    transform_name: add_explicit_timeout
+    notes: "Best practice to always set explicit timeout"
+
+  - symbol: "requests.post(timeout=None)"
+    change_type: behavior_changed
+    severity: high
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "None timeout warning; explicit timeout recommended"
+    replacement: "requests.post(url, timeout=30)"
+    has_deterministic_transform: true
+    transform_name: post_add_explicit_timeout
+
+  - symbol: "requests.put(timeout=None)"
+    change_type: behavior_changed
+    severity: high
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "None timeout warning; explicit timeout recommended"
+    replacement: "requests.put(url, timeout=30)"
+    has_deterministic_transform: true
+    transform_name: put_add_explicit_timeout
+
+  - symbol: "requests.delete(timeout=None)"
+    change_type: behavior_changed
+    severity: high
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "None timeout warning; explicit timeout recommended"
+    replacement: "requests.delete(url, timeout=30)"
+    has_deterministic_transform: true
+    transform_name: delete_add_explicit_timeout
+
+  # Session context manager (2.31+)
+  - symbol: "requests.Session()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Session resource management improved, use context manager"
+    replacement: "with requests.Session() as session: ..."
+    has_deterministic_transform: true
+    transform_name: session_context_manager
+    notes: "Context manager ensures proper cleanup"
+
+  # JSON parameter changes
+  - symbol: "requests.post(json=...)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "json parameter serialization updated for edge cases"
+    replacement: "Same API, check JSON serialization for custom objects"
+    has_deterministic_transform: false
+
+  # Auth handling
+  - symbol: "HTTPBasicAuth"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Auth header generation improved for unicode"
+    replacement: "Same API, better unicode handling"
+    has_deterministic_transform: false
+
+  # Redirect handling (2.29+)
+  - symbol: "Session.max_redirects"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Redirect loop detection improved"
+    replacement: "Same API, more robust redirect handling"
+    has_deterministic_transform: false
+
+  - symbol: "allow_redirects"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Redirect behavior with POST/PUT methods clarified"
+    replacement: "Same API, review redirect expectations"
+    has_deterministic_transform: false
+
+  # Proxies handling (2.28+)
+  - symbol: "proxies"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.28"
+    description: "SOCKS proxy handling updated, requires extras"
+    replacement: "pip install requests[socks] for SOCKS support"
+    has_deterministic_transform: false
+    notes: "Install with socks extra for SOCKS proxy support"
+
+  # File upload changes (2.31+)
+  - symbol: "files"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "File upload handling with generators improved"
+    replacement: "Same API, generator support improved"
+    has_deterministic_transform: false
+
+  # Connection pooling (urllib3 2.0)
+  - symbol: "HTTPAdapter"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.29"
+    description: "Connection pooling behavior changed with urllib3 2.0"
+    replacement: "Same API, review pool_connections and pool_maxsize settings"
+    has_deterministic_transform: false
+    notes: "urllib3 2.0 has stricter connection handling"
+
+  # Deprecated features
+  - symbol: "requests.compat"
+    change_type: deprecated
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Python 2/3 compatibility module deprecated"
+    replacement: "Use standard library equivalents"
+    has_deterministic_transform: false
+    notes: "Python 2 support removed"
+
+  - symbol: "from requests.compat import urljoin"
+    change_type: deprecated
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Import from urllib.parse instead"
+    replacement: "from urllib.parse import urljoin"
+    has_deterministic_transform: true
+    transform_name: compat_urljoin_fix
+
+  - symbol: "from requests.compat import urlparse"
+    change_type: deprecated
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Import from urllib.parse instead"
+    replacement: "from urllib.parse import urlparse"
+    has_deterministic_transform: true
+    transform_name: compat_urlparse_fix
+
+  # Exception changes
+  - symbol: "requests.exceptions.ConnectionError"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Connection error messages improved, may affect error parsing"
+    replacement: "Same exception, check error message parsing"
+    has_deterministic_transform: false
+
+  # Response iteration
+  - symbol: "Response.iter_content(decode_unicode=True)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Unicode decoding behavior improved"
+    replacement: "Same API, better unicode handling"
+    has_deterministic_transform: false
+
+  - symbol: "Response.iter_lines()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.25"
+    to_version: "2.31"
+    description: "Line iteration memory efficiency improved"
+    replacement: "Same API, uses less memory"
+    has_deterministic_transform: false

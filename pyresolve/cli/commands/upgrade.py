@@ -13,6 +13,10 @@ from rich.table import Table
 from pyresolve.knowledge_base import KnowledgeBaseLoader
 from pyresolve.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
 from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
+from pyresolve.migrator.transforms.fastapi_transformer import transform_fastapi
+from pyresolve.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
+from pyresolve.migrator.transforms.pandas_transformer import transform_pandas
+from pyresolve.migrator.transforms.requests_transformer import transform_requests
 from pyresolve.scanner import CodeScanner, DependencyParser
 from pyresolve.utils.config import Config, ProjectConfig
 
@@ -193,8 +197,16 @@ def upgrade(
                 source_code = file_path.read_text()
 
                 # Select transformer based on library
-                if library == "pydantic":
-                    transformed_code, changes = transform_pydantic_v1_to_v2(source_code)
+                transform_func = {
+                    "pydantic": transform_pydantic_v1_to_v2,
+                    "fastapi": transform_fastapi,
+                    "sqlalchemy": transform_sqlalchemy,
+                    "pandas": transform_pandas,
+                    "requests": transform_requests,
+                }.get(library)
+
+                if transform_func:
+                    transformed_code, changes = transform_func(source_code)
                     # Create TransformResult from the function output
                     result = TransformResult(
                         file_path=file_path,
@@ -208,7 +220,7 @@ def upgrade(
                                 original=c.original,
                                 replacement=c.replacement,
                                 transform_name=c.transform_name,
-                                confidence=c.confidence,
+                                confidence=getattr(c, 'confidence', 1.0),
                             )
                             for c in changes
                         ],

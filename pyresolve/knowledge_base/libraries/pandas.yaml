@@ -1,0 +1,311 @@
+# Pandas Knowledge Base
+# Breaking changes from 1.x to 2.0
+
+name: pandas
+display_name: Pandas
+description: Powerful data structures for data analysis, time series, and statistics
+migration_guide_url: https://pandas.pydata.org/docs/whatsnew/v2.0.0.html
+
+supported_migrations:
+  - from: "1.5"
+    to: "2.0"
+
+breaking_changes:
+  # Major deprecations and removals
+  - symbol: "DataFrame.append()"
+    change_type: removed
+    severity: high
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "DataFrame.append() removed in favor of pd.concat()"
+    replacement: "pd.concat([df1, df2], ignore_index=True)"
+    has_deterministic_transform: true
+    transform_name: append_to_concat
+    notes: "Use pd.concat() with a list of DataFrames"
+
+  - symbol: "Series.append()"
+    change_type: removed
+    severity: high
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Series.append() removed in favor of pd.concat()"
+    replacement: "pd.concat([s1, s2], ignore_index=True)"
+    has_deterministic_transform: true
+    transform_name: series_append_to_concat
+
+  - symbol: "DataFrame.iteritems()"
+    change_type: removed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "iteritems() removed, use items() instead"
+    replacement: "DataFrame.items()"
+    has_deterministic_transform: true
+    transform_name: iteritems_to_items
+
+  - symbol: "Series.iteritems()"
+    change_type: removed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "iteritems() removed, use items() instead"
+    replacement: "Series.items()"
+    has_deterministic_transform: true
+    transform_name: series_iteritems_to_items
+
+  # Index changes
+  - symbol: "Index.is_monotonic"
+    change_type: removed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "is_monotonic removed, use is_monotonic_increasing"
+    replacement: "Index.is_monotonic_increasing"
+    has_deterministic_transform: true
+    transform_name: is_monotonic_to_increasing
+
+  - symbol: "Index.is_all_dates"
+    change_type: removed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "is_all_dates removed"
+    replacement: "isinstance(index, pd.DatetimeIndex)"
+    has_deterministic_transform: false
+    notes: "Check index type directly instead"
+
+  # Datetime and timezone changes
+  - symbol: "DatetimeIndex.to_pydatetime()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Returns array of datetime objects, not ndarray"
+    replacement: "DatetimeIndex.to_pydatetime()"
+    has_deterministic_transform: false
+    notes: "Return type changed but method signature same"
+
+  - symbol: "datetime64[ns]"
+    change_type: behavior_changed
+    severity: high
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "datetime64 now supports multiple resolutions (s, ms, us, ns)"
+    replacement: "datetime64[ns] still supported but other resolutions available"
+    has_deterministic_transform: false
+    notes: "Check dtype explicitly if nanosecond precision required"
+
+  # Copy behavior changes
+  - symbol: "DataFrame.copy()"
+    change_type: behavior_changed
+    severity: high
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Copy-on-Write (CoW) mode introduced, changes copy semantics"
+    replacement: "Use .copy() explicitly when mutation intended"
+    has_deterministic_transform: false
+    notes: "Enable with pd.options.mode.copy_on_write = True"
+
+  - symbol: "DataFrame[col]"
+    change_type: behavior_changed
+    severity: high
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Indexing returns view by default, changes with CoW"
+    replacement: "Use .loc or .iloc for explicit selection"
+    has_deterministic_transform: false
+    notes: "CoW affects chained assignment detection"
+
+  # Groupby changes
+  - symbol: "GroupBy.apply()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "apply() no longer called twice on first group for inference"
+    replacement: "Same API but may need to update expected behavior"
+    has_deterministic_transform: false
+    notes: "Performance improvement, but side-effect behavior changes"
+
+  - symbol: "DataFrameGroupBy.mean(numeric_only=None)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "numeric_only defaults to False instead of None"
+    replacement: "GroupBy.mean(numeric_only=True)"
+    has_deterministic_transform: true
+    transform_name: groupby_numeric_only
+    notes: "Explicitly set numeric_only for non-numeric columns"
+
+  - symbol: "DataFrameGroupBy.sum()"
+    change_type: signature_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "numeric_only defaults to False"
+    replacement: "GroupBy.sum(numeric_only=True)"
+    has_deterministic_transform: true
+    transform_name: groupby_sum_numeric_only
+
+  - symbol: "DataFrameGroupBy.prod()"
+    change_type: signature_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "numeric_only defaults to False"
+    replacement: "GroupBy.prod(numeric_only=True)"
+    has_deterministic_transform: true
+    transform_name: groupby_prod_numeric_only
+
+  # read_* function changes
+  - symbol: "pd.read_csv()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Default dtype backend changed, considers nullable types"
+    replacement: "Explicitly set dtype_backend='numpy' for old behavior"
+    has_deterministic_transform: false
+    notes: "New nullable dtypes may be inferred"
+
+  - symbol: "pd.read_json()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "orient='table' with StringIO behavior changed"
+    replacement: "Pass string directly instead of StringIO"
+    has_deterministic_transform: false
+
+  - symbol: "pd.read_excel()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Default engine changed for .xls files"
+    replacement: "Specify engine='xlrd' explicitly for .xls files"
+    has_deterministic_transform: false
+
+  # Nullable dtypes
+  - symbol: "Int64"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Nullable Int64 dtype now more widely inferred"
+    replacement: "Same API, check for NA handling"
+    has_deterministic_transform: false
+    notes: "Better NA support but behavior may differ"
+
+  - symbol: "StringDtype"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "String dtype behavior improved with pyarrow backend"
+    replacement: "pd.StringDtype('pyarrow') for Arrow-backed strings"
+    has_deterministic_transform: false
+
+  # Sorting changes
+  - symbol: "DataFrame.sort_values(inplace=True)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "inplace operations deprecated in many contexts"
+    replacement: "df = df.sort_values(...)"
+    has_deterministic_transform: true
+    transform_name: remove_inplace_sort
+
+  # Method signature changes
+  - symbol: "DataFrame.to_csv(line_terminator=...)"
+    change_type: renamed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "line_terminator renamed to lineterminator"
+    replacement: "to_csv(lineterminator='\\n')"
+    has_deterministic_transform: true
+    transform_name: line_terminator_rename
+
+  # Resample changes
+  - symbol: "Resampler.apply()"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Resample apply no longer calls func twice on first group"
+    replacement: "Same API, remove workarounds for double-call"
+    has_deterministic_transform: false
+
+  # Deprecated syntax
+  - symbol: "df.groupby(level=...)"
+    change_type: deprecated
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "level parameter deprecated in some contexts"
+    replacement: "Use df.groupby(df.index.get_level_values(level))"
+    has_deterministic_transform: false
+
+  # Index constructor changes
+  - symbol: "pd.Index([], dtype=object)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Empty Index dtype inference changed"
+    replacement: "Explicitly specify dtype for empty Index"
+    has_deterministic_transform: false
+
+  # DataFrame constructor changes
+  - symbol: "DataFrame(data, dtype=...)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "dtype parameter behavior with mixed types changed"
+    replacement: "Use astype() after construction for explicit conversion"
+    has_deterministic_transform: false
+
+  # String methods
+  - symbol: "Series.str.split(expand=True)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "Split with expand returns nullable string dtype"
+    replacement: "Same API, check for NA handling in result"
+    has_deterministic_transform: false
+
+  # Window operations
+  - symbol: "Rolling.apply()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "raw parameter default changed for numba engine"
+    replacement: "Explicitly set raw=True for numba"
+    has_deterministic_transform: false
+
+  # Removed deprecated features
+  - symbol: "DataFrame.swaplevel()"
+    change_type: signature_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "axis parameter removed"
+    replacement: "Use df.swaplevel(i, j) without axis"
+    has_deterministic_transform: true
+    transform_name: swaplevel_remove_axis
+
+  - symbol: "DataFrame.reorder_levels()"
+    change_type: signature_changed
+    severity: low
+    from_version: "1.5"
+    to_version: "2.0"
+    description: "axis parameter deprecated"
+    replacement: "Use df.reorder_levels(order) without axis"
+    has_deterministic_transform: true
+    transform_name: reorder_levels_remove_axis
