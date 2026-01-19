@@ -10,6 +10,12 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from pyresolve.knowledge import (
+    Confidence,
+    GeneratedKnowledgeBase,
+    generate_knowledge_base_sync,
+    is_tier_1_library,
+)
 from pyresolve.knowledge_base import KnowledgeBaseLoader
 from pyresolve.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
 from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
@@ -128,14 +134,87 @@ def upgrade(
         dep_parser = DependencyParser(project_path)
         current_dep = dep_parser.get_dependency(library)
 
+        current_version = None
         if current_dep:
             console.print(f"Found [cyan]{library}[/] in project dependencies: {current_dep.version_spec or 'any version'}")
+            # Extract version number from spec (e.g., ">=1.0,<2.0" -> "1.0")
+            if current_dep.version_spec:
+                import re
+                version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', current_dep.version_spec)
+                if version_match:
+                    current_version = version_match.group(1)
         else:
             console.print(f"[yellow]Warning:[/] {library} not found in project dependencies")
 
         progress.update(task, completed=True)
 
-    # Step 2: Scan for library usage
+    # Step 2: Fetch knowledge sources from GitHub
+    generated_kb: Optional[GeneratedKnowledgeBase] = None
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Fetching knowledge sources...", total=None)
+
+        def progress_callback(msg: str) -> None:
+            progress.update(task, description=msg)
+
+        try:
+            generated_kb = generate_knowledge_base_sync(
+                package=library,
+                old_version=current_version or "1.0",
+                new_version=target,
+                progress_callback=progress_callback,
+            )
+        except Exception as e:
+            if verbose:
+                console.print(f"[yellow]Warning:[/] Could not fetch knowledge sources: {e}")
+
+        progress.update(task, completed=True)
+
+    # Display detected breaking changes
+    if generated_kb and generated_kb.has_changes:
+        console.print(f"\n[bold]Breaking changes detected:[/]\n")
+
+        # Group by confidence
+        high_confidence = generated_kb.get_changes_by_confidence(Confidence.HIGH)
+        medium_confidence = [c for c in generated_kb.breaking_changes if c.confidence == Confidence.MEDIUM]
+        low_confidence = [c for c in generated_kb.breaking_changes if c.confidence == Confidence.LOW]
+
+        if high_confidence:
+            console.print("   [green]HIGH CONFIDENCE:[/]")
+            for change in high_confidence:
+                if change.new_api:
+                    console.print(f"   [dim]├──[/] {change.old_api} [dim]→[/] {change.new_api}")
+                else:
+                    console.print(f"   [dim]├──[/] {change.old_api} [red](removed)[/]")
+
+        if medium_confidence:
+            console.print("\n   [yellow]MEDIUM CONFIDENCE:[/]")
+            for change in medium_confidence:
+                if change.new_api:
+                    console.print(f"   [dim]├──[/] {change.old_api} [dim]→[/] {change.new_api}")
+                else:
+                    console.print(f"   [dim]├──[/] {change.old_api} [red](removed)[/]")
+
+        if low_confidence and verbose:
+            console.print("\n   [dim]LOW CONFIDENCE:[/]")
+            for change in low_confidence:
+                if change.new_api:
+                    console.print(f"   [dim]├──[/] {change.old_api} [dim]→[/] {change.new_api}")
+                else:
+                    console.print(f"   [dim]├──[/] {change.old_api} [red](removed)[/]")
+
+        if generated_kb.sources:
+            console.print(f"\n   [dim]Sources: {', '.join(generated_kb.sources[:2])}{'...' if len(generated_kb.sources) > 2 else ''}[/]")
+
+    elif generated_kb:
+        console.print(f"\n[dim]No breaking changes detected from changelog sources.[/]")
+
+    # Step 3: Scan for library usage
+    console.print("")  # Add spacing
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -177,7 +256,7 @@ def upgrade(
         console.print(f"\n[yellow]No {library} imports found in the codebase.[/]")
         return
 
-    # Step 3: Apply transforms
+    # Step 4: Apply transforms
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -237,7 +316,7 @@ def upgrade(
 
         progress.update(task, completed=True)
 
-    # Step 4: Show results
+    # Step 5: Show results
     if not results:
         console.print(f"\n[green]No changes needed![/] Your code appears to be compatible with {library} v{target}.")
         return
@@ -257,8 +336,13 @@ def upgrade(
             TransformStatus.FAILED: "[red]Failed[/]",
             TransformStatus.NO_CHANGES: "[dim]No changes[/]",
         }
+        # Handle files outside project path
+        try:
+            display_path = str(result.file_path.relative_to(project_path))
+        except ValueError:
+            display_path = str(result.file_path)
         table.add_row(
-            str(result.file_path.relative_to(project_path)),
+            display_path,
             str(result.change_count),
             status_style.get(result.status, "[dim]Unknown[/]"),
         )
@@ -271,7 +355,11 @@ def upgrade(
     if verbose:
         console.print("\n[bold]Change Details[/]")
         for result in results:
-            console.print(f"\n[cyan]{result.file_path.relative_to(project_path)}[/]:")
+            try:
+                display_path = str(result.file_path.relative_to(project_path))
+            except ValueError:
+                display_path = str(result.file_path)
+            console.print(f"\n[cyan]{display_path}[/]:")
             for change in result.changes:
                 console.print(f"  • {change.description}")
                 console.print(f"    [red]- {change.original}[/]")
