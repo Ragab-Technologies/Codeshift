@@ -7,7 +7,7 @@ name = "pyresolve"
 version = "0.1.2"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Elastic-2.0"}
 requires-python = ">=3.9"
 authors = [
     {name = "PyResolve Team"}
@@ -16,7 +16,7 @@ keywords = ["migration", "dependencies", "ast", "refactoring", "pydantic"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
