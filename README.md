@@ -238,4 +238,12 @@ use_llm = true
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+This software is licensed under the [Elastic License 2.0 (ELv2)](LICENSE).
+
+**What this means:**
+
+- ✅ **Free** for personal use, open-source projects, and internal company use
+- ✅ **Free** to modify and distribute (with license notice)
+- ❌ **Not allowed** to offer PyResolve as a managed/hosted service to third parties
+
+For commercial licensing inquiries, please contact yragab99@gmail.com.
