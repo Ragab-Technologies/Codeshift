@@ -212,9 +212,7 @@ class DependencyParser:
         # Look for install_requires = [...] pattern
         import re
 
-        match = re.search(
-            r"install_requires\s*=\s*\[(.*?)\]", content, re.DOTALL
-        )
+        match = re.search(r"install_requires\s*=\s*\[(.*?)\]", content, re.DOTALL)
         if match:
             deps_str = match.group(1)
             # Extract quoted strings
@@ -319,9 +317,7 @@ class DependencyParser:
 
         return version
 
-    def update_dependency_version(
-        self, name: str, new_version: str
-    ) -> list[tuple[Path, bool]]:
+    def update_dependency_version(self, name: str, new_version: str) -> list[tuple[Path, bool]]:
         """Update the version of a dependency in all source files.
 
         Args:
@@ -425,16 +421,14 @@ class DependencyParser:
             original_content = content
 
             # Pattern: pydantic>=1.0 or pydantic==1.10.0 or just pydantic
-            pattern = rf'^({name})([><=!~]+[^\s#]*)?(\s*#.*)?$'
+            pattern = rf"^({name})([><=!~]+[^\s#]*)?(\s*#.*)?$"
 
             def replace_line(match: re.Match) -> str:
                 pkg_name = match.group(1)
                 comment = match.group(3) or ""
                 return f"{pkg_name}>={new_version}{comment}"
 
-            content = re.sub(
-                pattern, replace_line, content, flags=re.IGNORECASE | re.MULTILINE
-            )
+            content = re.sub(pattern, replace_line, content, flags=re.IGNORECASE | re.MULTILINE)
 
             if content != original_content:
                 requirements_path.write_text(content)
@@ -467,8 +461,8 @@ class DependencyParser:
 
             # Pattern for install_requires entries: "pydantic>=1.0" or 'pydantic>=1.0'
             for quote in ['"', "'"]:
-                pattern = rf'{quote}({name})([><=!~]+[^{quote}]*)?{quote}'
-                replacement = rf'{quote}\1>={new_version}{quote}'
+                pattern = rf"{quote}({name})([><=!~]+[^{quote}]*)?{quote}"
+                replacement = rf"{quote}\1>={new_version}{quote}"
                 content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
 
             if content != original_content:

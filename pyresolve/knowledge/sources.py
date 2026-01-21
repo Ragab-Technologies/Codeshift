@@ -111,13 +111,17 @@ class SourceFetcher:
                 version=info.get("version", ""),
                 home_page=info.get("home_page"),
                 project_url=info.get("project_url"),
-                repository_url=project_urls.get("Repository") or project_urls.get("Source") or project_urls.get("GitHub"),
+                repository_url=project_urls.get("Repository")
+                or project_urls.get("Source")
+                or project_urls.get("GitHub"),
                 documentation_url=project_urls.get("Documentation") or project_urls.get("Docs"),
             )
         except Exception:
             return None
 
-    def fetch_github_file(self, repo_url: str, file_path: str, branch: str = "main") -> Optional[str]:
+    def fetch_github_file(
+        self, repo_url: str, file_path: str, branch: str = "main"
+    ) -> Optional[str]:
         """Fetch a file from a GitHub repository.
 
         Args:
@@ -183,7 +187,9 @@ class SourceFetcher:
         for pattern in self.MIGRATION_GUIDE_PATTERNS:
             # Try common file extensions
             for ext in [".md", ".rst", ".txt", ""]:
-                path = f"{pattern}{ext}" if not pattern.endswith((".md", ".rst", ".txt")) else pattern
+                path = (
+                    f"{pattern}{ext}" if not pattern.endswith((".md", ".rst", ".txt")) else pattern
+                )
                 content = self.fetch_github_file(repo_url, path)
                 if content:
                     return ChangelogSource(
@@ -246,7 +252,9 @@ class SourceFetcher:
 
         return None
 
-    async def discover_sources(self, package: str, target_version: Optional[str] = None) -> list[ChangelogSource]:
+    async def discover_sources(
+        self, package: str, target_version: Optional[str] = None
+    ) -> list[ChangelogSource]:
         """Discover all available changelog sources for a package.
 
         Args:
@@ -259,7 +267,9 @@ class SourceFetcher:
         # This is a sync wrapper - the async signature matches the architecture doc
         return self.discover_sources_sync(package, target_version)
 
-    def discover_sources_sync(self, package: str, target_version: Optional[str] = None) -> list[ChangelogSource]:
+    def discover_sources_sync(
+        self, package: str, target_version: Optional[str] = None
+    ) -> list[ChangelogSource]:
         """Synchronously discover all available changelog sources for a package.
 
         Args:
