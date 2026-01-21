@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 import click
 import httpx
@@ -33,7 +33,7 @@ def get_latest_version(package: str) -> Optional[str]:
     try:
         response = httpx.get(f"https://pypi.org/pypi/{package}/json", timeout=10.0)
         if response.status_code == 200:
-            return response.json().get("info", {}).get("version")
+            return cast(Optional[str], response.json().get("info", {}).get("version"))
     except Exception:
         pass
     return None
@@ -234,9 +234,9 @@ def scan(
 
                 try:
                     kb = generate_knowledge_base_sync(
-                        package=pkg["name"],
-                        old_version=pkg["current"],
-                        new_version=pkg["latest"],
+                        package=str(pkg["name"]),
+                        old_version=str(pkg["current"]),
+                        new_version=str(pkg["latest"]),
                     )
 
                     pkg["breaking_changes"] = len(kb.breaking_changes)
@@ -310,7 +310,7 @@ def scan(
             changes = pkg.get("breaking_changes")
             if changes is not None:
                 row.append(str(changes))
-                confidence = pkg.get("confidence", "unknown")
+                confidence = str(pkg.get("confidence", "unknown"))
                 conf_style = {
                     "high": "[green]HIGH[/]",
                     "medium": "[yellow]MEDIUM[/]",
@@ -321,7 +321,7 @@ def scan(
                 row.append("[dim]?[/]")
                 row.append("[dim]?[/]")
 
-        table.add_row(*row)
+        table.add_row(*[str(item) for item in row])
 
     console.print(table)
 
@@ -341,15 +341,17 @@ def scan(
 
             if fetch_changes and pkg.get("changes"):
                 console.print("    Breaking changes:")
-                for change in pkg["changes"][:3]:
+                changes_list = cast(list[dict[str, Any]], pkg["changes"])
+                for change in changes_list[:3]:
                     if change["new_api"]:
                         console.print(
                             f"      [dim]├──[/] {change['old_api']} → {change['new_api']}"
                         )
                     else:
                         console.print(f"      [dim]├──[/] {change['old_api']} [red](removed)[/]")
-                if len(pkg.get("changes", [])) > 3:
-                    console.print(f"      [dim]└── ... and {len(pkg['changes']) - 3} more[/]")
+                pkg_changes = cast(list[Any], pkg.get("changes", []))
+                if len(pkg_changes) > 3:
+                    console.print(f"      [dim]└── ... and {len(pkg_changes) - 3} more[/]")
 
             console.print()
 
