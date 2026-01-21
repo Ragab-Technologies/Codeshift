@@ -140,9 +140,12 @@ def status(path: str) -> None:
     # Try to fetch quota from API
     try:
         api_url = get_api_url()
+        headers: dict[str, str] = {}
+        if api_key:
+            headers["X-API-Key"] = api_key
         response = httpx.get(
             f"{api_url}/usage/quota",
-            headers={"X-API-Key": api_key},
+            headers=headers,
             timeout=10,
         )
 
@@ -165,10 +168,11 @@ def status(path: str) -> None:
                 f"{data['llm_calls']}/{data['llm_calls_limit']} ({data['llm_calls_remaining']} remaining)",
             )
 
+            email_display = creds.get("email", "Authenticated") if creds else "Authenticated"
             console.print(
                 Panel(
                     table,
-                    title=f"Account Status - {creds.get('email', 'Authenticated')}",
+                    title=f"Account Status - {email_display}",
                 )
             )
 
@@ -180,11 +184,13 @@ def status(path: str) -> None:
                 )
         else:
             # Fall back to cached info
+            cached_email = creds.get("email", "unknown") if creds else "unknown"
+            cached_tier = creds.get("tier", "free") if creds else "free"
             console.print(
                 Panel(
                     f"[green]Logged in[/] [dim](offline)[/]\n"
-                    f"Email: [cyan]{creds.get('email', 'unknown')}[/]\n"
-                    f"Tier: [cyan]{creds.get('tier', 'free')}[/]",
+                    f"Email: [cyan]{cached_email}[/]\n"
+                    f"Tier: [cyan]{cached_tier}[/]",
                     title="Account Status",
                 )
             )

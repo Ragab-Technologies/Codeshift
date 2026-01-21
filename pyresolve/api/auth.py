@@ -2,7 +2,8 @@
 
 import hashlib
 import secrets
-from typing import Annotated, Optional
+from collections.abc import Awaitable
+from typing import Annotated, Callable, Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
@@ -138,7 +139,7 @@ async def get_optional_user(
         return None
 
 
-def require_scope(scope: str):
+def require_scope(scope: str) -> Callable[..., Awaitable[AuthenticatedUser]]:
     """Dependency that requires a specific scope."""
 
     async def check_scope(
@@ -154,7 +155,7 @@ def require_scope(scope: str):
     return check_scope
 
 
-def require_tier(minimum_tier: str):
+def require_tier(minimum_tier: str) -> Callable[..., Awaitable[AuthenticatedUser]]:
     """Dependency that requires a minimum tier."""
     tier_levels = {"free": 0, "pro": 1, "unlimited": 2, "enterprise": 3}
 

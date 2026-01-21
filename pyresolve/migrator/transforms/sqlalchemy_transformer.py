@@ -144,7 +144,7 @@ class SQLAlchemyTransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, module: Union[cst.Name, cst.Attribute]) -> str:
+    def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
             return module.value

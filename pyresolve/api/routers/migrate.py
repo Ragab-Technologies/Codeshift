@@ -10,6 +10,7 @@ The Anthropic API calls are made server-side, ensuring:
 import re
 from typing import Annotated
 
+from anthropic import Anthropic
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from pyresolve.api.auth import AuthenticatedUser, require_tier
@@ -25,16 +26,15 @@ from pyresolve.api.models.migrate import (
 router = APIRouter(prefix="/migrate", tags=["migrate"])
 
 
-def get_anthropic_client():
+def get_anthropic_client():  # type: ignore[no-untyped-def]
     """Get the server-side Anthropic client."""
+
     settings = get_settings()
     if not settings.anthropic_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LLM service not configured",
         )
-
-    from anthropic import Anthropic
 
     return Anthropic(api_key=settings.anthropic_api_key)
 
@@ -100,7 +100,8 @@ def extract_code_from_response(content: str) -> str:
 
     if matches:
         # Return the longest code block (likely the full migration)
-        return max(matches, key=len).strip()
+        longest_match: str = max(matches, key=len)
+        return longest_match.strip()
 
     # No code block found, assume the entire response is code
     content = content.strip()

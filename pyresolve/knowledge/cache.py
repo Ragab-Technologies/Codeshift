@@ -135,7 +135,7 @@ class KnowledgeCache:
         Returns:
             List of (package, old_version, new_version) tuples.
         """
-        cached = []
+        cached: list[tuple[str, str, str]] = []
         if not self.cache_dir.exists():
             return cached
 

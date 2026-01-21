@@ -1,8 +1,8 @@
 """Parser for dependency files (requirements.txt, pyproject.toml)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import toml
 from packaging.requirements import Requirement
@@ -16,12 +16,8 @@ class Dependency:
 
     name: str
     version_spec: Optional[str] = None
-    extras: list[str] = None
+    extras: list[str] = field(default_factory=list)
     source_file: Optional[Path] = None
-
-    def __post_init__(self) -> None:
-        if self.extras is None:
-            self.extras = []
 
     @property
     def min_version(self) -> Optional[Version]:
@@ -268,7 +264,7 @@ class DependencyParser:
                 )
             return None
 
-    def _parse_poetry_dep(self, name: str, spec: any) -> Optional[Dependency]:
+    def _parse_poetry_dep(self, name: str, spec: Any) -> Optional[Dependency]:
         """Parse a Poetry-style dependency specification.
 
         Args:
@@ -284,9 +280,11 @@ class DependencyParser:
             return Dependency(name=name, version_spec=version_spec)
         elif isinstance(spec, dict):
             version = spec.get("version", "")
-            version_spec = self._convert_poetry_version(version) if version else None
+            dict_version_spec: Optional[str] = (
+                self._convert_poetry_version(version) if version else None
+            )
             extras = spec.get("extras", [])
-            return Dependency(name=name, version_spec=version_spec, extras=extras)
+            return Dependency(name=name, version_spec=dict_version_spec, extras=extras)
 
         return None
 
@@ -311,9 +309,9 @@ class DependencyParser:
             base = version[1:]
             parts = base.split(".")
             if len(parts) >= 2:
-                major = parts[0]
+                major_str = parts[0]
                 minor = int(parts[1])
-                return f">={base},<{major}.{minor + 1}.0"
+                return f">={base},<{major_str}.{minor + 1}.0"
 
         return version
 

@@ -16,21 +16,21 @@ class RiskLevel(Enum):
     HIGH = "high"
     CRITICAL = "critical"
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:
         if not isinstance(other, RiskLevel):
             return NotImplemented
         order = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL]
         return order.index(self) < order.index(other)
 
-    def __le__(self, other):
+    def __le__(self, other: object) -> bool:
         return self == other or self < other
 
-    def __gt__(self, other):
+    def __gt__(self, other: object) -> bool:
         if not isinstance(other, RiskLevel):
             return NotImplemented
         return not self <= other
 
-    def __ge__(self, other):
+    def __ge__(self, other: object) -> bool:
         return self == other or self > other
 
 
