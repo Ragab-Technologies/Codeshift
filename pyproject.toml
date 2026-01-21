@@ -34,6 +34,10 @@ dependencies = [
     "toml>=0.10",
     "packaging>=23.0",
     "httpx>=0.25",
+    "pytest>=8.4.2",
+    "nox>=2025.11.12",
+    "black>=24.10.0",
+    "mypy>=1.19.1",
 ]
 
 [project.optional-dependencies]
@@ -47,9 +51,12 @@ api = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "black>=23.0",
+    "black>=24.0,<25.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "nox>=2024.0",
+    "types-toml>=0.10",
+    "types-PyYAML>=6.0",
 ]
 all = [
     "pyresolve[api,dev]",
@@ -90,3 +97,9 @@ python_version = "3.9"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20250915",
+    "types-toml>=0.10.8.20240310",
+]
