@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 import click
 from rich.console import Console
@@ -35,12 +35,12 @@ from pyresolve.utils.config import ProjectConfig
 console = Console()
 
 
-def load_state(project_path: Path) -> Optional[dict]:
+def load_state(project_path: Path) -> Optional[dict[str, Any]]:
     """Load the current migration state if it exists."""
     state_file = project_path / ".pyresolve" / "state.json"
     if state_file.exists():
         try:
-            return json.loads(state_file.read_text())
+            return cast(dict[str, Any], json.loads(state_file.read_text()))
         except Exception:
             return None
     return None
@@ -382,10 +382,10 @@ def upgrade(
             except ValueError:
                 display_path = str(result.file_path)
             console.print(f"\n[cyan]{display_path}[/]:")
-            for change in result.changes:
-                console.print(f"  • {change.description}")
-                console.print(f"    [red]- {change.original}[/]")
-                console.print(f"    [green]+ {change.replacement}[/]")
+            for transform_change in result.changes:
+                console.print(f"  • {transform_change.description}")
+                console.print(f"    [red]- {transform_change.original}[/]")
+                console.print(f"    [green]+ {transform_change.replacement}[/]")
 
     # Save state
     if not dry_run:

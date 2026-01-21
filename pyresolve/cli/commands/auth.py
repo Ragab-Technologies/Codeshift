@@ -5,7 +5,7 @@ import os
 import time
 import webbrowser
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 import click
 import httpx
@@ -27,12 +27,12 @@ def get_api_url() -> str:
     return os.environ.get("PYRESOLVE_API_URL", "https://api.pyresolve.dev")
 
 
-def load_credentials() -> Optional[dict]:
+def load_credentials() -> Optional[dict[str, Any]]:
     """Load saved credentials from disk."""
     if not CREDENTIALS_FILE.exists():
         return None
     try:
-        return json.loads(CREDENTIALS_FILE.read_text())
+        return cast(dict[str, Any], json.loads(CREDENTIALS_FILE.read_text()))
     except (OSError, json.JSONDecodeError):
         return None
 
@@ -70,7 +70,7 @@ def get_api_key() -> Optional[str]:
 def make_authenticated_request(
     method: str,
     endpoint: str,
-    **kwargs,
+    **kwargs: Any,
 ) -> httpx.Response:
     """Make an authenticated request to the API."""
     api_key = get_api_key()

@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -331,7 +331,7 @@ def upgrade_all(
     for pkg in upgradeable:
         type_str = "[red]Major[/]" if pkg["is_major"] else "[yellow]Minor/Patch[/]"
         tier_str = "[green]Tier 1[/]" if pkg["is_tier1"] else "[dim]Tier 2/3[/]"
-        table.add_row(pkg["name"], pkg["current"], pkg["latest"], type_str, tier_str)
+        table.add_row(str(pkg["name"]), str(pkg["current"]), str(pkg["latest"]), type_str, tier_str)
 
     console.print(table)
 
@@ -354,15 +354,15 @@ def upgrade_all(
             progress.update(task, description=f"Upgrading {pkg['name']} to {pkg['latest']}...")
 
             results, generated_kb = run_single_upgrade(
-                library=pkg["name"],
-                target=pkg["latest"],
+                library=str(pkg["name"]),
+                target=str(pkg["latest"]),
                 project_path=project_path,
                 project_config=project_config,
                 verbose=verbose,
             )
 
             if results:
-                all_results[pkg["name"]] = [
+                all_results[str(pkg["name"])] = [
                     {
                         "file_path": str(r.file_path),
                         "original_code": r.original_code,
@@ -436,16 +436,18 @@ def upgrade_all(
     # Show detailed changes if verbose
     if verbose:
         console.print("\n[bold]Change Details[/]")
-        for lib_name, results in all_results.items():
+        for lib_name, lib_results in all_results.items():
             console.print(f"\n[bold cyan]{lib_name}[/]")
-            for result in results:
+            for result_dict in lib_results:
                 try:
-                    display_path = str(Path(result["file_path"]).relative_to(project_path))
+                    display_path = str(
+                        Path(str(result_dict["file_path"])).relative_to(project_path)
+                    )
                 except ValueError:
-                    display_path = result["file_path"]
+                    display_path = str(result_dict["file_path"])
                 console.print(f"  [cyan]{display_path}[/]:")
-                for change in result["changes"]:
-                    console.print(f"    • {change['description']}")
+                for change_dict in result_dict["changes"]:
+                    console.print(f"    • {change_dict['description']}")
 
     # Update dependency files with new versions
     if update_deps and migration_summary:
@@ -456,13 +458,15 @@ def upgrade_all(
 
         for summary in migration_summary:
             if not dry_run:
-                results = dep_parser.update_dependency_version(
-                    summary["library"], summary["to_version"]
+                update_results = dep_parser.update_dependency_version(
+                    str(summary["library"]), str(summary["to_version"])
                 )
-                dep_updates.append((summary["library"], summary["to_version"], results))
+                dep_updates.append(
+                    (str(summary["library"]), str(summary["to_version"]), update_results)
+                )
             else:
                 # In dry run, just show what would be updated
-                dep_updates.append((summary["library"], summary["to_version"], []))
+                dep_updates.append((str(summary["library"]), str(summary["to_version"]), []))
 
         # Display update results
         if dry_run:
@@ -471,8 +475,8 @@ def upgrade_all(
                 console.print(f"  [cyan]{lib_name}[/] → [green]>={version}[/]")
         else:
             files_updated: set[Path] = set()
-            for lib_name, version, results in dep_updates:
-                for file_path, success in results:
+            for lib_name, version, update_results in dep_updates:
+                for file_path, success in update_results:
                     if success:
                         files_updated.add(file_path)
                         if verbose:
@@ -491,12 +495,12 @@ def upgrade_all(
     if not dry_run:
         # Merge all results into a combined state format
         # This maintains compatibility with diff/apply commands
-        combined_results = []
-        for lib_name, results in all_results.items():
-            for result in results:
+        combined_results: list[dict[str, Any]] = []
+        for lib_name, lib_results in all_results.items():
+            for result_dict in lib_results:
                 # Add library info to each result for tracking
-                result["library"] = lib_name
-                combined_results.append(result)
+                result_dict["library"] = lib_name
+                combined_results.append(result_dict)
 
         state = {
             "library": "multiple",

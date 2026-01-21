@@ -1,6 +1,6 @@
 """Pydantic v1 to v2 transformation using LibCST."""
 
-from typing import Optional, Union
+from typing import Any, Optional
 
 import libcst as cst
 from libcst import matchers as m
@@ -73,9 +73,9 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return updated_node.with_changes(body=updated_node.body.with_changes(body=new_body))
 
-    def _extract_config_options(self, config_class: cst.ClassDef) -> dict:
+    def _extract_config_options(self, config_class: cst.ClassDef) -> dict[str, Any]:
         """Extract configuration options from a Config class."""
-        options = {}
+        options: dict[str, Any] = {}
 
         for item in config_class.body.body:
             if isinstance(item, cst.SimpleStatementLine):
@@ -93,7 +93,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return options
 
-    def _map_config_option(self, name: str, value: any) -> tuple[Optional[str], any]:
+    def _map_config_option(self, name: str, value: Any) -> tuple[Optional[str], Any]:
         """Map a v1 Config option to v2 ConfigDict option."""
         # Direct mappings
         mappings = {
@@ -133,7 +133,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         # Return as-is for unknown options (might work)
         return (name, value)
 
-    def _extract_value(self, node: cst.BaseExpression) -> any:
+    def _extract_value(self, node: cst.BaseExpression) -> Any:
         """Extract a Python value from a CST node."""
         if isinstance(node, cst.Name):
             if node.value == "True":
@@ -152,11 +152,12 @@ class PydanticV1ToV2Transformer(BaseTransformer):
             return float(node.value)
         return None
 
-    def _create_model_config(self, config_dict: dict) -> cst.SimpleStatementLine:
+    def _create_model_config(self, config_dict: dict[str, Any]) -> cst.SimpleStatementLine:
         """Create a model_config = ConfigDict(...) statement."""
         args = []
         for key, value in config_dict.items():
             # Create the value node
+            value_node: cst.BaseExpression
             if isinstance(value, bool):
                 value_node = cst.Name("True" if value else "False")
             elif isinstance(value, str):
@@ -495,7 +496,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, node: Union[cst.Attribute, cst.Name]) -> str:
+    def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
             return node.value
@@ -590,7 +591,7 @@ class PydanticImportTransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, node: Union[cst.Attribute, cst.Name]) -> str:
+    def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
             return node.value
