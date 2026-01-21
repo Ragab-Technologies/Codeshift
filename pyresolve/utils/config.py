@@ -11,7 +11,9 @@ import toml
 class ProjectConfig:
     """Configuration loaded from pyproject.toml [tool.pyresolve] section."""
 
-    exclude: list[str] = field(default_factory=lambda: [".pyresolve/*", "tests/*", ".venv/*", "venv/*"])
+    exclude: list[str] = field(
+        default_factory=lambda: [".pyresolve/*", "tests/*", ".venv/*", "venv/*"]
+    )
     use_llm: bool = True
     anthropic_api_key: Optional[str] = None
     cache_dir: Path = field(default_factory=lambda: Path.home() / ".pyresolve" / "cache")

@@ -208,7 +208,9 @@ class MigrationEngine:
 
         for change in knowledge_base.breaking_changes:
             if change.new_api:
-                context_parts.append(f"- {change.old_api} -> {change.new_api}: {change.description}")
+                context_parts.append(
+                    f"- {change.old_api} -> {change.new_api}: {change.description}"
+                )
             else:
                 context_parts.append(f"- {change.old_api} (removed): {change.description}")
 

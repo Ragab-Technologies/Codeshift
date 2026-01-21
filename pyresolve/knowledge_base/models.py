@@ -73,12 +73,8 @@ class LibraryKnowledge:
     @classmethod
     def from_dict(cls, data: dict) -> "LibraryKnowledge":
         """Create a LibraryKnowledge from a dictionary."""
-        breaking_changes = [
-            BreakingChange.from_dict(bc) for bc in data.get("breaking_changes", [])
-        ]
-        supported_migrations = [
-            (m["from"], m["to"]) for m in data.get("supported_migrations", [])
-        ]
+        breaking_changes = [BreakingChange.from_dict(bc) for bc in data.get("breaking_changes", [])]
+        supported_migrations = [(m["from"], m["to"]) for m in data.get("supported_migrations", [])]
 
         return cls(
             name=data["name"],
@@ -89,9 +85,7 @@ class LibraryKnowledge:
             breaking_changes=breaking_changes,
         )
 
-    def get_changes_for_migration(
-        self, from_version: str, to_version: str
-    ) -> list[BreakingChange]:
+    def get_changes_for_migration(self, from_version: str, to_version: str) -> list[BreakingChange]:
         """Get all breaking changes relevant to a specific migration."""
         from packaging.version import Version
 

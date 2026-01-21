@@ -8,11 +8,10 @@ import click
 import httpx
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
 from pyresolve.knowledge import (
-    Confidence,
     generate_knowledge_base_sync,
     is_tier_1_library,
 )
@@ -50,7 +49,8 @@ def parse_version(version_spec: str) -> Optional[str]:
         Extracted version or None.
     """
     import re
-    match = re.search(r'(\d+\.\d+(?:\.\d+)?)', version_spec)
+
+    match = re.search(r"(\d+\.\d+(?:\.\d+)?)", version_spec)
     if match:
         return match.group(1)
     return None
@@ -67,6 +67,7 @@ def compare_versions(current: str, latest: str) -> bool:
         True if latest > current.
     """
     from packaging.version import Version
+
     try:
         return Version(latest) > Version(current)
     except Exception:
@@ -84,8 +85,8 @@ def is_major_upgrade(current: str, latest: str) -> bool:
         True if major version changed.
     """
     try:
-        current_major = int(current.split('.')[0])
-        latest_major = int(latest.split('.')[0])
+        current_major = int(current.split(".")[0])
+        latest_major = int(latest.split(".")[0])
         return latest_major > current_major
     except Exception:
         return False
@@ -93,7 +94,8 @@ def is_major_upgrade(current: str, latest: str) -> bool:
 
 @click.command()
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project to scan",
@@ -114,7 +116,8 @@ def is_major_upgrade(current: str, latest: str) -> bool:
     help="Output results as JSON",
 )
 @click.option(
-    "--verbose", "-v",
+    "--verbose",
+    "-v",
     is_flag=True,
     help="Show detailed output",
 )
@@ -138,14 +141,16 @@ def scan(
         pyresolve scan --json-output
     """
     project_path = Path(path).resolve()
-    project_config = ProjectConfig.from_pyproject(project_path)
+    # Load project config (currently unused, reserved for future use)
+    _ = ProjectConfig.from_pyproject(project_path)
 
     if not json_output:
-        console.print(Panel(
-            "[bold]Scanning project for possible migrations[/]\n\n"
-            f"Path: {project_path}",
-            title="PyResolve Scan",
-        ))
+        console.print(
+            Panel(
+                "[bold]Scanning project for possible migrations[/]\n\n" f"Path: {project_path}",
+                title="PyResolve Scan",
+            )
+        )
 
     # Parse dependencies
     dep_parser = DependencyParser(project_path)
@@ -161,7 +166,6 @@ def scan(
 
     # Check for updates
     outdated = []
-    results = []
 
     with Progress(
         SpinnerColumn(),
@@ -187,13 +191,15 @@ def scan(
                         progress.advance(task)
                         continue
 
-                    outdated.append({
-                        "name": dep.name,
-                        "current": current_version,
-                        "latest": latest_version,
-                        "is_major": is_major,
-                        "is_tier1": is_tier_1_library(dep.name),
-                    })
+                    outdated.append(
+                        {
+                            "name": dep.name,
+                            "current": current_version,
+                            "latest": latest_version,
+                            "is_major": is_major,
+                            "is_tier1": is_tier_1_library(dep.name),
+                        }
+                    )
 
             progress.advance(task)
 
@@ -209,7 +215,9 @@ def scan(
 
     if fetch_changes:
         if not json_output:
-            console.print(f"\n[bold]Fetching changelogs for {len(outdated)} outdated packages...[/]\n")
+            console.print(
+                f"\n[bold]Fetching changelogs for {len(outdated)} outdated packages...[/]\n"
+            )
 
         with Progress(
             SpinnerColumn(),
@@ -261,10 +269,15 @@ def scan(
 
     # Output results
     if json_output:
-        print(json.dumps({
-            "outdated": outdated,
-            "migrations": migrations,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "outdated": outdated,
+                    "migrations": migrations,
+                },
+                indent=2,
+            )
+        )
         return
 
     # Display results
@@ -317,14 +330,22 @@ def scan(
         console.print(f"\n[bold]Suggested Migrations ({len(migrations)})[/]\n")
 
         for pkg in migrations:
-            tier_label = "[green](Tier 1 - deterministic)[/]" if pkg["is_tier1"] else "[yellow](Tier 2/3 - LLM-assisted)[/]"
-            console.print(f"  [cyan]{pkg['name']}[/] {pkg['current']} → {pkg['latest']} {tier_label}")
+            tier_label = (
+                "[green](Tier 1 - deterministic)[/]"
+                if pkg["is_tier1"]
+                else "[yellow](Tier 2/3 - LLM-assisted)[/]"
+            )
+            console.print(
+                f"  [cyan]{pkg['name']}[/] {pkg['current']} → {pkg['latest']} {tier_label}"
+            )
 
             if fetch_changes and pkg.get("changes"):
                 console.print("    Breaking changes:")
                 for change in pkg["changes"][:3]:
                     if change["new_api"]:
-                        console.print(f"      [dim]├──[/] {change['old_api']} → {change['new_api']}")
+                        console.print(
+                            f"      [dim]├──[/] {change['old_api']} → {change['new_api']}"
+                        )
                     else:
                         console.print(f"      [dim]├──[/] {change['old_api']} [red](removed)[/]")
                 if len(pkg.get("changes", [])) > 3:
@@ -333,11 +354,13 @@ def scan(
             console.print()
 
         console.print("[bold]To migrate a package, run:[/]")
-        console.print(f"  [cyan]pyresolve upgrade <package> --target <version>[/]\n")
+        console.print("  [cyan]pyresolve upgrade <package> --target <version>[/]\n")
 
         # Show quick commands
         console.print("[bold]Quick commands:[/]")
         for pkg in migrations[:3]:
             console.print(f"  [dim]pyresolve upgrade {pkg['name']} --target {pkg['latest']}[/]")
     else:
-        console.print("\n[dim]No migrations suggested. Use --fetch-changes for detailed analysis.[/]")
+        console.print(
+            "\n[dim]No migrations suggested. Use --fetch-changes for detailed analysis.[/]"
+        )

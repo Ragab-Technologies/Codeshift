@@ -144,7 +144,9 @@ class GeneratedKnowledgeBase:
             package=data["package"],
             old_version=data["old_version"],
             new_version=data["new_version"],
-            breaking_changes=[BreakingChange.from_dict(c) for c in data.get("breaking_changes", [])],
+            breaking_changes=[
+                BreakingChange.from_dict(c) for c in data.get("breaking_changes", [])
+            ],
             sources=data.get("sources", []),
             overall_confidence=Confidence(data.get("overall_confidence", "low")),
         )
