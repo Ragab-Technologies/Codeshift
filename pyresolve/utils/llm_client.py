@@ -84,14 +84,12 @@ class LLMClient:
             )
 
         try:
-            messages = [{"role": "user", "content": prompt}]
-
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens or self.MAX_TOKENS,
                 temperature=temperature,
                 system=system_prompt or "",
-                messages=messages,
+                messages=[{"role": "user", "content": prompt}],
             )
 
             content = ""
