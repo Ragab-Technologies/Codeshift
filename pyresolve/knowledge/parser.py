@@ -184,14 +184,16 @@ Extract breaking changes as a JSON array:"""
                 except ValueError:
                     category = ChangeCategory.BEHAVIOR_CHANGED
 
-                changes.append(BreakingChange(
-                    category=category,
-                    old_api=item.get("old_api", ""),
-                    new_api=item.get("new_api"),
-                    description=item.get("description", ""),
-                    confidence=confidence,
-                    source=source.url,
-                ))
+                changes.append(
+                    BreakingChange(
+                        category=category,
+                        old_api=item.get("old_api", ""),
+                        new_api=item.get("new_api"),
+                        description=item.get("description", ""),
+                        confidence=confidence,
+                        source=source.url,
+                    )
+                )
 
             return changes
 
