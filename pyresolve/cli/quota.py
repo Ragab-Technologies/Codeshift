@@ -1,6 +1,6 @@
 """Quota checking and usage logging utilities for CLI commands."""
 
-from typing import Optional
+from typing import Optional, cast
 
 import httpx
 from rich.console import Console
@@ -188,9 +188,9 @@ def get_remaining_quota(event_type: str) -> Optional[int]:
             data = response.json()
 
             if event_type == "file_migrated":
-                return data.get("files_remaining", 0)
+                return cast(int, data.get("files_remaining", 0))
             elif event_type == "llm_call":
-                return data.get("llm_calls_remaining", 0)
+                return cast(int, data.get("llm_calls_remaining", 0))
             else:
                 return None
 
