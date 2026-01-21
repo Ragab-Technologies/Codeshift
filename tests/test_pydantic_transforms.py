@@ -1,13 +1,9 @@
 """Tests for Pydantic v1 to v2 transforms."""
 
-import pytest
-
 from pyresolve.migrator.transforms.pydantic_v1_to_v2 import (
-    PydanticV1ToV2Transformer,
     transform_pydantic_v1_to_v2,
 )
 from tests.fixtures.pydantic_v1_samples import (
-    BASIC_MODEL_WITH_CONFIG,
     CONFIG_MULTIPLE_OPTIONS,
     FIELD_WITH_REGEX,
     METHOD_CALLS,
@@ -101,7 +97,7 @@ class User(BaseModel):
         assert "field_validator" in transformed
         # The import line should have field_validator, not validator
         lines = transformed.split("\n")
-        import_line = next(l for l in lines if "from pydantic import" in l)
+        import_line = next(line for line in lines if "from pydantic import" in line)
         assert "field_validator" in import_line
 
 
