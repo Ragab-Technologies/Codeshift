@@ -1,5 +1,10 @@
 # PyResolve
 
+[![CI](https://github.com/youssefragab/PyResolve/actions/workflows/ci.yml/badge.svg)](https://github.com/youssefragab/PyResolve/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/pyresolve.svg)](https://pypi.org/project/pyresolve/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Don't just flag the update. Fix the break.**
 
 PyResolve is an AI-powered CLI tool that migrates Python code to handle breaking dependency changes. Unlike Dependabot/Renovate which just bump versions, PyResolve actually rewrites code to be compatible with new library versions.
@@ -236,14 +241,30 @@ use_llm = true
 # anthropic_api_key = "sk-..."
 ```
 
+## Pricing
+
+PyResolve uses a tiered pricing model:
+
+| Tier | Price | Features |
+|------|-------|----------|
+| **Free** | $0/month | Tier 1 deterministic transforms (Pydantic, FastAPI, SQLAlchemy, Pandas, Requests) |
+| **Pro** | $19/month | Tier 2 KB-guided LLM migrations for any library |
+| **Unlimited** | $49/month | Tier 3 pure LLM migrations + priority support |
+
+**How it works:**
+- **Tier 1 (Free)**: Runs entirely locally using deterministic AST transforms. No account required.
+- **Tier 2/3 (Paid)**: LLM-powered migrations are processed through the PyResolve API to ensure quality and manage costs.
+
+```bash
+# Login to access Pro/Unlimited features
+pyresolve login
+
+# Check your current plan and usage
+pyresolve quota
+```
+
 ## License
 
-This software is licensed under the [Elastic License 2.0 (ELv2)](LICENSE).
+This software is licensed under the [MIT License](LICENSE).
 
-**What this means:**
-
-- ✅ **Free** for personal use, open-source projects, and internal company use
-- ✅ **Free** to modify and distribute (with license notice)
-- ❌ **Not allowed** to offer PyResolve as a managed/hosted service to third parties
-
-For commercial licensing inquiries, please contact yragab99@gmail.com.
+You are free to use, modify, and distribute this software. The CLI tool and all transforms are fully open source.

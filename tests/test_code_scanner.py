@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pyresolve.scanner import CodeScanner, DependencyParser, ImportInfo, UsageInfo
+from pyresolve.scanner import CodeScanner, DependencyParser
 
 
 class TestCodeScanner:
@@ -13,7 +13,8 @@ class TestCodeScanner:
     def test_scan_file_with_pydantic_imports(self, tmp_path: Path):
         """Test scanning a file with Pydantic imports."""
         test_file = tmp_path / "models.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from pydantic import BaseModel, Field, validator
 
 class User(BaseModel):
@@ -22,7 +23,8 @@ class User(BaseModel):
     @validator("name")
     def validate_name(cls, v):
         return v.strip()
-""")
+"""
+        )
 
         scanner = CodeScanner("pydantic")
         imports, usages = scanner.scan_file(test_file)
@@ -37,7 +39,8 @@ class User(BaseModel):
     def test_scan_file_with_method_calls(self, tmp_path: Path):
         """Test scanning for method calls like .dict()."""
         test_file = tmp_path / "utils.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from pydantic import BaseModel
 
 class User(BaseModel):
@@ -48,7 +51,8 @@ def get_dict(user: User):
 
 def get_schema():
     return User.schema()
-""")
+"""
+        )
 
         scanner = CodeScanner("pydantic")
         imports, usages = scanner.scan_file(test_file)
@@ -63,7 +67,8 @@ def get_schema():
     def test_scan_file_with_decorators(self, tmp_path: Path):
         """Test scanning for decorator usages."""
         test_file = tmp_path / "models.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from pydantic import BaseModel, validator, root_validator
 
 class User(BaseModel):
@@ -77,7 +82,8 @@ class User(BaseModel):
     @root_validator
     def validate_model(cls, values):
         return values
-""")
+"""
+        )
 
         scanner = CodeScanner("pydantic")
         imports, usages = scanner.scan_file(test_file)
@@ -89,12 +95,14 @@ class User(BaseModel):
     def test_scan_file_no_pydantic(self, tmp_path: Path):
         """Test scanning a file without Pydantic imports."""
         test_file = tmp_path / "other.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import json
 
 def parse_json(data):
     return json.loads(data)
-""")
+"""
+        )
 
         scanner = CodeScanner("pydantic")
         imports, usages = scanner.scan_file(test_file)
@@ -105,20 +113,26 @@ def parse_json(data):
     def test_scan_directory(self, tmp_path: Path):
         """Test scanning a directory."""
         # Create test files
-        (tmp_path / "models.py").write_text("""
+        (tmp_path / "models.py").write_text(
+            """
 from pydantic import BaseModel
 
 class User(BaseModel):
     name: str
-""")
-        (tmp_path / "utils.py").write_text("""
+"""
+        )
+        (tmp_path / "utils.py").write_text(
+            """
 from pydantic import Field
 
 x = Field(default=None)
-""")
-        (tmp_path / "other.py").write_text("""
+"""
+        )
+        (tmp_path / "other.py").write_text(
+            """
 import json
-""")
+"""
+        )
 
         scanner = CodeScanner("pydantic")
         result = scanner.scan_directory(tmp_path)
@@ -157,14 +171,16 @@ class TestDependencyParser:
     def test_parse_pyproject_toml(self, tmp_path: Path):
         """Test parsing pyproject.toml."""
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("""
+        pyproject.write_text(
+            """
 [project]
 name = "test"
 dependencies = [
     "pydantic>=1.10,<2.0",
     "fastapi>=0.100.0",
 ]
-""")
+"""
+        )
 
         parser = DependencyParser(tmp_path)
         deps = parser.parse_pyproject_toml()
@@ -179,13 +195,15 @@ dependencies = [
     def test_parse_requirements_txt(self, tmp_path: Path):
         """Test parsing requirements.txt."""
         requirements = tmp_path / "requirements.txt"
-        requirements.write_text("""
+        requirements.write_text(
+            """
 # Core dependencies
 pydantic>=1.10
 requests==2.28.0
 # Dev dependencies
 pytest>=7.0
-""")
+"""
+        )
 
         parser = DependencyParser(tmp_path)
         deps = parser.parse_requirements_txt()
@@ -198,10 +216,12 @@ pytest>=7.0
     def test_get_dependency(self, tmp_path: Path):
         """Test getting a specific dependency."""
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("""
+        pyproject.write_text(
+            """
 [project]
 dependencies = ["pydantic>=1.10,<2.0"]
-""")
+"""
+        )
 
         parser = DependencyParser(tmp_path)
         dep = parser.get_dependency("pydantic")
@@ -223,10 +243,12 @@ dependencies = ["pydantic>=1.10,<2.0"]
     def test_dependency_min_version(self, tmp_path: Path):
         """Test getting minimum version from dependency."""
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("""
+        pyproject.write_text(
+            """
 [project]
 dependencies = ["pydantic>=1.10.5,<2.0"]
-""")
+"""
+        )
 
         parser = DependencyParser(tmp_path)
         dep = parser.get_dependency("pydantic")
@@ -237,10 +259,12 @@ dependencies = ["pydantic>=1.10.5,<2.0"]
     def test_is_version_compatible(self, tmp_path: Path):
         """Test version compatibility checking."""
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("""
+        pyproject.write_text(
+            """
 [project]
 dependencies = ["pydantic>=1.10,<2.0"]
-""")
+"""
+        )
 
         parser = DependencyParser(tmp_path)
         dep = parser.get_dependency("pydantic")

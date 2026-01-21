@@ -2,7 +2,7 @@
 
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -53,9 +53,11 @@ class TestRunner:
     def _detect_test_command(self) -> list[str]:
         """Detect the appropriate test command for the project."""
         # Check for pytest
-        if (self.project_path / "pytest.ini").exists() or \
-           (self.project_path / "pyproject.toml").exists() or \
-           (self.project_path / "tests").exists():
+        if (
+            (self.project_path / "pytest.ini").exists()
+            or (self.project_path / "pyproject.toml").exists()
+            or (self.project_path / "tests").exists()
+        ):
             return [sys.executable, "-m", "pytest", "-v", "--tb=short"]
 
         # Check for unittest

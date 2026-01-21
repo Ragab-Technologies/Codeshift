@@ -1,9 +1,8 @@
 """SQLAlchemy 1.x to 2.0 transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
+from typing import Union
 
 import libcst as cst
-from libcst import matchers as m
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
 
@@ -94,9 +93,7 @@ class SQLAlchemyTransformer(BaseTransformer):
 
         return updated_node
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform SQLAlchemy function calls."""
         # Handle declarative_base() -> class Base(DeclarativeBase): pass
         # This is complex - we just record the need for change
@@ -141,10 +138,9 @@ class SQLAlchemyTransformer(BaseTransformer):
         self, original_node: cst.Attribute, updated_node: cst.Attribute
     ) -> cst.Attribute:
         """Transform SQLAlchemy attribute accesses."""
-        attr_name = updated_node.attr.value
-
         # Handle method renames: .all() when preceded by query-like calls
         # This is simplified - would need more context for accurate detection
+        # Note: attr_name = updated_node.attr.value would be used for future transforms
 
         return updated_node
 

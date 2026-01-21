@@ -55,23 +55,19 @@ class KnowledgeBaseLoader:
             )
 
         try:
-            with open(yaml_path, "r") as f:
+            with open(yaml_path) as f:
                 data = yaml.safe_load(f)
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML in knowledge base for '{library_name}': {e}")
+            raise ValueError(f"Invalid YAML in knowledge base for '{library_name}': {e}") from e
 
         if not isinstance(data, dict):
-            raise ValueError(
-                f"Knowledge base for '{library_name}' must be a dictionary"
-            )
+            raise ValueError(f"Knowledge base for '{library_name}' must be a dictionary")
 
         knowledge = LibraryKnowledge.from_dict(data)
         self._cache[library_name] = knowledge
         return knowledge
 
-    def is_migration_supported(
-        self, library_name: str, from_version: str, to_version: str
-    ) -> bool:
+    def is_migration_supported(self, library_name: str, from_version: str, to_version: str) -> bool:
         """Check if a specific migration path is supported.
 
         Args:

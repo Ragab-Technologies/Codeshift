@@ -1,9 +1,8 @@
 """Requests library transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
+from typing import Union
 
 import libcst as cst
-from libcst import matchers as m
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
 
@@ -24,7 +23,9 @@ class RequestsTransformer(BaseTransformer):
         module_name = self._get_module_name(original_node.module)
 
         # Transform requests.packages.urllib3 imports
-        if module_name == "requests.packages.urllib3" or module_name.startswith("requests.packages.urllib3."):
+        if module_name == "requests.packages.urllib3" or module_name.startswith(
+            "requests.packages.urllib3."
+        ):
             new_module_name = module_name.replace("requests.packages.urllib3", "urllib3")
             self.record_change(
                 description="Import urllib3 directly instead of through requests.packages",
@@ -33,9 +34,7 @@ class RequestsTransformer(BaseTransformer):
                 replacement=f"from {new_module_name}",
                 transform_name="urllib3_import_fix",
             )
-            return updated_node.with_changes(
-                module=self._build_module_node(new_module_name)
-            )
+            return updated_node.with_changes(module=self._build_module_node(new_module_name))
 
         # Transform requests.compat imports
         if module_name == "requests.compat":
@@ -45,7 +44,15 @@ class RequestsTransformer(BaseTransformer):
             for name in updated_node.names:
                 if isinstance(name, cst.ImportAlias) and isinstance(name.name, cst.Name):
                     import_name = name.name.value
-                    if import_name in ("urljoin", "urlparse", "urlsplit", "urlunparse", "urlencode", "quote", "unquote"):
+                    if import_name in (
+                        "urljoin",
+                        "urlparse",
+                        "urlsplit",
+                        "urlunparse",
+                        "urlencode",
+                        "quote",
+                        "unquote",
+                    ):
                         self.record_change(
                             description=f"Import {import_name} from urllib.parse instead of requests.compat",
                             line_number=1,
@@ -82,13 +89,14 @@ class RequestsTransformer(BaseTransformer):
 
         return updated_node
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform requests function calls."""
         # Check for requests.get/post/put/delete without timeout
         if isinstance(updated_node.func, cst.Attribute):
-            if isinstance(updated_node.func.value, cst.Name) and updated_node.func.value.value == "requests":
+            if (
+                isinstance(updated_node.func.value, cst.Name)
+                and updated_node.func.value.value == "requests"
+            ):
                 method_name = updated_node.func.attr.value
                 if method_name in ("get", "post", "put", "delete", "patch", "head", "options"):
                     # Check if timeout is specified
@@ -110,7 +118,16 @@ class RequestsTransformer(BaseTransformer):
         # Check for session method calls without timeout
         if isinstance(updated_node.func, cst.Attribute):
             method_name = updated_node.func.attr.value
-            if method_name in ("get", "post", "put", "delete", "patch", "head", "options", "request"):
+            if method_name in (
+                "get",
+                "post",
+                "put",
+                "delete",
+                "patch",
+                "head",
+                "options",
+                "request",
+            ):
                 # Check if this might be a session call (heuristic)
                 has_timeout = any(
                     isinstance(arg.keyword, cst.Name) and arg.keyword.value == "timeout"

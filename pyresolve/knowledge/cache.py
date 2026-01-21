@@ -143,11 +143,13 @@ class KnowledgeCache:
             try:
                 data = json.loads(cache_file.read_text())
                 kb_data = data.get("knowledge_base", {})
-                cached.append((
-                    kb_data.get("package", ""),
-                    kb_data.get("old_version", ""),
-                    kb_data.get("new_version", ""),
-                ))
+                cached.append(
+                    (
+                        kb_data.get("package", ""),
+                        kb_data.get("old_version", ""),
+                        kb_data.get("new_version", ""),
+                    )
+                )
             except Exception:
                 continue
 

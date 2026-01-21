@@ -2,11 +2,10 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 from typing import Optional
 
 from pyresolve.knowledge_base.models import BreakingChange, Severity
-from pyresolve.migrator.ast_transforms import TransformChange, TransformResult
+from pyresolve.migrator.ast_transforms import TransformResult
 
 
 class RiskLevel(Enum):
@@ -16,6 +15,23 @@ class RiskLevel(Enum):
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+    def __lt__(self, other):
+        if not isinstance(other, RiskLevel):
+            return NotImplemented
+        order = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL]
+        return order.index(self) < order.index(other)
+
+    def __le__(self, other):
+        return self == other or self < other
+
+    def __gt__(self, other):
+        if not isinstance(other, RiskLevel):
+            return NotImplemented
+        return not self <= other
+
+    def __ge__(self, other):
+        return self == other or self > other
 
 
 @dataclass
@@ -41,7 +57,9 @@ class RiskAssessment:
     @property
     def is_safe(self) -> bool:
         """Check if the migration is considered safe."""
-        return self.overall_risk in (RiskLevel.LOW, RiskLevel.MEDIUM) and self.confidence_score >= 0.7
+        return (
+            self.overall_risk in (RiskLevel.LOW, RiskLevel.MEDIUM) and self.confidence_score >= 0.7
+        )
 
     @property
     def summary(self) -> str:
@@ -248,10 +266,16 @@ class RiskAssessor:
             description=f"{len(critical_files)} critical file(s) affected: {', '.join(f.name for f in critical_files[:3])}",
             severity=severity,
             score=score,
-            mitigation="Pay extra attention to critical files during review" if severity != RiskLevel.LOW else None,
+            mitigation=(
+                "Pay extra attention to critical files during review"
+                if severity != RiskLevel.LOW
+                else None
+            ),
         )
 
-    def _assess_breaking_change_severity(self, breaking_changes: list[BreakingChange]) -> RiskFactor:
+    def _assess_breaking_change_severity(
+        self, breaking_changes: list[BreakingChange]
+    ) -> RiskFactor:
         """Assess risk based on breaking change severity."""
         if not breaking_changes:
             return RiskFactor(
@@ -289,7 +313,11 @@ class RiskAssessor:
             description=f"Addressing {len(breaking_changes)} breaking changes",
             severity=severity,
             score=score,
-            mitigation="Ensure thorough testing of affected functionality" if severity != RiskLevel.LOW else None,
+            mitigation=(
+                "Ensure thorough testing of affected functionality"
+                if severity != RiskLevel.LOW
+                else None
+            ),
         )
 
     def _assess_test_coverage(self, coverage: float) -> RiskFactor:
