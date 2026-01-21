@@ -71,7 +71,7 @@ class RequestsTransformer(BaseTransformer):
 
     def leave_Attribute(
         self, original_node: cst.Attribute, updated_node: cst.Attribute
-    ) -> cst.Attribute:
+    ) -> Union[cst.Attribute, cst.Name]:
         """Transform requests.packages.urllib3 attribute access."""
         # Check for requests.packages.urllib3 pattern
         attr_str = self._get_full_attribute(updated_node)
@@ -85,7 +85,7 @@ class RequestsTransformer(BaseTransformer):
                 replacement=new_attr_str,
                 transform_name="urllib3_attribute_fix",
             )
-            return self._build_attribute_node(new_attr_str)
+            return self._build_name_or_attribute_node(new_attr_str)
 
         return updated_node
 
@@ -148,7 +148,7 @@ class RequestsTransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, module: Union[cst.Name, cst.Attribute]) -> str:
+    def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
             return module.value
@@ -162,7 +162,7 @@ class RequestsTransformer(BaseTransformer):
         if len(parts) == 1:
             return cst.Name(parts[0])
 
-        result = cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result
@@ -178,7 +178,19 @@ class RequestsTransformer(BaseTransformer):
     def _build_attribute_node(self, attr_str: str) -> cst.Attribute:
         """Build an attribute node from a dotted string."""
         parts = attr_str.split(".")
-        result = cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
+        for part in parts[1:]:
+            result = cst.Attribute(value=result, attr=cst.Name(part))
+        # Safe to cast since we always have at least 2 parts for an Attribute
+        assert isinstance(result, cst.Attribute)
+        return result
+
+    def _build_name_or_attribute_node(self, name_str: str) -> Union[cst.Name, cst.Attribute]:
+        """Build a Name or Attribute node from a dotted string."""
+        parts = name_str.split(".")
+        if len(parts) == 1:
+            return cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result

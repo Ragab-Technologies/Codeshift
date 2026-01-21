@@ -80,3 +80,7 @@ dmypy.json
 .pyresolve/
 .pyresolve_cache/
 *.pyresolve.json
+
+# Ignore .env file
+.env
+.env.local
