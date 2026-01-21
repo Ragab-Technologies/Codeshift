@@ -279,7 +279,7 @@ class SourceFetcher:
         Returns:
             List of discovered ChangelogSources.
         """
-        sources = []
+        sources: list[ChangelogSource] = []
 
         # Get package info from PyPI
         pkg_info = self.get_package_info(package)

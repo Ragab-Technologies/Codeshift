@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional
+from typing import Optional, cast
 
 from pyresolve.knowledge.models import (
     BreakingChange,
@@ -228,16 +228,16 @@ Extract breaking changes as a JSON array:"""
         code_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
         matches = re.findall(code_block_pattern, content)
         for match in matches:
-            match = match.strip()
-            if match.startswith("["):
-                return match
+            match_str = cast(str, match).strip()
+            if match_str.startswith("["):
+                return match_str
 
         # Try to find bare JSON array
         array_pattern = r"\[[\s\S]*?\]"
         matches = re.findall(array_pattern, content)
         if matches:
             # Return the longest match (likely the full array)
-            return max(matches, key=len)
+            return cast(str, max(matches, key=len))
 
         return None
 
