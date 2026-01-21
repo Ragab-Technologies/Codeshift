@@ -1,7 +1,7 @@
 """Supabase database client and operations."""
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional, cast
 
 from supabase import Client, create_client
 
@@ -95,7 +95,7 @@ class Database:
         key_hash: str,
         name: str = "CLI Key",
         scopes: Optional[list[str]] = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Create a new API key."""
         data = {
             "user_id": user_id,
@@ -105,7 +105,7 @@ class Database:
             "scopes": scopes or ["read", "write"],
         }
         result = self.client.table("api_keys").insert(data).execute()
-        return result.data[0]
+        return cast(dict[str, Any], result.data[0])
 
     def revoke_api_key(self, key_id: str) -> bool:
         """Revoke an API key."""
@@ -130,8 +130,8 @@ class Database:
         event_type: str,
         library: Optional[str] = None,
         quantity: int = 1,
-        metadata: Optional[dict] = None,
-    ) -> dict:
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """Record a usage event."""
         now = datetime.now(timezone.utc)
         data = {
@@ -144,7 +144,7 @@ class Database:
             "created_at": now.isoformat(),
         }
         result = self.client.table("usage_events").insert(data).execute()
-        return result.data[0]
+        return cast(dict[str, Any], result.data[0])
 
     def get_usage_for_period(
         self, user_id: str, billing_period: Optional[str] = None
@@ -175,7 +175,7 @@ class Database:
         billing_period: Optional[str] = None,
         event_type: Optional[str] = None,
         limit: int = 100,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Get detailed usage events."""
         if billing_period is None:
             billing_period = datetime.now(timezone.utc).strftime("%Y-%m")
@@ -191,7 +191,16 @@ class Database:
             query = query.eq("event_type", event_type)
 
         result = query.order("created_at", desc=True).limit(limit).execute()
-        return result.data
+        return cast(list[dict[str, Any]], result.data)
+
+    def get_user_quota(self, user_id: str) -> Optional[dict[str, int]]:
+        """Get quota information for a user.
+
+        Returns:
+            Dict with llm_calls and file_migrated counts, or None if error.
+        """
+        billing_period = datetime.now(timezone.utc).strftime("%Y-%m")
+        return self.get_usage_for_period(user_id, billing_period)
 
 
 # Singleton instance
