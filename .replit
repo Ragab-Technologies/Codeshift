@@ -14,6 +14,10 @@ channel = "stable-25_05"
 [deployment.build]
 run = ["sh", "-c", "pip install -e '.[api]'"]
 
+# Build step runs during deployment build phase (before runtime)
+[deployment.build]
+run = ["sh", "-c", "pip install -e '.[api]'"]
+
 [deployment]
 # Production: no reload, multiple workers for concurrency
 run = ["sh", "-c", "uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
