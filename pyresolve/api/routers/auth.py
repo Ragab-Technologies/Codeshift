@@ -19,6 +19,7 @@ from pyresolve.api.models.auth import (
     DeviceTokenRequest,
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
     UserInfo,
 )
 
@@ -111,6 +112,103 @@ async def login(request: LoginRequest) -> LoginResponse:
             stripe_customer_id=profile.get("stripe_customer_id"),
             created_at=profile["created_at"],
         ),
+    )
+
+
+@router.post("/register", response_model=LoginResponse)
+async def register(request: RegisterRequest) -> LoginResponse:
+    """Register a new user account.
+
+    Creates a new user in Supabase Auth and returns an API key for CLI usage.
+    The profile is automatically created by a database trigger.
+    """
+    from pyresolve.api.database import get_supabase_anon_client
+
+    client = get_supabase_anon_client()
+
+    try:
+        # Create user in Supabase Auth
+        auth_response = client.auth.sign_up(
+            {
+                "email": request.email,
+                "password": request.password,
+                "options": {
+                    "data": {"full_name": request.full_name} if request.full_name else {}
+                },
+            }
+        )
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "already registered" in error_msg or "already exists" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email already exists",
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed. Please try again.",
+        ) from e
+
+    if not auth_response.user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed. Please try again.",
+        )
+
+    user_id = auth_response.user.id
+
+    # Wait briefly for the trigger to create the profile
+    import asyncio
+
+    await asyncio.sleep(0.5)
+
+    # Get the profile (created by database trigger)
+    db = get_database()
+    profile = db.get_profile_by_id(user_id)
+
+    if not profile:
+        # Profile wasn't created by trigger - create it manually
+        try:
+            db.client.table("profiles").insert(
+                {
+                    "id": user_id,
+                    "email": request.email,
+                    "full_name": request.full_name or "",
+                    "tier": "free",
+                }
+            ).execute()
+            profile = db.get_profile_by_id(user_id)
+        except Exception:
+            pass
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Account created but profile setup failed. Please try logging in.",
+        )
+
+    # Generate a new API key
+    full_key, key_prefix, key_hash = generate_api_key()
+
+    # Store the API key
+    db.create_api_key(
+        user_id=user_id,
+        key_prefix=key_prefix,
+        key_hash=key_hash,
+        name="CLI Registration Key",
+    )
+
+    return LoginResponse(
+        api_key=full_key,
+        user=UserInfo(
+            id=profile["id"],
+            email=profile["email"],
+            full_name=profile.get("full_name"),
+            tier=profile.get("tier", "free"),
+            stripe_customer_id=profile.get("stripe_customer_id"),
+            created_at=profile["created_at"],
+        ),
+        message="Registration successful",
     )
 
 
