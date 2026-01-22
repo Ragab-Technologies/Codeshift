@@ -1,11 +1,11 @@
 run = "pip install -e '.[api]' && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --reload"
 entrypoint = "pyresolve/api/main.py"
-modules = ["python-3.11"]
+modules = ["python-3.12", "web", "nodejs-20"]
 
 hidden = [".pythonlibs", "__pycache__", ".pytest_cache", "*.pyc"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 
 [deployment]
 # Production: no reload, multiple workers for concurrency
