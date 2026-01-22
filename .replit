@@ -1,15 +1,22 @@
-run = "pip install -e '.[api]' && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --reload"
+run = "uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --reload"
 entrypoint = "pyresolve/api/main.py"
 modules = ["python-3.12", "web", "nodejs-20"]
 
 hidden = [".pythonlibs", "__pycache__", ".pytest_cache", "*.pyc"]
 
+# Install dependencies when workspace boots (for development)
+onBoot = "pip install -e '.[api]'"
+
 [nix]
 channel = "stable-25_05"
 
+# Build step runs during deployment build phase (before runtime)
+[deployment.build]
+run = ["sh", "-c", "pip install -e '.[api]'"]
+
 [deployment]
 # Production: no reload, multiple workers for concurrency
-run = ["sh", "-c", "pip install -e '.[api]' && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
+run = ["sh", "-c", "uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
 deploymentTarget = "autoscale"
 
 [deployment.autoscale]
