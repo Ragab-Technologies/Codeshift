@@ -2,10 +2,10 @@
 // PyResolve Landing Page - Supabase Integration
 // ============================================
 
-// IMPORTANT: Replace these with your actual Supabase credentials
-// You can find these in your Supabase project settings > API
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // e.g., 'https://xxxxx.supabase.co'
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // e.g., 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+// Supabase configuration for waitlist signups
+// The anon key is safe for client-side use (it's a publishable key)
+const SUPABASE_URL = 'https://ztpklncwerkbycbtjszd.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable__xjS65qhfWLbJf6EHJPb2Q_qsxufF_i';
 
 // Initialize Supabase client
 let supabase = null;
