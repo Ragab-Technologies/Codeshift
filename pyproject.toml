@@ -38,6 +38,7 @@ dependencies = [
     "nox>=2025.11.12",
     "black>=24.10.0",
     "mypy>=1.19.1",
+    "supabase>=2.27.2",
 ]
 
 [project.optional-dependencies]
@@ -47,6 +48,7 @@ api = [
     "supabase>=2.3.0",
     "stripe>=7.0.0",
     "pydantic-settings>=2.1.0",
+    "email-validator>=2.0.0",
 ]
 dev = [
     "pytest>=7.0",
@@ -91,6 +93,10 @@ target-version = "py39"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyresolve"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.mypy]
 python_version = "3.9"
