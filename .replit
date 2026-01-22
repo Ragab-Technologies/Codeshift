@@ -7,8 +7,8 @@ hidden = [".pythonlibs", "__pycache__", ".pytest_cache"]
 channel = "stable-25_05"
 
 [deployment]
-run = ["sh", "-c", "uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
-build = ["sh", "-c", "pip install -e '.[api]'"]
+run = ["sh", "-c", ". .venv/bin/activate && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
+build = ["sh", "-c", "python -m venv .venv && . .venv/bin/activate && pip install -e '.[api]'"]
 deploymentTarget = "autoscale"
 
 [[ports]]
