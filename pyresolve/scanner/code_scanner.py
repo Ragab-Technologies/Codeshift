@@ -180,8 +180,17 @@ class UsageVisitor(cst.CSTVisitor):
         # Handle method calls like .dict(), .json(), etc.
         if isinstance(node.func, cst.Attribute):
             method_name = node.func.attr.value
-            if method_name in {"dict", "json", "schema", "schema_json", "parse_obj",
-                              "parse_raw", "parse_file", "copy", "update_forward_refs"}:
+            if method_name in {
+                "dict",
+                "json",
+                "schema",
+                "schema_json",
+                "parse_obj",
+                "parse_raw",
+                "parse_file",
+                "copy",
+                "update_forward_refs",
+            }:
                 pos = self.get_metadata(PositionProvider, node)
                 self.usages.append(
                     UsageInfo(
@@ -276,7 +285,7 @@ class CodeScanner:
         try:
             tree = cst.parse_module(source_code)
         except cst.ParserSyntaxError as e:
-            raise SyntaxError(f"Invalid Python syntax in {file_path}: {e}")
+            raise SyntaxError(f"Invalid Python syntax in {file_path}: {e}") from e
 
         wrapper = MetadataWrapper(tree)
 
@@ -291,9 +300,7 @@ class CodeScanner:
         # Second pass: find usages (only if we have imports)
         usages = []
         if import_visitor.imported_names:
-            usage_visitor = UsageVisitor(
-                import_visitor.imported_names, self.target_library
-            )
+            usage_visitor = UsageVisitor(import_visitor.imported_names, self.target_library)
             wrapper.visit(usage_visitor)
             for usage in usage_visitor.usages:
                 usage.file_path = file_path

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyresolve"
-version = "0.1.2"
+version = "0.2.0b1"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
 license = {text = "MIT"}
@@ -34,15 +34,32 @@ dependencies = [
     "toml>=0.10",
     "packaging>=23.0",
     "httpx>=0.25",
+    "pytest>=8.4.2",
+    "nox>=2025.11.12",
+    "black>=24.10.0",
+    "mypy>=1.19.1",
 ]
 
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "supabase>=2.3.0",
+    "stripe>=7.0.0",
+    "pydantic-settings>=2.1.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "black>=23.0",
+    "black>=24.0,<25.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "nox>=2024.0",
+    "types-toml>=0.10",
+    "types-PyYAML>=6.0",
+]
+all = [
+    "pyresolve[api,dev]",
 ]
 
 [project.scripts]
@@ -80,3 +97,9 @@ python_version = "3.9"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20250915",
+    "types-toml>=0.10.8.20240310",
+]
