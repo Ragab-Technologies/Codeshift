@@ -6,12 +6,9 @@ hidden = [".pythonlibs", "__pycache__", ".pytest_cache"]
 [nix]
 channel = "stable-25_05"
 
-# Build step runs during deployment build phase (before runtime)
-[deployment.build]
-run = ["sh", "-c", "pip install -e '.[api]'"]
-
 [deployment]
-run = ["sh", "-c", "pip install -e '.[api]' && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
+run = ["sh", "-c", "uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
+build = ["sh", "-c", "pip install -e '.[api]'"]
 deploymentTarget = "autoscale"
 
 [[ports]]
