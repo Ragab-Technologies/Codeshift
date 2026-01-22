@@ -99,3 +99,11 @@ class DeviceTokenRequest(BaseModel):
 
     device_code: str
     client_id: str = "pyresolve-cli"
+
+
+class RegisterRequest(BaseModel):
+    """Request for new user registration."""
+
+    email: EmailStr
+    password: str = Field(min_length=8, description="Password must be at least 8 characters")
+    full_name: Optional[str] = Field(default=None, max_length=100)
