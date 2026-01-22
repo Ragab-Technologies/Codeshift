@@ -1,0 +1,21 @@
+run = "pip install -e . && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --reload"
+entrypoint = "pyresolve/api/main.py"
+modules = ["python-3.11"]
+
+hidden = [".pythonlibs", "__pycache__", ".pytest_cache", "*.pyc"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+# Production: no reload, multiple workers for concurrency
+run = ["sh", "-c", "pip install -e . && uvicorn pyresolve.api.main:app --host 0.0.0.0 --port 8080 --workers 2"]
+deploymentTarget = "autoscale"
+
+[deployment.autoscale]
+minInstances = 0
+maxInstances = 5
+
+[[ports]]
+localPort = 8080
+externalPort = 80

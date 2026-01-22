@@ -144,9 +144,7 @@ class KnowledgeGenerator:
             return Confidence.LOW
 
         # Check if we have migration guide (high confidence source)
-        has_migration_guide = any(
-            s.source_type == "migration_guide" for s in sources
-        )
+        has_migration_guide = any(s.source_type == "migration_guide" for s in sources)
 
         if has_migration_guide:
             return Confidence.HIGH
