@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 import click
 from rich.console import Console
@@ -10,6 +10,12 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from pyresolve.cli.quota import (
+    QuotaError,
+    check_quota,
+    record_usage,
+    show_quota_exceeded_message,
+)
 from pyresolve.knowledge import (
     Confidence,
     GeneratedKnowledgeBase,
@@ -18,23 +24,23 @@ from pyresolve.knowledge import (
 )
 from pyresolve.knowledge_base import KnowledgeBaseLoader
 from pyresolve.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
-from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
 from pyresolve.migrator.transforms.fastapi_transformer import transform_fastapi
-from pyresolve.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
 from pyresolve.migrator.transforms.pandas_transformer import transform_pandas
+from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
 from pyresolve.migrator.transforms.requests_transformer import transform_requests
+from pyresolve.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
 from pyresolve.scanner import CodeScanner, DependencyParser
-from pyresolve.utils.config import Config, ProjectConfig
+from pyresolve.utils.config import ProjectConfig
 
 console = Console()
 
 
-def load_state(project_path: Path) -> Optional[dict]:
+def load_state(project_path: Path) -> Optional[dict[str, Any]]:
     """Load the current migration state if it exists."""
     state_file = project_path / ".pyresolve" / "state.json"
     if state_file.exists():
         try:
-            return json.loads(state_file.read_text())
+            return cast(dict[str, Any], json.loads(state_file.read_text()))
         except Exception:
             return None
     return None
@@ -51,18 +57,21 @@ def save_state(project_path: Path, state: dict) -> None:
 @click.command()
 @click.argument("library")
 @click.option(
-    "--target", "-t",
+    "--target",
+    "-t",
     required=True,
     help="Target version to upgrade to (e.g., 2.5.0)",
 )
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project to analyze",
 )
 @click.option(
-    "--file", "-f",
+    "--file",
+    "-f",
     type=click.Path(exists=True),
     help="Analyze a single file instead of the entire project",
 )
@@ -72,7 +81,8 @@ def save_state(project_path: Path, state: dict) -> None:
     help="Show what would be changed without saving state",
 )
 @click.option(
-    "--verbose", "-v",
+    "--verbose",
+    "-v",
     is_flag=True,
     help="Show detailed output",
 )
@@ -95,14 +105,13 @@ def upgrade(
     project_path = Path(path).resolve()
     project_config = ProjectConfig.from_pyproject(project_path)
 
-    config = Config(
-        project_path=project_path,
-        target_library=library,
-        target_version=target,
-        project_config=project_config,
-        dry_run=dry_run,
-        verbose=verbose,
-    )
+    # Check quota before starting (allow offline for Tier 1 libraries)
+    is_tier1 = is_tier_1_library(library)
+    try:
+        check_quota("file_migrated", quantity=1, allow_offline=is_tier1)
+    except QuotaError as e:
+        show_quota_exceeded_message(e)
+        raise SystemExit(1) from e
 
     # Load knowledge base
     loader = KnowledgeBaseLoader()
@@ -112,16 +121,18 @@ def upgrade(
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/] {e}")
         console.print(f"\nSupported libraries: {', '.join(loader.get_supported_libraries())}")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
     # Check if migration is supported
     # For now, we'll allow any version since we're doing a general migration
-    console.print(Panel(
-        f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
-        f"{knowledge.description}\n"
-        f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
-        title="PyResolve Migration",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
+            f"{knowledge.description}\n"
+            f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
+            title="PyResolve Migration",
+        )
+    )
 
     # Step 1: Parse dependencies
     with Progress(
@@ -136,11 +147,14 @@ def upgrade(
 
         current_version = None
         if current_dep:
-            console.print(f"Found [cyan]{library}[/] in project dependencies: {current_dep.version_spec or 'any version'}")
+            console.print(
+                f"Found [cyan]{library}[/] in project dependencies: {current_dep.version_spec or 'any version'}"
+            )
             # Extract version number from spec (e.g., ">=1.0,<2.0" -> "1.0")
             if current_dep.version_spec:
                 import re
-                version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', current_dep.version_spec)
+
+                version_match = re.search(r"(\d+\.\d+(?:\.\d+)?)", current_dep.version_spec)
                 if version_match:
                     current_version = version_match.group(1)
         else:
@@ -176,12 +190,16 @@ def upgrade(
 
     # Display detected breaking changes
     if generated_kb and generated_kb.has_changes:
-        console.print(f"\n[bold]Breaking changes detected:[/]\n")
+        console.print("\n[bold]Breaking changes detected:[/]\n")
 
         # Group by confidence
         high_confidence = generated_kb.get_changes_by_confidence(Confidence.HIGH)
-        medium_confidence = [c for c in generated_kb.breaking_changes if c.confidence == Confidence.MEDIUM]
-        low_confidence = [c for c in generated_kb.breaking_changes if c.confidence == Confidence.LOW]
+        medium_confidence = [
+            c for c in generated_kb.breaking_changes if c.confidence == Confidence.MEDIUM
+        ]
+        low_confidence = [
+            c for c in generated_kb.breaking_changes if c.confidence == Confidence.LOW
+        ]
 
         if high_confidence:
             console.print("   [green]HIGH CONFIDENCE:[/]")
@@ -208,10 +226,12 @@ def upgrade(
                     console.print(f"   [dim]├──[/] {change.old_api} [red](removed)[/]")
 
         if generated_kb.sources:
-            console.print(f"\n   [dim]Sources: {', '.join(generated_kb.sources[:2])}{'...' if len(generated_kb.sources) > 2 else ''}[/]")
+            console.print(
+                f"\n   [dim]Sources: {', '.join(generated_kb.sources[:2])}{'...' if len(generated_kb.sources) > 2 else ''}[/]"
+            )
 
     elif generated_kb:
-        console.print(f"\n[dim]No breaking changes detected from changelog sources.[/]")
+        console.print("\n[dim]No breaking changes detected from changelog sources.[/]")
 
     # Step 3: Scan for library usage
     console.print("")  # Add spacing
@@ -299,7 +319,7 @@ def upgrade(
                                 original=c.original,
                                 replacement=c.replacement,
                                 transform_name=c.transform_name,
-                                confidence=getattr(c, 'confidence', 1.0),
+                                confidence=getattr(c, "confidence", 1.0),
                             )
                             for c in changes
                         ],
@@ -318,10 +338,12 @@ def upgrade(
 
     # Step 5: Show results
     if not results:
-        console.print(f"\n[green]No changes needed![/] Your code appears to be compatible with {library} v{target}.")
+        console.print(
+            f"\n[green]No changes needed![/] Your code appears to be compatible with {library} v{target}."
+        )
         return
 
-    console.print(f"\n[bold]Proposed Changes[/]")
+    console.print("\n[bold]Proposed Changes[/]")
 
     table = Table()
     table.add_column("File", style="cyan")
@@ -360,10 +382,10 @@ def upgrade(
             except ValueError:
                 display_path = str(result.file_path)
             console.print(f"\n[cyan]{display_path}[/]:")
-            for change in result.changes:
-                console.print(f"  • {change.description}")
-                console.print(f"    [red]- {change.original}[/]")
-                console.print(f"    [green]+ {change.replacement}[/]")
+            for transform_change in result.changes:
+                console.print(f"  • {transform_change.description}")
+                console.print(f"    [red]- {transform_change.original}[/]")
+                console.print(f"    [green]+ {transform_change.replacement}[/]")
 
     # Save state
     if not dry_run:
@@ -394,7 +416,19 @@ def upgrade(
         }
         save_state(project_path, state)
 
-        console.print(f"\n[dim]State saved to .pyresolve/state.json[/]")
+        # Record usage event
+        record_usage(
+            event_type="scan",
+            library=library,
+            quantity=1,
+            metadata={
+                "files_analyzed": len(files_to_transform),
+                "changes_proposed": total_changes,
+                "target_version": target,
+            },
+        )
+
+        console.print("\n[dim]State saved to .pyresolve/state.json[/]")
         console.print("\nNext steps:")
         console.print("  [cyan]pyresolve diff[/]    - View detailed diff of proposed changes")
         console.print("  [cyan]pyresolve apply[/]   - Apply changes to your files")

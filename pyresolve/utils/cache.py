@@ -3,7 +3,7 @@
 import hashlib
 import json
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -140,13 +140,17 @@ class Cache:
 
         # Store in file
         cache_path = self._get_cache_path(key)
-        cache_path.write_text(json.dumps({
-            "key": entry.key,
-            "value": entry.value,
-            "created_at": entry.created_at,
-            "expires_at": entry.expires_at,
-            "hits": entry.hits,
-        }))
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "key": entry.key,
+                    "value": entry.value,
+                    "created_at": entry.created_at,
+                    "expires_at": entry.expires_at,
+                    "hits": entry.hits,
+                }
+            )
+        )
 
     def delete(self, key: str) -> bool:
         """Delete a value from the cache.
@@ -195,10 +199,7 @@ class Cache:
         count = 0
 
         # Clean memory cache
-        expired_keys = [
-            k for k, v in self._memory_cache.items()
-            if v.is_expired
-        ]
+        expired_keys = [k for k, v in self._memory_cache.items() if v.is_expired]
         for key in expired_keys:
             del self._memory_cache[key]
             count += 1

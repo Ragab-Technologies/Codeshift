@@ -1,18 +1,24 @@
-"""LLM-based migration for complex cases."""
+"""LLM-based migration for complex cases.
+
+LLM migrations (Tier 2/3) are routed through the PyResolve API,
+which handles authentication, quota checking, and billing.
+Users must have a Pro or Unlimited subscription to use LLM features.
+
+Tier 1 (deterministic AST transforms) remains free and local.
+"""
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 from pyresolve.migrator.ast_transforms import (
-    BaseTransformer,
     TransformChange,
     TransformResult,
     TransformStatus,
 )
+from pyresolve.utils.api_client import PyResolveAPIClient, get_api_client
 from pyresolve.utils.cache import LLMCache, get_llm_cache
-from pyresolve.utils.llm_client import LLMClient, LLMResponse, get_llm_client
 from pyresolve.validator.syntax_checker import quick_syntax_check
 
 
@@ -24,17 +30,27 @@ class LLMMigrationResult:
     migrated_code: str
     success: bool
     used_cache: bool = False
-    llm_response: Optional[LLMResponse] = None
     error: Optional[str] = None
     validation_passed: bool = True
+    usage: Optional[dict] = None
 
 
 class LLMMigrator:
-    """Handles complex migrations using LLM."""
+    """Handles complex migrations using LLM via the PyResolve API.
+
+    LLM migrations require authentication and a Pro or Unlimited subscription.
+    All LLM calls are routed through the PyResolve API, which handles:
+    - Authentication and authorization
+    - Quota checking and billing
+    - Server-side Anthropic API calls
+
+    This ensures users cannot bypass the subscription model by using
+    their own API keys.
+    """
 
     def __init__(
         self,
-        client: Optional[LLMClient] = None,
+        client: Optional[PyResolveAPIClient] = None,
         cache: Optional[LLMCache] = None,
         use_cache: bool = True,
         validate_output: bool = True,
@@ -42,19 +58,19 @@ class LLMMigrator:
         """Initialize the LLM migrator.
 
         Args:
-            client: LLM client to use. Defaults to singleton.
+            client: API client to use. Defaults to singleton.
             cache: Cache to use. Defaults to singleton.
             use_cache: Whether to use caching
             validate_output: Whether to validate migrated code syntax
         """
-        self.client = client or get_llm_client()
+        self.client = client or get_api_client()
         self.cache = cache or get_llm_cache() if use_cache else None
         self.use_cache = use_cache
         self.validate_output = validate_output
 
     @property
     def is_available(self) -> bool:
-        """Check if LLM migration is available."""
+        """Check if LLM migration is available (user is authenticated)."""
         return self.client.is_available
 
     def migrate(
@@ -65,7 +81,7 @@ class LLMMigrator:
         to_version: str,
         context: Optional[str] = None,
     ) -> LLMMigrationResult:
-        """Migrate code using the LLM.
+        """Migrate code using the LLM via PyResolve API.
 
         Args:
             code: Source code to migrate
@@ -82,7 +98,10 @@ class LLMMigrator:
                 original_code=code,
                 migrated_code=code,
                 success=False,
-                error="LLM client not available (no API key)",
+                error=(
+                    "LLM migrations require authentication. "
+                    "Run 'pyresolve login' to authenticate, then upgrade to Pro tier."
+                ),
             )
 
         # Check cache first
@@ -96,7 +115,7 @@ class LLMMigrator:
                     used_cache=True,
                 )
 
-        # Call LLM
+        # Call PyResolve API (which calls Anthropic server-side)
         response = self.client.migrate_code(
             code=code,
             library=library,
@@ -110,12 +129,10 @@ class LLMMigrator:
                 original_code=code,
                 migrated_code=code,
                 success=False,
-                llm_response=response,
                 error=response.error,
             )
 
-        # Extract code from response
-        migrated_code = self._extract_code(response.content)
+        migrated_code = response.content
 
         # Validate syntax
         validation_passed = True
@@ -129,7 +146,6 @@ class LLMMigrator:
                         original_code=code,
                         migrated_code=code,
                         success=False,
-                        llm_response=response,
                         error="LLM output has syntax errors",
                         validation_passed=False,
                     )
@@ -142,36 +158,9 @@ class LLMMigrator:
             original_code=code,
             migrated_code=migrated_code,
             success=True,
-            llm_response=response,
             validation_passed=validation_passed,
+            usage=response.usage,
         )
-
-    def _extract_code(self, content: str) -> str:
-        """Extract Python code from LLM response.
-
-        Args:
-            content: Raw LLM response content
-
-        Returns:
-            Extracted Python code
-        """
-        # Try to find code block
-        code_block_pattern = r"```(?:python)?\n(.*?)```"
-        matches = re.findall(code_block_pattern, content, re.DOTALL)
-
-        if matches:
-            # Return the longest code block (likely the full migration)
-            return max(matches, key=len).strip()
-
-        # No code block found, assume the entire response is code
-        # Remove any markdown artifacts
-        content = content.strip()
-        if content.startswith("```"):
-            content = content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-
-        return content.strip()
 
     def _attempt_fix(self, code: str) -> str:
         """Attempt to fix common syntax issues in LLM output.
@@ -185,9 +174,9 @@ class LLMMigrator:
         # Common fixes
         fixes = [
             # Remove trailing incomplete lines
-            (r'\n\s*$', '\n'),
+            (r"\n\s*$", "\n"),
             # Fix unclosed strings (simple cases)
-            (r'(["\'])([^"\'\n]*?)$', r'\1\2\1'),
+            (r'(["\'])([^"\'\n]*?)$', r"\1\2\1"),
         ]
 
         fixed = code
@@ -230,6 +219,10 @@ def migrate_with_llm_fallback(
 ) -> TransformResult:
     """Migrate code with LLM as a fallback for failures.
 
+    IMPORTANT: LLM migrations require Pro tier or higher subscription.
+    If the user is not authenticated or doesn't have the required tier,
+    only deterministic transforms will be applied.
+
     Args:
         code: Source code to migrate
         library: Library being upgraded
@@ -250,13 +243,29 @@ def migrate_with_llm_fallback(
     if not migrator.is_available:
         # Return deterministic result if available, or no changes
         if deterministic_result:
-            return deterministic_result
+            # Add a note about LLM not being available
+            errors = list(deterministic_result.errors)
+            errors.append(
+                "LLM fallback not available. Run 'pyresolve login' and upgrade to Pro "
+                "for LLM-powered migrations."
+            )
+            return TransformResult(
+                file_path=deterministic_result.file_path,
+                status=deterministic_result.status,
+                original_code=deterministic_result.original_code,
+                transformed_code=deterministic_result.transformed_code,
+                changes=deterministic_result.changes,
+                errors=errors,
+            )
         return TransformResult(
             file_path=Path("<unknown>"),
             status=TransformStatus.NO_CHANGES,
             original_code=code,
             transformed_code=code,
-            errors=["LLM not available and no deterministic transform applied"],
+            errors=[
+                "LLM not available. Run 'pyresolve login' and upgrade to Pro "
+                "for LLM-powered migrations."
+            ],
         )
 
     # Use deterministic result as base if available
@@ -280,15 +289,17 @@ def migrate_with_llm_fallback(
         changes.extend(deterministic_result.changes)
 
     if result.success and result.migrated_code != base_code:
-        changes.append(TransformChange(
-            description="LLM-assisted migration",
-            line_number=1,
-            original="(various)",
-            replacement="(LLM migrated)",
-            transform_name="llm_migration",
-            confidence=0.8,  # Lower confidence for LLM
-            notes="This change was made by the LLM and should be reviewed carefully",
-        ))
+        changes.append(
+            TransformChange(
+                description="LLM-assisted migration",
+                line_number=1,
+                original="(various)",
+                replacement="(LLM migrated)",
+                transform_name="llm_migration",
+                confidence=0.8,  # Lower confidence for LLM
+                notes="This change was made by the LLM and should be reviewed carefully",
+            )
+        )
 
     status = TransformStatus.SUCCESS if result.success else TransformStatus.PARTIAL
     if not changes:
