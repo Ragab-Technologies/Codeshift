@@ -8,7 +8,7 @@ const SUPABASE_URL = 'https://ztpklncwerkbycbtjszd.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable__xjS65qhfWLbJf6EHJPb2Q_qsxufF_i';
 
 // Initialize Supabase client
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabase() {
     if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
@@ -17,7 +17,7 @@ function initSupabase() {
     }
 
     try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         return true;
     } catch (error) {
         console.error('Failed to initialize Supabase:', error);
@@ -50,8 +50,8 @@ async function handleFormSubmit(event, formId) {
 
     try {
         // If Supabase is configured, save to database
-        if (supabase) {
-            const { error } = await supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
                 .from('waitlist')
                 .insert([
                     {
