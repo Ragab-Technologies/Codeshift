@@ -1,6 +1,6 @@
 """Pydantic v1 to v2 transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
+from typing import Any, Optional
 
 import libcst as cst
 from libcst import matchers as m
@@ -71,13 +71,11 @@ class PydanticV1ToV2Transformer(BaseTransformer):
             transform_name="config_to_configdict",
         )
 
-        return updated_node.with_changes(
-            body=updated_node.body.with_changes(body=new_body)
-        )
+        return updated_node.with_changes(body=updated_node.body.with_changes(body=new_body))
 
-    def _extract_config_options(self, config_class: cst.ClassDef) -> dict:
+    def _extract_config_options(self, config_class: cst.ClassDef) -> dict[str, Any]:
         """Extract configuration options from a Config class."""
-        options = {}
+        options: dict[str, Any] = {}
 
         for item in config_class.body.body:
             if isinstance(item, cst.SimpleStatementLine):
@@ -89,15 +87,13 @@ class PydanticV1ToV2Transformer(BaseTransformer):
                                 value = self._extract_value(stmt.value)
                                 if value is not None:
                                     # Map v1 options to v2
-                                    mapped_name, mapped_value = self._map_config_option(
-                                        name, value
-                                    )
+                                    mapped_name, mapped_value = self._map_config_option(name, value)
                                     if mapped_name:
                                         options[mapped_name] = mapped_value
 
         return options
 
-    def _map_config_option(self, name: str, value: any) -> tuple[Optional[str], any]:
+    def _map_config_option(self, name: str, value: Any) -> tuple[Optional[str], Any]:
         """Map a v1 Config option to v2 ConfigDict option."""
         # Direct mappings
         mappings = {
@@ -137,7 +133,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         # Return as-is for unknown options (might work)
         return (name, value)
 
-    def _extract_value(self, node: cst.BaseExpression) -> any:
+    def _extract_value(self, node: cst.BaseExpression) -> Any:
         """Extract a Python value from a CST node."""
         if isinstance(node, cst.Name):
             if node.value == "True":
@@ -156,11 +152,12 @@ class PydanticV1ToV2Transformer(BaseTransformer):
             return float(node.value)
         return None
 
-    def _create_model_config(self, config_dict: dict) -> cst.SimpleStatementLine:
+    def _create_model_config(self, config_dict: dict[str, Any]) -> cst.SimpleStatementLine:
         """Create a model_config = ConfigDict(...) statement."""
         args = []
         for key, value in config_dict.items():
             # Create the value node
+            value_node: cst.BaseExpression
             if isinstance(value, bool):
                 value_node = cst.Name("True" if value else "False")
             elif isinstance(value, str):
@@ -221,15 +218,11 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return updated_node
 
-    def _transform_validator_decorator(
-        self, node: cst.Decorator
-    ) -> cst.Decorator:
+    def _transform_validator_decorator(self, node: cst.Decorator) -> cst.Decorator:
         """Transform @validator("field") to @field_validator("field")."""
         if isinstance(node.decorator, cst.Call):
             # @validator("field_name", ...)
-            new_call = node.decorator.with_changes(
-                func=cst.Name("field_validator")
-            )
+            new_call = node.decorator.with_changes(func=cst.Name("field_validator"))
 
             self.record_change(
                 description="Convert @validator to @field_validator",
@@ -251,9 +244,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
             )
             return node.with_changes(decorator=cst.Name("field_validator"))
 
-    def _transform_root_validator_decorator(
-        self, node: cst.Decorator
-    ) -> cst.Decorator:
+    def _transform_root_validator_decorator(self, node: cst.Decorator) -> cst.Decorator:
         """Transform @root_validator to @model_validator(mode='before')."""
         mode = "before"  # Default for v1 root_validator
 
@@ -331,9 +322,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return updated_node
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.BaseExpression:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
         """Transform method calls like .dict() to .model_dump()."""
         # Handle method calls on objects
         if isinstance(updated_node.func, cst.Attribute):
@@ -352,9 +341,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
             if method_name in method_mappings:
                 new_method = method_mappings[method_name]
-                new_attr = updated_node.func.with_changes(
-                    attr=cst.Name(new_method)
-                )
+                new_attr = updated_node.func.with_changes(attr=cst.Name(new_method))
 
                 self.record_change(
                     description=f"Convert .{method_name}() to .{new_method}()",
@@ -497,8 +484,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         if self._needs_config_dict:
             # Check if ConfigDict is already imported
             has_config_dict = any(
-                isinstance(n, cst.ImportAlias)
-                and self._get_name_value(n.name) == "ConfigDict"
+                isinstance(n, cst.ImportAlias) and self._get_name_value(n.name) == "ConfigDict"
                 for n in new_names
             )
             if not has_config_dict:
@@ -510,7 +496,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, node: Union[cst.Attribute, cst.Name]) -> str:
+    def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
             return node.value
@@ -605,7 +591,7 @@ class PydanticImportTransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, node: Union[cst.Attribute, cst.Name]) -> str:
+    def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
             return node.value
@@ -633,7 +619,7 @@ def transform_pydantic_v1_to_v2(source_code: str) -> tuple[str, list]:
     try:
         tree = cst.parse_module(source_code)
     except cst.ParserSyntaxError as e:
-        raise SyntaxError(f"Invalid Python syntax: {e}")
+        raise SyntaxError(f"Invalid Python syntax: {e}") from e
 
     # First pass: main transformations
     transformer = PydanticV1ToV2Transformer()

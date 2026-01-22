@@ -8,7 +8,7 @@ from typing import Optional
 
 
 @dataclass
-class SyntaxError:
+class SyntaxIssue:
     """Represents a syntax error in code."""
 
     message: str
@@ -23,7 +23,7 @@ class SyntaxCheckResult:
 
     is_valid: bool
     file_path: Optional[Path] = None
-    errors: list[SyntaxError] = field(default_factory=list)
+    errors: list[SyntaxIssue] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -66,7 +66,7 @@ class SyntaxChecker:
             return SyntaxCheckResult(is_valid=True)
 
         except SyntaxError as e:
-            error = SyntaxError(
+            error = SyntaxIssue(
                 message=str(e.msg) if hasattr(e, "msg") else str(e),
                 line_number=e.lineno or 0,
                 column=e.offset or 0,
@@ -92,18 +92,22 @@ class SyntaxChecker:
             return SyntaxCheckResult(
                 is_valid=False,
                 file_path=file_path,
-                errors=[SyntaxError(
-                    message=f"Could not read file: {e}",
-                    line_number=0,
-                    column=0,
-                )],
+                errors=[
+                    SyntaxIssue(
+                        message=f"Could not read file: {e}",
+                        line_number=0,
+                        column=0,
+                    )
+                ],
             )
 
         result = self.check_code(source_code, str(file_path))
         result.file_path = file_path
         return result
 
-    def check_directory(self, directory: Path, exclude_patterns: Optional[list[str]] = None) -> list[SyntaxCheckResult]:
+    def check_directory(
+        self, directory: Path, exclude_patterns: Optional[list[str]] = None
+    ) -> list[SyntaxCheckResult]:
         """Check all Python files in a directory.
 
         Args:
