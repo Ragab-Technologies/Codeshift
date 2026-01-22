@@ -1,8 +1,8 @@
 """Parser for dependency files (requirements.txt, pyproject.toml)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import toml
 from packaging.requirements import Requirement
@@ -16,12 +16,8 @@ class Dependency:
 
     name: str
     version_spec: Optional[str] = None
-    extras: list[str] = None
+    extras: list[str] = field(default_factory=list)
     source_file: Optional[Path] = None
-
-    def __post_init__(self) -> None:
-        if self.extras is None:
-            self.extras = []
 
     @property
     def min_version(self) -> Optional[Version]:
@@ -212,9 +208,7 @@ class DependencyParser:
         # Look for install_requires = [...] pattern
         import re
 
-        match = re.search(
-            r"install_requires\s*=\s*\[(.*?)\]", content, re.DOTALL
-        )
+        match = re.search(r"install_requires\s*=\s*\[(.*?)\]", content, re.DOTALL)
         if match:
             deps_str = match.group(1)
             # Extract quoted strings
@@ -270,7 +264,7 @@ class DependencyParser:
                 )
             return None
 
-    def _parse_poetry_dep(self, name: str, spec: any) -> Optional[Dependency]:
+    def _parse_poetry_dep(self, name: str, spec: Any) -> Optional[Dependency]:
         """Parse a Poetry-style dependency specification.
 
         Args:
@@ -286,9 +280,11 @@ class DependencyParser:
             return Dependency(name=name, version_spec=version_spec)
         elif isinstance(spec, dict):
             version = spec.get("version", "")
-            version_spec = self._convert_poetry_version(version) if version else None
+            dict_version_spec: Optional[str] = (
+                self._convert_poetry_version(version) if version else None
+            )
             extras = spec.get("extras", [])
-            return Dependency(name=name, version_spec=version_spec, extras=extras)
+            return Dependency(name=name, version_spec=dict_version_spec, extras=extras)
 
         return None
 
@@ -313,15 +309,13 @@ class DependencyParser:
             base = version[1:]
             parts = base.split(".")
             if len(parts) >= 2:
-                major = parts[0]
+                major_str = parts[0]
                 minor = int(parts[1])
-                return f">={base},<{major}.{minor + 1}.0"
+                return f">={base},<{major_str}.{minor + 1}.0"
 
         return version
 
-    def update_dependency_version(
-        self, name: str, new_version: str
-    ) -> list[tuple[Path, bool]]:
+    def update_dependency_version(self, name: str, new_version: str) -> list[tuple[Path, bool]]:
         """Update the version of a dependency in all source files.
 
         Args:
@@ -425,16 +419,14 @@ class DependencyParser:
             original_content = content
 
             # Pattern: pydantic>=1.0 or pydantic==1.10.0 or just pydantic
-            pattern = rf'^({name})([><=!~]+[^\s#]*)?(\s*#.*)?$'
+            pattern = rf"^({name})([><=!~]+[^\s#]*)?(\s*#.*)?$"
 
             def replace_line(match: re.Match) -> str:
                 pkg_name = match.group(1)
                 comment = match.group(3) or ""
                 return f"{pkg_name}>={new_version}{comment}"
 
-            content = re.sub(
-                pattern, replace_line, content, flags=re.IGNORECASE | re.MULTILINE
-            )
+            content = re.sub(pattern, replace_line, content, flags=re.IGNORECASE | re.MULTILINE)
 
             if content != original_content:
                 requirements_path.write_text(content)
@@ -467,8 +459,8 @@ class DependencyParser:
 
             # Pattern for install_requires entries: "pydantic>=1.0" or 'pydantic>=1.0'
             for quote in ['"', "'"]:
-                pattern = rf'{quote}({name})([><=!~]+[^{quote}]*)?{quote}'
-                replacement = rf'{quote}\1>={new_version}{quote}'
+                pattern = rf"{quote}({name})([><=!~]+[^{quote}]*)?{quote}"
+                replacement = rf"{quote}\1>={new_version}{quote}"
                 content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
 
             if content != original_content:

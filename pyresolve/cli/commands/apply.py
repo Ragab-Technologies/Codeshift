@@ -11,19 +11,27 @@ from rich.panel import Panel
 from rich.prompt import Confirm
 
 from pyresolve.cli.commands.upgrade import load_state, save_state
+from pyresolve.cli.quota import (
+    QuotaError,
+    check_quota,
+    record_usage,
+    show_quota_exceeded_message,
+)
 
 console = Console()
 
 
 @click.command()
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project",
 )
 @click.option(
-    "--file", "-f",
+    "--file",
+    "-f",
     type=str,
     help="Apply changes to a specific file only",
 )
@@ -33,7 +41,8 @@ console = Console()
     help="Create backup files (.bak) before applying changes",
 )
 @click.option(
-    "--yes", "-y",
+    "--yes",
+    "-y",
     is_flag=True,
     help="Skip confirmation prompt",
 )
@@ -62,11 +71,13 @@ def apply(
     state = load_state(project_path)
 
     if state is None:
-        console.print(Panel(
-            "[yellow]No pending migration found.[/]\n\n"
-            "Run [cyan]pyresolve upgrade <library> --target <version>[/] first.",
-            title="No Changes",
-        ))
+        console.print(
+            Panel(
+                "[yellow]No pending migration found.[/]\n\n"
+                "Run [cyan]pyresolve upgrade <library> --target <version>[/] first.",
+                title="No Changes",
+            )
+        )
         return
 
     library = state.get("library", "unknown")
@@ -77,10 +88,18 @@ def apply(
         console.print("[yellow]No changes pending.[/]")
         return
 
+    # Check quota for file migrations
+    try:
+        check_quota("file_migrated", quantity=len(results), allow_offline=True)
+    except QuotaError as e:
+        show_quota_exceeded_message(e)
+        raise SystemExit(1) from e
+
     # Filter results if file specified
     if file:
         results = [
-            r for r in results
+            r
+            for r in results
             if Path(r["file_path"]).name == file
             or str(Path(r["file_path"]).relative_to(project_path)) == file
         ]
@@ -90,18 +109,24 @@ def apply(
 
     # Show summary
     total_changes = sum(r.get("change_count", 0) for r in results)
-    console.print(Panel(
-        f"[bold]Migration: {library}[/] → v{target_version}\n\n"
-        f"Files to modify: [cyan]{len(results)}[/]\n"
-        f"Total changes: [cyan]{total_changes}[/]",
-        title="Apply Changes",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Migration: {library}[/] → v{target_version}\n\n"
+            f"Files to modify: [cyan]{len(results)}[/]\n"
+            f"Total changes: [cyan]{total_changes}[/]",
+            title="Apply Changes",
+        )
+    )
 
     # List files to be modified
     console.print("\n[bold]Files to be modified:[/]")
     for result in results:
         file_path = Path(result["file_path"])
-        relative_path = file_path.relative_to(project_path) if file_path.is_relative_to(project_path) else file_path
+        relative_path = (
+            file_path.relative_to(project_path)
+            if file_path.is_relative_to(project_path)
+            else file_path
+        )
         console.print(f"  • {relative_path} ({result.get('change_count', 0)} changes)")
 
     # Confirm
@@ -118,7 +143,11 @@ def apply(
 
     for result in results:
         file_path = Path(result["file_path"])
-        relative_path = file_path.relative_to(project_path) if file_path.is_relative_to(project_path) else file_path
+        relative_path = (
+            file_path.relative_to(project_path)
+            if file_path.is_relative_to(project_path)
+            else file_path
+        )
         transformed_code = result.get("transformed_code", "")
 
         try:
@@ -152,6 +181,26 @@ def apply(
     if applied_count > 0:
         console.print(f"[green]Successfully applied changes to {applied_count} file(s)[/]")
 
+        # Record usage event for applied changes
+        record_usage(
+            event_type="file_migrated",
+            library=library,
+            quantity=applied_count,
+            metadata={
+                "target_version": target_version,
+                "total_changes": total_changes,
+            },
+        )
+        record_usage(
+            event_type="apply",
+            library=library,
+            quantity=1,
+            metadata={
+                "files_applied": applied_count,
+                "files_failed": failed_count,
+            },
+        )
+
     if failed_count > 0:
         console.print(f"[red]Failed to apply changes to {failed_count} file(s)[/]")
 
@@ -161,10 +210,7 @@ def apply(
     # Update state
     if file:
         # Remove only the applied files from state
-        remaining_results = [
-            r for r in state.get("results", [])
-            if r not in results
-        ]
+        remaining_results = [r for r in state.get("results", []) if r not in results]
         if remaining_results:
             state["results"] = remaining_results
             save_state(project_path, state)
@@ -190,13 +236,15 @@ def apply(
 
 @click.command()
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project",
 )
 @click.option(
-    "--yes", "-y",
+    "--yes",
+    "-y",
     is_flag=True,
     help="Skip confirmation prompt",
 )
@@ -220,11 +268,12 @@ def reset(path: str, yes: bool) -> None:
     library = state.get("library", "unknown")
     results = state.get("results", [])
 
-    console.print(Panel(
-        f"[bold]Pending migration: {library}[/]\n"
-        f"Files with changes: {len(results)}",
-        title="Reset Migration",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Pending migration: {library}[/]\n" f"Files with changes: {len(results)}",
+            title="Reset Migration",
+        )
+    )
 
     if not yes:
         if not Confirm.ask("Are you sure you want to discard these changes?"):
@@ -241,13 +290,15 @@ def reset(path: str, yes: bool) -> None:
 @click.command()
 @click.argument("backup_dir", type=click.Path(exists=True))
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project",
 )
 @click.option(
-    "--yes", "-y",
+    "--yes",
+    "-y",
     is_flag=True,
     help="Skip confirmation prompt",
 )
@@ -268,12 +319,14 @@ def restore(backup_dir: str, path: str, yes: bool) -> None:
         console.print(f"[yellow]No Python files found in backup: {backup_dir}[/]")
         return
 
-    console.print(Panel(
-        f"[bold]Restore from backup[/]\n\n"
-        f"Backup: {backup_path}\n"
-        f"Files: {len(backup_files)}",
-        title="Restore Backup",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Restore from backup[/]\n\n"
+            f"Backup: {backup_path}\n"
+            f"Files: {len(backup_files)}",
+            title="Restore Backup",
+        )
+    )
 
     for bf in backup_files:
         relative = bf.relative_to(backup_path)

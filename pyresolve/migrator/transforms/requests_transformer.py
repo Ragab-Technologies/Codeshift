@@ -1,9 +1,8 @@
 """Requests library transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
+from typing import Union
 
 import libcst as cst
-from libcst import matchers as m
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
 
@@ -24,7 +23,9 @@ class RequestsTransformer(BaseTransformer):
         module_name = self._get_module_name(original_node.module)
 
         # Transform requests.packages.urllib3 imports
-        if module_name == "requests.packages.urllib3" or module_name.startswith("requests.packages.urllib3."):
+        if module_name == "requests.packages.urllib3" or module_name.startswith(
+            "requests.packages.urllib3."
+        ):
             new_module_name = module_name.replace("requests.packages.urllib3", "urllib3")
             self.record_change(
                 description="Import urllib3 directly instead of through requests.packages",
@@ -33,9 +34,7 @@ class RequestsTransformer(BaseTransformer):
                 replacement=f"from {new_module_name}",
                 transform_name="urllib3_import_fix",
             )
-            return updated_node.with_changes(
-                module=self._build_module_node(new_module_name)
-            )
+            return updated_node.with_changes(module=self._build_module_node(new_module_name))
 
         # Transform requests.compat imports
         if module_name == "requests.compat":
@@ -45,7 +44,15 @@ class RequestsTransformer(BaseTransformer):
             for name in updated_node.names:
                 if isinstance(name, cst.ImportAlias) and isinstance(name.name, cst.Name):
                     import_name = name.name.value
-                    if import_name in ("urljoin", "urlparse", "urlsplit", "urlunparse", "urlencode", "quote", "unquote"):
+                    if import_name in (
+                        "urljoin",
+                        "urlparse",
+                        "urlsplit",
+                        "urlunparse",
+                        "urlencode",
+                        "quote",
+                        "unquote",
+                    ):
                         self.record_change(
                             description=f"Import {import_name} from urllib.parse instead of requests.compat",
                             line_number=1,
@@ -64,7 +71,7 @@ class RequestsTransformer(BaseTransformer):
 
     def leave_Attribute(
         self, original_node: cst.Attribute, updated_node: cst.Attribute
-    ) -> cst.Attribute:
+    ) -> Union[cst.Attribute, cst.Name]:
         """Transform requests.packages.urllib3 attribute access."""
         # Check for requests.packages.urllib3 pattern
         attr_str = self._get_full_attribute(updated_node)
@@ -78,17 +85,18 @@ class RequestsTransformer(BaseTransformer):
                 replacement=new_attr_str,
                 transform_name="urllib3_attribute_fix",
             )
-            return self._build_attribute_node(new_attr_str)
+            return self._build_name_or_attribute_node(new_attr_str)
 
         return updated_node
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform requests function calls."""
         # Check for requests.get/post/put/delete without timeout
         if isinstance(updated_node.func, cst.Attribute):
-            if isinstance(updated_node.func.value, cst.Name) and updated_node.func.value.value == "requests":
+            if (
+                isinstance(updated_node.func.value, cst.Name)
+                and updated_node.func.value.value == "requests"
+            ):
                 method_name = updated_node.func.attr.value
                 if method_name in ("get", "post", "put", "delete", "patch", "head", "options"):
                     # Check if timeout is specified
@@ -110,7 +118,16 @@ class RequestsTransformer(BaseTransformer):
         # Check for session method calls without timeout
         if isinstance(updated_node.func, cst.Attribute):
             method_name = updated_node.func.attr.value
-            if method_name in ("get", "post", "put", "delete", "patch", "head", "options", "request"):
+            if method_name in (
+                "get",
+                "post",
+                "put",
+                "delete",
+                "patch",
+                "head",
+                "options",
+                "request",
+            ):
                 # Check if this might be a session call (heuristic)
                 has_timeout = any(
                     isinstance(arg.keyword, cst.Name) and arg.keyword.value == "timeout"
@@ -131,7 +148,7 @@ class RequestsTransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, module: Union[cst.Name, cst.Attribute]) -> str:
+    def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
             return module.value
@@ -145,7 +162,7 @@ class RequestsTransformer(BaseTransformer):
         if len(parts) == 1:
             return cst.Name(parts[0])
 
-        result = cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result
@@ -161,7 +178,19 @@ class RequestsTransformer(BaseTransformer):
     def _build_attribute_node(self, attr_str: str) -> cst.Attribute:
         """Build an attribute node from a dotted string."""
         parts = attr_str.split(".")
-        result = cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
+        for part in parts[1:]:
+            result = cst.Attribute(value=result, attr=cst.Name(part))
+        # Safe to cast since we always have at least 2 parts for an Attribute
+        assert isinstance(result, cst.Attribute)
+        return result
+
+    def _build_name_or_attribute_node(self, name_str: str) -> Union[cst.Name, cst.Attribute]:
+        """Build a Name or Attribute node from a dotted string."""
+        parts = name_str.split(".")
+        if len(parts) == 1:
+            return cst.Name(parts[0])
+        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result

@@ -135,7 +135,7 @@ class KnowledgeCache:
         Returns:
             List of (package, old_version, new_version) tuples.
         """
-        cached = []
+        cached: list[tuple[str, str, str]] = []
         if not self.cache_dir.exists():
             return cached
 
@@ -143,11 +143,13 @@ class KnowledgeCache:
             try:
                 data = json.loads(cache_file.read_text())
                 kb_data = data.get("knowledge_base", {})
-                cached.append((
-                    kb_data.get("package", ""),
-                    kb_data.get("old_version", ""),
-                    kb_data.get("new_version", ""),
-                ))
+                cached.append(
+                    (
+                        kb_data.get("package", ""),
+                        kb_data.get("old_version", ""),
+                        kb_data.get("new_version", ""),
+                    )
+                )
             except Exception:
                 continue
 

@@ -2,30 +2,33 @@
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
+from pyresolve.cli.commands.scan import (
+    compare_versions,
+    get_latest_version,
+    is_major_upgrade,
+    parse_version,
+)
 from pyresolve.knowledge import (
-    Confidence,
     GeneratedKnowledgeBase,
     generate_knowledge_base_sync,
     is_tier_1_library,
 )
-from pyresolve.knowledge_base import KnowledgeBaseLoader
 from pyresolve.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
-from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
 from pyresolve.migrator.transforms.fastapi_transformer import transform_fastapi
-from pyresolve.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
 from pyresolve.migrator.transforms.pandas_transformer import transform_pandas
+from pyresolve.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
 from pyresolve.migrator.transforms.requests_transformer import transform_requests
+from pyresolve.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
 from pyresolve.scanner import CodeScanner, DependencyParser
 from pyresolve.utils.config import ProjectConfig
-from pyresolve.cli.commands.scan import get_latest_version, parse_version, compare_versions, is_major_upgrade
 
 console = Console()
 
@@ -67,7 +70,8 @@ def run_single_upgrade(
     current_version = None
     if current_dep and current_dep.version_spec:
         import re
-        version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', current_dep.version_spec)
+
+        version_match = re.search(r"(\d+\.\d+(?:\.\d+)?)", current_dep.version_spec)
         if version_match:
             current_version = version_match.group(1)
 
@@ -122,7 +126,7 @@ def run_single_upgrade(
                         original=c.original,
                         replacement=c.replacement,
                         transform_name=c.transform_name,
-                        confidence=getattr(c, 'confidence', 1.0),
+                        confidence=getattr(c, "confidence", 1.0),
                     )
                     for c in changes
                 ],
@@ -139,7 +143,8 @@ def run_single_upgrade(
 
 @click.command("upgrade-all")
 @click.option(
-    "--path", "-p",
+    "--path",
+    "-p",
     type=click.Path(exists=True),
     default=".",
     help="Path to the project to analyze",
@@ -177,7 +182,8 @@ def run_single_upgrade(
     help="Show what would be changed without saving state",
 )
 @click.option(
-    "--verbose", "-v",
+    "--verbose",
+    "-v",
     is_flag=True,
     help="Show detailed output",
 )
@@ -215,11 +221,12 @@ def upgrade_all(
     project_path = Path(path).resolve()
     project_config = ProjectConfig.from_pyproject(project_path)
 
-    console.print(Panel(
-        "[bold]Scanning project for upgradeable dependencies[/]\n\n"
-        f"Path: {project_path}",
-        title="PyResolve Upgrade All",
-    ))
+    console.print(
+        Panel(
+            "[bold]Scanning project for upgradeable dependencies[/]\n\n" f"Path: {project_path}",
+            title="PyResolve Upgrade All",
+        )
+    )
 
     # Parse dependencies
     dep_parser = DependencyParser(project_path)
@@ -254,13 +261,15 @@ def upgrade_all(
                     is_major = is_major_upgrade(current_version, latest_version)
                     is_tier1 = is_tier_1_library(dep.name)
 
-                    outdated.append({
-                        "name": dep.name,
-                        "current": current_version,
-                        "latest": latest_version,
-                        "is_major": is_major,
-                        "is_tier1": is_tier1,
-                    })
+                    outdated.append(
+                        {
+                            "name": dep.name,
+                            "current": current_version,
+                            "latest": latest_version,
+                            "is_major": is_major,
+                            "is_tier1": is_tier1,
+                        }
+                    )
 
             progress.advance(task)
 
@@ -300,11 +309,13 @@ def upgrade_all(
         console.print("[dim]Use --verbose to see all outdated packages, or adjust filters.[/]")
 
         if verbose and outdated:
-            console.print(f"\nOutdated packages (not matching criteria):")
+            console.print("\nOutdated packages (not matching criteria):")
             for pkg in outdated:
                 tier_label = "[green]Tier 1[/]" if pkg["is_tier1"] else "[dim]Tier 2/3[/]"
                 type_label = "[red]Major[/]" if pkg["is_major"] else "[dim]Minor/Patch[/]"
-                console.print(f"  {pkg['name']} {pkg['current']} → {pkg['latest']} {tier_label} {type_label}")
+                console.print(
+                    f"  {pkg['name']} {pkg['current']} → {pkg['latest']} {tier_label} {type_label}"
+                )
         return
 
     # Display packages to upgrade
@@ -320,12 +331,12 @@ def upgrade_all(
     for pkg in upgradeable:
         type_str = "[red]Major[/]" if pkg["is_major"] else "[yellow]Minor/Patch[/]"
         tier_str = "[green]Tier 1[/]" if pkg["is_tier1"] else "[dim]Tier 2/3[/]"
-        table.add_row(pkg["name"], pkg["current"], pkg["latest"], type_str, tier_str)
+        table.add_row(str(pkg["name"]), str(pkg["current"]), str(pkg["latest"]), type_str, tier_str)
 
     console.print(table)
 
     # Run upgrades for each package
-    console.print(f"\n[bold]Running migrations...[/]\n")
+    console.print("\n[bold]Running migrations...[/]\n")
 
     all_results: dict[str, list[dict]] = {}
     migration_summary: list[dict] = []
@@ -343,15 +354,15 @@ def upgrade_all(
             progress.update(task, description=f"Upgrading {pkg['name']} to {pkg['latest']}...")
 
             results, generated_kb = run_single_upgrade(
-                library=pkg["name"],
-                target=pkg["latest"],
+                library=str(pkg["name"]),
+                target=str(pkg["latest"]),
                 project_path=project_path,
                 project_config=project_config,
                 verbose=verbose,
             )
 
             if results:
-                all_results[pkg["name"]] = [
+                all_results[str(pkg["name"])] = [
                     {
                         "file_path": str(r.file_path),
                         "original_code": r.original_code,
@@ -372,23 +383,29 @@ def upgrade_all(
                     for r in results
                 ]
 
-                migration_summary.append({
-                    "library": pkg["name"],
-                    "from_version": pkg["current"],
-                    "to_version": pkg["latest"],
-                    "files_changed": len(results),
-                    "total_changes": sum(r.change_count for r in results),
-                    "breaking_changes_detected": len(generated_kb.breaking_changes) if generated_kb else 0,
-                })
+                migration_summary.append(
+                    {
+                        "library": pkg["name"],
+                        "from_version": pkg["current"],
+                        "to_version": pkg["latest"],
+                        "files_changed": len(results),
+                        "total_changes": sum(r.change_count for r in results),
+                        "breaking_changes_detected": (
+                            len(generated_kb.breaking_changes) if generated_kb else 0
+                        ),
+                    }
+                )
 
             progress.advance(task)
 
     # Display results summary
     if not migration_summary:
-        console.print("[green]No changes needed![/] Your code appears to be compatible with the latest versions.")
+        console.print(
+            "[green]No changes needed![/] Your code appears to be compatible with the latest versions."
+        )
         return
 
-    console.print(f"\n[bold]Migration Summary[/]\n")
+    console.print("\n[bold]Migration Summary[/]\n")
 
     summary_table = Table()
     summary_table.add_column("Library", style="cyan")
@@ -412,38 +429,44 @@ def upgrade_all(
         total_changes += summary["total_changes"]
 
     console.print(summary_table)
-    console.print(f"\n[bold]Total:[/] [cyan]{total_changes}[/] changes across [cyan]{total_files}[/] files")
+    console.print(
+        f"\n[bold]Total:[/] [cyan]{total_changes}[/] changes across [cyan]{total_files}[/] files"
+    )
 
     # Show detailed changes if verbose
     if verbose:
         console.print("\n[bold]Change Details[/]")
-        for lib_name, results in all_results.items():
+        for lib_name, lib_results in all_results.items():
             console.print(f"\n[bold cyan]{lib_name}[/]")
-            for result in results:
+            for result_dict in lib_results:
                 try:
-                    display_path = str(Path(result["file_path"]).relative_to(project_path))
+                    display_path = str(
+                        Path(str(result_dict["file_path"])).relative_to(project_path)
+                    )
                 except ValueError:
-                    display_path = result["file_path"]
+                    display_path = str(result_dict["file_path"])
                 console.print(f"  [cyan]{display_path}[/]:")
-                for change in result["changes"]:
-                    console.print(f"    • {change['description']}")
+                for change_dict in result_dict["changes"]:
+                    console.print(f"    • {change_dict['description']}")
 
     # Update dependency files with new versions
     if update_deps and migration_summary:
-        console.print(f"\n[bold]Updating dependency files...[/]\n")
+        console.print("\n[bold]Updating dependency files...[/]\n")
 
         dep_parser = DependencyParser(project_path)
         dep_updates: list[tuple[str, str, list[tuple[Path, bool]]]] = []
 
         for summary in migration_summary:
             if not dry_run:
-                results = dep_parser.update_dependency_version(
-                    summary["library"], summary["to_version"]
+                update_results = dep_parser.update_dependency_version(
+                    str(summary["library"]), str(summary["to_version"])
                 )
-                dep_updates.append((summary["library"], summary["to_version"], results))
+                dep_updates.append(
+                    (str(summary["library"]), str(summary["to_version"]), update_results)
+                )
             else:
                 # In dry run, just show what would be updated
-                dep_updates.append((summary["library"], summary["to_version"], []))
+                dep_updates.append((str(summary["library"]), str(summary["to_version"]), []))
 
         # Display update results
         if dry_run:
@@ -452,28 +475,32 @@ def upgrade_all(
                 console.print(f"  [cyan]{lib_name}[/] → [green]>={version}[/]")
         else:
             files_updated: set[Path] = set()
-            for lib_name, version, results in dep_updates:
-                for file_path, success in results:
+            for lib_name, version, update_results in dep_updates:
+                for file_path, success in update_results:
                     if success:
                         files_updated.add(file_path)
                         if verbose:
-                            console.print(f"  Updated [cyan]{lib_name}[/] to [green]>={version}[/] in {file_path.name}")
+                            console.print(
+                                f"  Updated [cyan]{lib_name}[/] to [green]>={version}[/] in {file_path.name}"
+                            )
 
             if files_updated:
                 console.print(f"Updated versions in: {', '.join(f.name for f in files_updated)}")
             else:
-                console.print("[dim]No dependency files were updated (dependencies may not be pinned)[/]")
+                console.print(
+                    "[dim]No dependency files were updated (dependencies may not be pinned)[/]"
+                )
 
     # Save state
     if not dry_run:
         # Merge all results into a combined state format
         # This maintains compatibility with diff/apply commands
-        combined_results = []
-        for lib_name, results in all_results.items():
-            for result in results:
+        combined_results: list[dict[str, Any]] = []
+        for lib_name, lib_results in all_results.items():
+            for result_dict in lib_results:
                 # Add library info to each result for tracking
-                result["library"] = lib_name
-                combined_results.append(result)
+                result_dict["library"] = lib_name
+                combined_results.append(result_dict)
 
         state = {
             "library": "multiple",
@@ -483,7 +510,7 @@ def upgrade_all(
         }
         save_multi_state(project_path, state)
 
-        console.print(f"\n[dim]State saved to .pyresolve/state.json[/]")
+        console.print("\n[dim]State saved to .pyresolve/state.json[/]")
         console.print("\nNext steps:")
         console.print("  [cyan]pyresolve diff[/]    - View detailed diff of proposed changes")
         console.print("  [cyan]pyresolve apply[/]   - Apply changes to your files")

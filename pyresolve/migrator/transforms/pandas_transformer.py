@@ -1,9 +1,6 @@
 """Pandas 1.x to 2.0 transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
-
 import libcst as cst
-from libcst import matchers as m
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
 
@@ -14,9 +11,7 @@ class PandasTransformer(BaseTransformer):
     def __init__(self) -> None:
         super().__init__()
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform Pandas function calls."""
         # Handle to_csv line_terminator -> lineterminator
         if isinstance(updated_node.func, cst.Attribute):
@@ -140,9 +135,7 @@ class PandasAppendTransformer(BaseTransformer):
     def __init__(self) -> None:
         super().__init__()
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.BaseExpression:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
         """Transform append calls to concat."""
         if not isinstance(updated_node.func, cst.Attribute):
             return updated_node
@@ -172,10 +165,12 @@ class PandasAppendTransformer(BaseTransformer):
         # Build pd.concat call
         concat_args = [
             cst.Arg(
-                value=cst.List(elements=[
-                    cst.Element(value=obj),
-                    cst.Element(value=append_arg),
-                ])
+                value=cst.List(
+                    elements=[
+                        cst.Element(value=obj),
+                        cst.Element(value=append_arg),
+                    ]
+                )
             )
         ]
 

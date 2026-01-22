@@ -1,9 +1,6 @@
 """FastAPI transformation using LibCST."""
 
-from typing import Optional, Sequence, Union
-
 import libcst as cst
-from libcst import matchers as m
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
 
@@ -75,9 +72,7 @@ class FastAPITransformer(BaseTransformer):
 
         return updated_node
 
-    def leave_Call(
-        self, original_node: cst.Call, updated_node: cst.Call
-    ) -> cst.Call:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform FastAPI function calls."""
         # Handle Field, Query, Path, Body regex -> pattern
         if isinstance(updated_node.func, cst.Name):
@@ -146,7 +141,7 @@ class FastAPITransformer(BaseTransformer):
 
         return updated_node
 
-    def _get_module_name(self, module: Union[cst.Name, cst.Attribute]) -> str:
+    def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
             return module.value
