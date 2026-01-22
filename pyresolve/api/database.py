@@ -3,9 +3,8 @@
 from datetime import datetime, timezone
 from typing import Any, Optional, cast
 
-from supabase import Client, create_client
-
 from pyresolve.api.config import get_settings
+from supabase import Client, create_client
 
 
 def get_supabase_client() -> Client:
