@@ -1,7 +1,5 @@
 """Requests library transformation using LibCST."""
 
-from typing import Union
-
 import libcst as cst
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
@@ -71,7 +69,7 @@ class RequestsTransformer(BaseTransformer):
 
     def leave_Attribute(
         self, original_node: cst.Attribute, updated_node: cst.Attribute
-    ) -> Union[cst.Attribute, cst.Name]:
+    ) -> cst.Attribute | cst.Name:
         """Transform requests.packages.urllib3 attribute access."""
         # Check for requests.packages.urllib3 pattern
         attr_str = self._get_full_attribute(updated_node)
@@ -156,13 +154,13 @@ class RequestsTransformer(BaseTransformer):
             return f"{self._get_module_name(module.value)}.{module.attr.value}"
         return ""
 
-    def _build_module_node(self, module_name: str) -> Union[cst.Name, cst.Attribute]:
+    def _build_module_node(self, module_name: str) -> cst.Name | cst.Attribute:
         """Build a module node from a dotted name string."""
         parts = module_name.split(".")
         if len(parts) == 1:
             return cst.Name(parts[0])
 
-        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
+        result: cst.Name | cst.Attribute = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result
@@ -178,19 +176,19 @@ class RequestsTransformer(BaseTransformer):
     def _build_attribute_node(self, attr_str: str) -> cst.Attribute:
         """Build an attribute node from a dotted string."""
         parts = attr_str.split(".")
-        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
+        result: cst.Name | cst.Attribute = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         # Safe to cast since we always have at least 2 parts for an Attribute
         assert isinstance(result, cst.Attribute)
         return result
 
-    def _build_name_or_attribute_node(self, name_str: str) -> Union[cst.Name, cst.Attribute]:
+    def _build_name_or_attribute_node(self, name_str: str) -> cst.Name | cst.Attribute:
         """Build a Name or Attribute node from a dotted string."""
         parts = name_str.split(".")
         if len(parts) == 1:
             return cst.Name(parts[0])
-        result: Union[cst.Name, cst.Attribute] = cst.Name(parts[0])
+        result: cst.Name | cst.Attribute = cst.Name(parts[0])
         for part in parts[1:]:
             result = cst.Attribute(value=result, attr=cst.Name(part))
         return result

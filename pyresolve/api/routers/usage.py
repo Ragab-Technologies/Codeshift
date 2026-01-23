@@ -1,7 +1,6 @@
 """Usage tracking router for the PyResolve API."""
 
 from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -60,7 +59,7 @@ async def get_quota(user: CurrentUser) -> QuotaInfo:
 @router.get("/", response_model=UsageResponse)
 async def get_usage(
     user: CurrentUser,
-    billing_period: Optional[str] = None,
+    billing_period: str | None = None,
     limit: int = 20,
 ) -> UsageResponse:
     """Get usage summary and recent events."""
@@ -238,7 +237,7 @@ async def check_quota(request: QuotaCheckRequest, user: CurrentUser) -> QuotaChe
 @router.get("/summary", response_model=UsageSummary)
 async def get_usage_summary(
     user: CurrentUser,
-    billing_period: Optional[str] = None,
+    billing_period: str | None = None,
 ) -> UsageSummary:
     """Get usage summary for a billing period."""
     db = get_database()

@@ -10,7 +10,6 @@ Tier 1 (deterministic AST transforms) remains free and local.
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from pyresolve.migrator.ast_transforms import (
     TransformChange,
@@ -30,9 +29,9 @@ class LLMMigrationResult:
     migrated_code: str
     success: bool
     used_cache: bool = False
-    error: Optional[str] = None
+    error: str | None = None
     validation_passed: bool = True
-    usage: Optional[dict] = None
+    usage: dict | None = None
 
 
 class LLMMigrator:
@@ -50,8 +49,8 @@ class LLMMigrator:
 
     def __init__(
         self,
-        client: Optional[PyResolveAPIClient] = None,
-        cache: Optional[LLMCache] = None,
+        client: PyResolveAPIClient | None = None,
+        cache: LLMCache | None = None,
         use_cache: bool = True,
         validate_output: bool = True,
     ):
@@ -79,7 +78,7 @@ class LLMMigrator:
         library: str,
         from_version: str,
         to_version: str,
-        context: Optional[str] = None,
+        context: str | None = None,
     ) -> LLMMigrationResult:
         """Migrate code using the LLM via PyResolve API.
 
@@ -190,7 +189,7 @@ class LLMMigrator:
         original: str,
         transformed: str,
         library: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get an explanation of a migration change.
 
         Args:
@@ -215,7 +214,7 @@ def migrate_with_llm_fallback(
     library: str,
     from_version: str,
     to_version: str,
-    deterministic_result: Optional[TransformResult] = None,
+    deterministic_result: TransformResult | None = None,
 ) -> TransformResult:
     """Migrate code with LLM as a fallback for failures.
 

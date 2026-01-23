@@ -2,8 +2,8 @@
 
 import hashlib
 import secrets
-from collections.abc import Awaitable
-from typing import Annotated, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
@@ -51,8 +51,8 @@ class AuthenticatedUser:
         user_id: str,
         email: str,
         tier: str,
-        api_key_id: Optional[str] = None,
-        scopes: Optional[list[str]] = None,
+        api_key_id: str | None = None,
+        scopes: list[str] | None = None,
     ):
         self.user_id = user_id
         self.email = email
@@ -66,7 +66,7 @@ class AuthenticatedUser:
 
 
 async def get_current_user(
-    api_key: Annotated[Optional[str], Security(api_key_header)] = None,
+    api_key: Annotated[str | None, Security(api_key_header)] = None,
 ) -> AuthenticatedUser:
     """Validate API key and return the authenticated user.
 
@@ -124,8 +124,8 @@ async def get_current_user(
 
 
 async def get_optional_user(
-    api_key: Annotated[Optional[str], Security(api_key_header)] = None,
-) -> Optional[AuthenticatedUser]:
+    api_key: Annotated[str | None, Security(api_key_header)] = None,
+) -> AuthenticatedUser | None:
     """Get the current user if authenticated, otherwise return None.
 
     This is useful for endpoints that work both authenticated and unauthenticated.
@@ -177,6 +177,6 @@ def require_tier(minimum_tier: str) -> Callable[..., Awaitable[AuthenticatedUser
 
 # Type aliases for dependency injection
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
-OptionalUser = Annotated[Optional[AuthenticatedUser], Depends(get_optional_user)]
+OptionalUser = Annotated[AuthenticatedUser | None, Depends(get_optional_user)]
 ProUser = Annotated[AuthenticatedUser, Depends(require_tier("pro"))]
 UnlimitedUser = Annotated[AuthenticatedUser, Depends(require_tier("unlimited"))]

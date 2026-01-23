@@ -5,7 +5,7 @@ import os
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import click
 import httpx
@@ -27,7 +27,7 @@ def get_api_url() -> str:
     return os.environ.get("PYRESOLVE_API_URL", "https://api.pyresolve.dev")
 
 
-def load_credentials() -> Optional[dict[str, Any]]:
+def load_credentials() -> dict[str, Any] | None:
     """Load saved credentials from disk."""
     if not CREDENTIALS_FILE.exists():
         return None
@@ -52,7 +52,7 @@ def delete_credentials() -> None:
         CREDENTIALS_FILE.unlink()
 
 
-def get_api_key() -> Optional[str]:
+def get_api_key() -> str | None:
     """Get API key from environment or saved credentials."""
     # Check environment first
     api_key = os.environ.get("PYRESOLVE_API_KEY")
@@ -94,9 +94,9 @@ def make_authenticated_request(
 @click.option("--api-key", "-k", help="Use an existing API key")
 @click.option("--device", "-d", is_flag=True, help="Use device code flow (for browsers)")
 def login(
-    email: Optional[str],
-    password: Optional[str],
-    api_key: Optional[str],
+    email: str | None,
+    password: str | None,
+    api_key: str | None,
     device: bool,
 ) -> None:
     """Login to PyResolve to enable cloud features.
@@ -144,9 +144,9 @@ def login(
 @click.option("--password", "-p", help="Password (min 8 characters)", hide_input=True)
 @click.option("--name", "-n", help="Your full name (optional)")
 def register(
-    email: Optional[str],
-    password: Optional[str],
-    name: Optional[str],
+    email: str | None,
+    password: str | None,
+    name: str | None,
 ) -> None:
     """Create a new PyResolve account.
 
@@ -186,7 +186,7 @@ def register(
     _register_account(email, password, name if name else None)
 
 
-def _register_account(email: str, password: str, full_name: Optional[str]) -> None:
+def _register_account(email: str, password: str, full_name: str | None) -> None:
     """Register a new account."""
     api_url = get_api_url()
 
@@ -658,7 +658,7 @@ def _progress_bar(current: int, total: int, percentage: float) -> str:
 
 @click.command("upgrade-plan")
 @click.option("--tier", "-t", type=click.Choice(["pro", "unlimited"]), help="Tier to upgrade to")
-def upgrade_plan(tier: Optional[str]) -> None:
+def upgrade_plan(tier: str | None) -> None:
     """Show available plans or upgrade to a paid tier.
 
     \b

@@ -1,6 +1,6 @@
 """Quota checking and usage logging utilities for CLI commands."""
 
-from typing import Optional, cast
+from typing import cast
 
 import httpx
 from rich.console import Console
@@ -103,9 +103,9 @@ def check_quota(
 
 def record_usage(
     event_type: str,
-    library: Optional[str] = None,
+    library: str | None = None,
     quantity: int = 1,
-    metadata: Optional[dict] = None,
+    metadata: dict | None = None,
 ) -> bool:
     """Record a usage event after an operation completes.
 
@@ -165,7 +165,7 @@ def show_quota_exceeded_message(error: QuotaError) -> None:
     )
 
 
-def get_remaining_quota(event_type: str) -> Optional[int]:
+def get_remaining_quota(event_type: str) -> int | None:
     """Get remaining quota for an event type.
 
     Returns:
