@@ -1,7 +1,5 @@
 """Billing router for the PyResolve API."""
 
-from typing import Optional
-
 import stripe
 from fastapi import APIRouter, HTTPException, status
 
@@ -163,7 +161,7 @@ async def get_billing_overview(user: CurrentUser) -> BillingOverview:
         status="active" if tier != "free" else "free",
     )
 
-    payment_method: Optional[PaymentMethodInfo] = None
+    payment_method: PaymentMethodInfo | None = None
 
     # Fetch Stripe details if available
     subscription_id = profile.get("stripe_subscription_id")

@@ -1,7 +1,6 @@
 """Authentication models for the PyResolve API."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -11,9 +10,9 @@ class UserInfo(BaseModel):
 
     id: str
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: str | None = None
     tier: str = "free"
-    stripe_customer_id: Optional[str] = None
+    stripe_customer_id: str | None = None
     created_at: datetime
 
     class Config:
@@ -35,8 +34,8 @@ class APIKey(BaseModel):
     key_prefix: str
     scopes: list[str]
     revoked: bool = False
-    last_used_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    last_used_at: datetime | None = None
+    expires_at: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -60,7 +59,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 class LoginRequest(BaseModel):
@@ -106,4 +105,4 @@ class RegisterRequest(BaseModel):
 
     email: EmailStr
     password: str = Field(min_length=8, description="Password must be at least 8 characters")
-    full_name: Optional[str] = Field(default=None, max_length=100)
+    full_name: str | None = Field(default=None, max_length=100)
