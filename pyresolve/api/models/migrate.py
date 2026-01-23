@@ -1,6 +1,6 @@
 """Migration models for the PyResolve API."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ class MigrateCodeRequest(BaseModel):
     library: str = Field(..., description="Library being upgraded (e.g., 'pydantic')")
     from_version: str = Field(..., description="Current version (e.g., '1.10.0')")
     to_version: str = Field(..., description="Target version (e.g., '2.5.0')")
-    context: Optional[str] = Field(None, description="Optional context about the migration")
+    context: str | None = Field(None, description="Optional context about the migration")
 
 
 class MigrateCodeResponse(BaseModel):
@@ -21,7 +21,7 @@ class MigrateCodeResponse(BaseModel):
     success: bool
     migrated_code: str
     original_code: str
-    error: Optional[str] = None
+    error: str | None = None
     usage: dict[str, Any] = Field(default_factory=dict)
     cached: bool = False
 
@@ -38,5 +38,5 @@ class ExplainChangeResponse(BaseModel):
     """Response with explanation of changes."""
 
     success: bool
-    explanation: Optional[str] = None
-    error: Optional[str] = None
+    explanation: str | None = None
+    error: str | None = None

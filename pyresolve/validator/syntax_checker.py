@@ -4,7 +4,6 @@ import ast
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -14,7 +13,7 @@ class SyntaxIssue:
     message: str
     line_number: int
     column: int
-    line_text: Optional[str] = None
+    line_text: str | None = None
 
 
 @dataclass
@@ -22,7 +21,7 @@ class SyntaxCheckResult:
     """Result of a syntax check."""
 
     is_valid: bool
-    file_path: Optional[Path] = None
+    file_path: Path | None = None
     errors: list[SyntaxIssue] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -35,7 +34,7 @@ class SyntaxCheckResult:
 class SyntaxChecker:
     """Validates Python code syntax."""
 
-    def __init__(self, python_version: Optional[tuple[int, int]] = None):
+    def __init__(self, python_version: tuple[int, int] | None = None):
         """Initialize the syntax checker.
 
         Args:
@@ -106,7 +105,7 @@ class SyntaxChecker:
         return result
 
     def check_directory(
-        self, directory: Path, exclude_patterns: Optional[list[str]] = None
+        self, directory: Path, exclude_patterns: list[str] | None = None
     ) -> list[SyntaxCheckResult]:
         """Check all Python files in a directory.
 
