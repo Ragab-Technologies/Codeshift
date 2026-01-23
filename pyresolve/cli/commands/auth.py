@@ -108,6 +108,8 @@ def login(
     3. Device flow: pyresolve login --device
 
     Your credentials are stored in ~/.config/pyresolve/credentials.json
+
+    Don't have an account? Run: pyresolve register
     """
     # Check if already logged in
     existing = load_credentials()
@@ -133,6 +135,119 @@ def login(
         password = Prompt.ask("Password", password=True)
 
     _login_with_password(email, password)
+
+
+@click.command()
+@click.option("--email", "-e", help="Email address for registration")
+@click.option("--password", "-p", help="Password (min 8 characters)", hide_input=True)
+@click.option("--name", "-n", help="Your full name (optional)")
+def register(
+    email: Optional[str],
+    password: Optional[str],
+    name: Optional[str],
+) -> None:
+    """Create a new PyResolve account.
+
+    \b
+    Example:
+      pyresolve register -e user@example.com -p yourpassword
+
+    Your credentials are stored in ~/.config/pyresolve/credentials.json
+    """
+    # Check if already logged in
+    existing = load_credentials()
+    if existing:
+        if not Confirm.ask(
+            "[yellow]You are already logged in. Do you want to create a new account?[/]"
+        ):
+            return
+
+    if not email:
+        email = Prompt.ask("Email")
+
+    if not password:
+        password = Prompt.ask("Password (min 8 characters)", password=True)
+        password_confirm = Prompt.ask("Confirm password", password=True)
+        if password != password_confirm:
+            console.print("[red]Passwords do not match[/]")
+            raise SystemExit(1)
+
+    if len(password) < 8:
+        console.print("[red]Password must be at least 8 characters[/]")
+        raise SystemExit(1)
+
+    if not name:
+        name = Prompt.ask("Full name (optional)", default="")
+
+    _register_account(email, password, name if name else None)
+
+
+def _register_account(email: str, password: str, full_name: Optional[str]) -> None:
+    """Register a new account."""
+    api_url = get_api_url()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Creating account...", total=None)
+
+        try:
+            payload = {"email": email, "password": password}
+            if full_name:
+                payload["full_name"] = full_name
+
+            response = httpx.post(
+                f"{api_url}/auth/register",
+                json=payload,
+                timeout=30,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+
+                # Save credentials
+                save_credentials(
+                    {
+                        "api_key": data["api_key"],
+                        "user_id": data["user"]["id"],
+                        "email": data["user"]["email"],
+                        "tier": data["user"].get("tier", "free"),
+                    }
+                )
+
+                progress.update(task, completed=True)
+
+                console.print(
+                    Panel(
+                        f"[green]Account created successfully![/]\n\n"
+                        f"Email: [cyan]{data['user']['email']}[/]\n"
+                        f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n\n"
+                        f"[dim]You are now logged in and ready to use PyResolve.[/]",
+                        title="Registration Successful",
+                    )
+                )
+            elif response.status_code == 409:
+                console.print(
+                    "[red]An account with this email already exists.[/]\n"
+                    "Run [cyan]pyresolve login[/] to sign in."
+                )
+                raise SystemExit(1)
+            elif response.status_code == 422:
+                detail = response.json().get("detail", [])
+                if isinstance(detail, list) and detail:
+                    msg = detail[0].get("msg", "Invalid input")
+                else:
+                    msg = str(detail)
+                console.print(f"[red]Validation error: {msg}[/]")
+                raise SystemExit(1)
+            else:
+                console.print(f"[red]Registration failed: {response.text}[/]")
+                raise SystemExit(1)
+        except httpx.RequestError as e:
+            console.print(f"[red]Connection error: {e}[/]")
+            raise SystemExit(1) from e
 
 
 def _login_with_api_key(api_key: str) -> None:
@@ -538,35 +653,190 @@ def _progress_bar(current: int, total: int, percentage: float) -> str:
 
 
 @click.command("upgrade-plan")
-def upgrade_plan() -> None:
-    """Show available upgrade plans and pricing."""
+@click.option("--tier", "-t", type=click.Choice(["pro", "unlimited"]), help="Tier to upgrade to")
+def upgrade_plan(tier: Optional[str]) -> None:
+    """Show available plans or upgrade to a paid tier.
+
+    \b
+    Examples:
+      pyresolve upgrade-plan              # Show all plans
+      pyresolve upgrade-plan --tier pro   # Upgrade to Pro tier
+    """
+    api_key = get_api_key()
+    api_url = get_api_url()
+
+    # If tier specified and logged in, initiate checkout
+    if tier and api_key:
+        _initiate_upgrade(api_url, api_key, tier)
+        return
+
+    # Otherwise show available tiers
     try:
-        api_url = get_api_url()
         response = httpx.get(f"{api_url}/billing/tiers", timeout=30)
 
         if response.status_code == 200:
-            tiers = response.json()
+            tiers_data = response.json()
 
             console.print("\n[bold]Available Plans[/]\n")
 
-            for tier in tiers:
-                if tier["name"] == "enterprise":
+            for t in tiers_data:
+                if t["name"] == "enterprise":
                     price = "Custom"
-                elif tier["price_monthly"] == 0:
+                elif t["price_monthly"] == 0:
                     price = "Free"
                 else:
-                    price = f"${tier['price_monthly'] / 100:.0f}/mo"
+                    price = f"${t['price_monthly'] / 100:.0f}/mo"
 
-                console.print(f"[bold cyan]{tier['display_name']}[/] - {price}")
-                console.print(f"  Files: {tier['files_per_month']:,}/mo")
-                console.print(f"  LLM Calls: {tier['llm_calls_per_month']:,}/mo")
-                for feature in tier["features"]:
+                console.print(f"[bold cyan]{t['display_name']}[/] - {price}")
+                console.print(f"  Files: {t['files_per_month']:,}/mo")
+                console.print(f"  LLM Calls: {t['llm_calls_per_month']:,}/mo")
+                for feature in t["features"]:
                     console.print(f"  • {feature}")
                 console.print()
 
-            console.print("[dim]To upgrade, visit https://pyresolve.dev/pricing[/]")
+            if api_key:
+                console.print(
+                    "[green]To upgrade, run:[/]\n"
+                    "  [cyan]pyresolve upgrade-plan --tier pro[/]\n"
+                    "  [cyan]pyresolve upgrade-plan --tier unlimited[/]"
+                )
+            else:
+                console.print(
+                    "[yellow]Login first to upgrade:[/]\n"
+                    "  [cyan]pyresolve login[/]"
+                )
         else:
             console.print("[red]Failed to load pricing information[/]")
 
     except httpx.RequestError as e:
         console.print(f"[red]Connection error: {e}[/]")
+
+
+def _initiate_upgrade(api_url: str, api_key: str, tier: str) -> None:
+    """Create checkout session and open in browser."""
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Creating checkout session...", total=None)
+
+        try:
+            response = httpx.post(
+                f"{api_url}/billing/checkout",
+                headers={"X-API-Key": api_key},
+                json={
+                    "tier": tier,
+                    "success_url": "https://pyresolve.dev/upgrade/success",
+                    "cancel_url": "https://pyresolve.dev/upgrade/cancel",
+                },
+                timeout=30,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                checkout_url = data["checkout_url"]
+
+                progress.update(task, completed=True)
+
+                console.print(
+                    Panel(
+                        f"[green]Opening checkout in your browser...[/]\n\n"
+                        f"Upgrading to: [cyan]{tier.title()}[/]\n\n"
+                        f"[dim]If the browser doesn't open, visit:[/]\n"
+                        f"[link={checkout_url}]{checkout_url[:60]}...[/]",
+                        title="Checkout",
+                    )
+                )
+
+                # Open browser
+                webbrowser.open(checkout_url)
+
+                console.print(
+                    "\n[dim]After completing payment, your account will be "
+                    "automatically upgraded.[/]\n"
+                    "[dim]Run [cyan]pyresolve whoami[/] to verify your new tier.[/]"
+                )
+            elif response.status_code == 401:
+                console.print("[red]Session expired. Please run [cyan]pyresolve login[/] again.[/]")
+                raise SystemExit(1)
+            elif response.status_code == 500:
+                detail = response.json().get("detail", "Unknown error")
+                if "not configured" in detail.lower():
+                    console.print(
+                        "[yellow]Stripe payments are not yet configured.[/]\n"
+                        "Please visit [cyan]https://pyresolve.dev/pricing[/] to upgrade."
+                    )
+                else:
+                    console.print(f"[red]Checkout failed: {detail}[/]")
+                raise SystemExit(1)
+            else:
+                console.print(f"[red]Failed to create checkout: {response.text}[/]")
+                raise SystemExit(1)
+
+        except httpx.RequestError as e:
+            console.print(f"[red]Connection error: {e}[/]")
+            raise SystemExit(1) from e
+
+
+@click.command("billing")
+def billing() -> None:
+    """Open Stripe billing portal to manage your subscription."""
+    api_key = get_api_key()
+
+    if not api_key:
+        console.print(
+            "[yellow]Not logged in.[/]\n"
+            "Run [cyan]pyresolve login[/] to authenticate first."
+        )
+        raise SystemExit(1)
+
+    api_url = get_api_url()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Opening billing portal...", total=None)
+
+        try:
+            response = httpx.get(
+                f"{api_url}/billing/portal",
+                headers={"X-API-Key": api_key},
+                timeout=30,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                portal_url = data["portal_url"]
+
+                progress.update(task, completed=True)
+
+                console.print(
+                    Panel(
+                        "[green]Opening billing portal in your browser...[/]\n\n"
+                        "You can:\n"
+                        "  • Update payment method\n"
+                        "  • View invoices\n"
+                        "  • Change or cancel subscription",
+                        title="Billing Portal",
+                    )
+                )
+
+                webbrowser.open(portal_url)
+            elif response.status_code == 400:
+                console.print(
+                    "[yellow]No billing account found.[/]\n"
+                    "Run [cyan]pyresolve upgrade-plan --tier pro[/] to subscribe first."
+                )
+            elif response.status_code == 401:
+                console.print("[red]Session expired. Please run [cyan]pyresolve login[/] again.[/]")
+                raise SystemExit(1)
+            else:
+                console.print(f"[red]Failed to open billing portal: {response.text}[/]")
+                raise SystemExit(1)
+
+        except httpx.RequestError as e:
+            console.print(f"[red]Connection error: {e}[/]")
+            raise SystemExit(1) from e
