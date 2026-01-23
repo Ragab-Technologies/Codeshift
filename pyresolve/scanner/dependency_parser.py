@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import toml
 from packaging.requirements import Requirement
@@ -15,12 +15,12 @@ class Dependency:
     """Represents a project dependency."""
 
     name: str
-    version_spec: Optional[str] = None
+    version_spec: str | None = None
     extras: list[str] = field(default_factory=list)
-    source_file: Optional[Path] = None
+    source_file: Path | None = None
 
     @property
-    def min_version(self) -> Optional[Version]:
+    def min_version(self) -> Version | None:
         """Get the minimum version from the specifier."""
         if not self.version_spec:
             return None
@@ -35,7 +35,7 @@ class Dependency:
         return None
 
     @property
-    def max_version(self) -> Optional[Version]:
+    def max_version(self) -> Version | None:
         """Get the maximum version from the specifier."""
         if not self.version_spec:
             return None
@@ -220,7 +220,7 @@ class DependencyParser:
 
         return dependencies
 
-    def get_dependency(self, name: str) -> Optional[Dependency]:
+    def get_dependency(self, name: str) -> Dependency | None:
         """Get a specific dependency by name.
 
         Args:
@@ -236,7 +236,7 @@ class DependencyParser:
                 return dep
         return None
 
-    def _parse_requirement_string(self, req_str: str) -> Optional[Dependency]:
+    def _parse_requirement_string(self, req_str: str) -> Dependency | None:
         """Parse a requirement string like 'pydantic>=1.10,<2.0'.
 
         Args:
@@ -264,7 +264,7 @@ class DependencyParser:
                 )
             return None
 
-    def _parse_poetry_dep(self, name: str, spec: Any) -> Optional[Dependency]:
+    def _parse_poetry_dep(self, name: str, spec: Any) -> Dependency | None:
         """Parse a Poetry-style dependency specification.
 
         Args:
@@ -280,7 +280,7 @@ class DependencyParser:
             return Dependency(name=name, version_spec=version_spec)
         elif isinstance(spec, dict):
             version = spec.get("version", "")
-            dict_version_spec: Optional[str] = (
+            dict_version_spec: str | None = (
                 self._convert_poetry_version(version) if version else None
             )
             extras = spec.get("extras", [])
