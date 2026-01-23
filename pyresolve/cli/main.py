@@ -5,7 +5,15 @@ from rich.console import Console
 
 from pyresolve import __version__
 from pyresolve.cli.commands.apply import apply
-from pyresolve.cli.commands.auth import login, logout, quota, upgrade_plan, whoami
+from pyresolve.cli.commands.auth import (
+    billing,
+    login,
+    logout,
+    quota,
+    register,
+    upgrade_plan,
+    whoami,
+)
 from pyresolve.cli.commands.diff import diff
 from pyresolve.cli.commands.scan import scan
 from pyresolve.cli.commands.upgrade import upgrade
@@ -40,11 +48,13 @@ cli.add_command(diff)
 cli.add_command(apply)
 
 # Auth commands
+cli.add_command(register)
 cli.add_command(login)
 cli.add_command(logout)
 cli.add_command(whoami)
 cli.add_command(quota)
 cli.add_command(upgrade_plan)
+cli.add_command(billing)
 
 
 @cli.command()
