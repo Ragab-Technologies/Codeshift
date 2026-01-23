@@ -146,7 +146,7 @@ class SourceFetcher:
         try:
             response = self.client.get(raw_url)
             if response.status_code == 200:
-                return response.text
+                return str(response.text)
         except Exception:
             pass
 

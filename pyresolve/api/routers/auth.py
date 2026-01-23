@@ -132,9 +132,7 @@ async def register(request: RegisterRequest) -> LoginResponse:
             {
                 "email": request.email,
                 "password": request.password,
-                "options": {
-                    "data": {"full_name": request.full_name} if request.full_name else {}
-                },
+                "options": {"data": {"full_name": request.full_name} if request.full_name else {}},
             }
         )
     except Exception as e:
