@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class ChangeCategory(Enum):
@@ -44,10 +43,10 @@ class BreakingChange:
 
     category: ChangeCategory
     old_api: str
-    new_api: Optional[str]
+    new_api: str | None
     description: str
     confidence: Confidence
-    source: Optional[str] = None  # Where this change was detected from
+    source: str | None = None  # Where this change was detected from
 
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
@@ -80,7 +79,7 @@ class ChangelogSource:
     url: str
     source_type: str  # "changelog", "migration_guide", "release_notes"
     content: str
-    version_range: Optional[tuple[str, str]] = None  # (from_version, to_version)
+    version_range: tuple[str, str] | None = None  # (from_version, to_version)
 
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""

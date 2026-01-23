@@ -1,6 +1,6 @@
 """Pydantic v1 to v2 transformation using LibCST."""
 
-from typing import Any, Optional
+from typing import Any
 
 import libcst as cst
 from libcst import matchers as m
@@ -21,7 +21,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         self._has_root_validator_import = False
         # Track classes that have inner Config
         self._classes_with_config: dict[str, dict] = {}
-        self._current_class: Optional[str] = None
+        self._current_class: str | None = None
         # Track position info
         self._line_offset = 0
 
@@ -93,7 +93,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
 
         return options
 
-    def _map_config_option(self, name: str, value: Any) -> tuple[Optional[str], Any]:
+    def _map_config_option(self, name: str, value: Any) -> tuple[str | None, Any]:
         """Map a v1 Config option to v2 ConfigDict option."""
         # Direct mappings
         mappings = {
@@ -505,7 +505,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
             return f"{base}.{node.attr.value}"
         return ""
 
-    def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
+    def _get_name_value(self, node: cst.BaseExpression) -> str | None:
         """Extract the string value from a Name node."""
         if isinstance(node, cst.Name):
             return str(node.value)
@@ -600,7 +600,7 @@ class PydanticImportTransformer(BaseTransformer):
             return f"{base}.{node.attr.value}"
         return ""
 
-    def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
+    def _get_name_value(self, node: cst.BaseExpression) -> str | None:
         """Extract the string value from a Name node."""
         if isinstance(node, cst.Name):
             return str(node.value)

@@ -23,7 +23,7 @@ class APISettings(BaseSettings):
     anthropic_api_key: str = ""
 
     # API settings
-    pyresolve_api_url: str = "https://api.pyresolve.dev"
+    pyresolve_api_url: str = "https://py-resolve.replit.app"
     api_key_prefix: str = "pyr_"
 
     # Tier quotas

@@ -2,7 +2,6 @@
 
 import difflib
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich.console import Console
@@ -47,7 +46,7 @@ console = Console()
 )
 def diff(
     path: str,
-    file: Optional[str],
+    file: str | None,
     no_color: bool,
     context: int,
     summary: bool,
