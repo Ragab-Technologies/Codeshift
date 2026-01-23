@@ -3,7 +3,6 @@
 import json
 import time
 from pathlib import Path
-from typing import Optional
 
 from pyresolve.knowledge.models import GeneratedKnowledgeBase
 
@@ -15,7 +14,7 @@ class KnowledgeCache:
 
     def __init__(
         self,
-        cache_dir: Optional[Path] = None,
+        cache_dir: Path | None = None,
         ttl: int = DEFAULT_TTL,
     ):
         """Initialize the cache.
@@ -46,7 +45,7 @@ class KnowledgeCache:
         package: str,
         old_version: str,
         new_version: str,
-    ) -> Optional[GeneratedKnowledgeBase]:
+    ) -> GeneratedKnowledgeBase | None:
         """Get a cached knowledge base.
 
         Args:
@@ -157,7 +156,7 @@ class KnowledgeCache:
 
 
 # Singleton instance
-_default_cache: Optional[KnowledgeCache] = None
+_default_cache: KnowledgeCache | None = None
 
 
 def get_knowledge_cache() -> KnowledgeCache:

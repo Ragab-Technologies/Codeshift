@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional, cast
+from typing import cast
 
 from pyresolve.knowledge.models import (
     BreakingChange,
@@ -46,7 +46,7 @@ Respond with a JSON array of breaking changes. Example:
 
 If there are no breaking changes, respond with an empty array: []"""
 
-    def __init__(self, client: Optional[LLMClient] = None):
+    def __init__(self, client: LLMClient | None = None):
         """Initialize the parser.
 
         Args:
@@ -200,7 +200,7 @@ Extract breaking changes as a JSON array:"""
         except json.JSONDecodeError:
             return []
 
-    def _extract_json(self, content: str) -> Optional[str]:
+    def _extract_json(self, content: str) -> str | None:
         """Extract JSON array from LLM response.
 
         Args:
@@ -259,7 +259,7 @@ Extract breaking changes as a JSON array:"""
 
 
 # Singleton instance
-_default_parser: Optional[ChangelogParser] = None
+_default_parser: ChangelogParser | None = None
 
 
 def get_changelog_parser() -> ChangelogParser:

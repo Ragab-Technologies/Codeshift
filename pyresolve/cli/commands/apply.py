@@ -3,7 +3,6 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich.console import Console
@@ -53,7 +52,7 @@ console = Console()
 )
 def apply(
     path: str,
-    file: Optional[str],
+    file: str | None,
     backup: bool,
     yes: bool,
     validate: bool,
