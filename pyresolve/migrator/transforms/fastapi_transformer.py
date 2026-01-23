@@ -144,7 +144,7 @@ class FastAPITransformer(BaseTransformer):
     def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
-            return module.value
+            return str(module.value)
         elif isinstance(module, cst.Attribute):
             return f"{self._get_module_name(module.value)}.{module.attr.value}"
         return ""

@@ -134,6 +134,8 @@ def login(
     if not password:
         password = Prompt.ask("Password", password=True)
 
+    assert email is not None
+    assert password is not None
     _login_with_password(email, password)
 
 
@@ -179,6 +181,8 @@ def register(
     if not name:
         name = Prompt.ask("Full name (optional)", default="")
 
+    assert email is not None
+    assert password is not None
     _register_account(email, password, name if name else None)
 
 
@@ -701,10 +705,7 @@ def upgrade_plan(tier: Optional[str]) -> None:
                     "  [cyan]pyresolve upgrade-plan --tier unlimited[/]"
                 )
             else:
-                console.print(
-                    "[yellow]Login first to upgrade:[/]\n"
-                    "  [cyan]pyresolve login[/]"
-                )
+                console.print("[yellow]Login first to upgrade:[/]\n" "  [cyan]pyresolve login[/]")
         else:
             console.print("[red]Failed to load pricing information[/]")
 
@@ -786,8 +787,7 @@ def billing() -> None:
 
     if not api_key:
         console.print(
-            "[yellow]Not logged in.[/]\n"
-            "Run [cyan]pyresolve login[/] to authenticate first."
+            "[yellow]Not logged in.[/]\n" "Run [cyan]pyresolve login[/] to authenticate first."
         )
         raise SystemExit(1)
 
