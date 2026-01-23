@@ -151,7 +151,7 @@ class RequestsTransformer(BaseTransformer):
     def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""
         if isinstance(module, cst.Name):
-            return module.value
+            return str(module.value)
         elif isinstance(module, cst.Attribute):
             return f"{self._get_module_name(module.value)}.{module.attr.value}"
         return ""
@@ -173,7 +173,7 @@ class RequestsTransformer(BaseTransformer):
             return f"{node.value.value}.{node.attr.value}"
         elif isinstance(node.value, cst.Attribute):
             return f"{self._get_full_attribute(node.value)}.{node.attr.value}"
-        return node.attr.value
+        return str(node.attr.value)
 
     def _build_attribute_node(self, attr_str: str) -> cst.Attribute:
         """Build an attribute node from a dotted string."""
