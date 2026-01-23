@@ -81,6 +81,9 @@ dmypy.json
 .pyresolve_cache/
 *.pyresolve.json
 
+# Supabase local development
+supabase/.temp/
+
 # Ignore .env file
 .env
 .env.local

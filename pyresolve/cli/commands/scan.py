@@ -69,7 +69,7 @@ def compare_versions(current: str, latest: str) -> bool:
     from packaging.version import Version
 
     try:
-        return Version(latest) > Version(current)
+        return bool(Version(latest) > Version(current))
     except Exception:
         return False
 
