@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import toml
 
@@ -15,7 +14,7 @@ class ProjectConfig:
         default_factory=lambda: [".pyresolve/*", "tests/*", ".venv/*", "venv/*"]
     )
     use_llm: bool = True
-    anthropic_api_key: Optional[str] = None
+    anthropic_api_key: str | None = None
     cache_dir: Path = field(default_factory=lambda: Path.home() / ".pyresolve" / "cache")
 
     @classmethod
@@ -52,7 +51,7 @@ class Config:
     target_library: str
     target_version: str
     project_config: ProjectConfig = field(default_factory=ProjectConfig)
-    state_file: Optional[Path] = None
+    state_file: Path | None = None
     dry_run: bool = False
     verbose: bool = False
 
