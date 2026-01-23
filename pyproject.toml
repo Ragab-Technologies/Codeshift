@@ -8,7 +8,7 @@ version = "0.2.0b1"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 authors = [
     {name = "PyResolve Team"}
 ]
@@ -39,6 +39,7 @@ dependencies = [
     "black>=24.10.0",
     "mypy>=1.19.1",
     "supabase>=2.27.2",
+    "pre-commit>=4.5.1",
 ]
 
 [project.optional-dependencies]
@@ -57,6 +58,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0",
     "nox>=2024.0",
+    "pre-commit>=3.6.0",
     "types-toml>=0.10",
     "types-PyYAML>=6.0",
 ]
@@ -103,6 +105,11 @@ python_version = "3.9"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "supabase.*"
+ignore_missing_imports = true
+ignore_errors = true
 
 [dependency-groups]
 dev = [
