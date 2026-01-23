@@ -499,7 +499,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
     def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         if isinstance(node, cst.Attribute):
             base = self._get_module_name(node.value)
             return f"{base}.{node.attr.value}"
@@ -508,7 +508,7 @@ class PydanticV1ToV2Transformer(BaseTransformer):
     def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
         """Extract the string value from a Name node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         return None
 
 
@@ -594,7 +594,7 @@ class PydanticImportTransformer(BaseTransformer):
     def _get_module_name(self, node: cst.BaseExpression) -> str:
         """Get the full module name from an Attribute or Name node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         if isinstance(node, cst.Attribute):
             base = self._get_module_name(node.value)
             return f"{base}.{node.attr.value}"
@@ -603,7 +603,7 @@ class PydanticImportTransformer(BaseTransformer):
     def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
         """Extract the string value from a Name node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         return None
 
 

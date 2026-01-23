@@ -4,10 +4,11 @@ from datetime import datetime, timezone
 from typing import Any, Optional, cast
 
 from pyresolve.api.config import get_settings
-from supabase import Client, create_client
+from supabase import Client as SupabaseClient
+from supabase import create_client
 
 
-def get_supabase_client() -> Client:
+def get_supabase_client() -> "SupabaseClient":
     """Get a Supabase client instance."""
     settings = get_settings()
     return create_client(
@@ -16,7 +17,7 @@ def get_supabase_client() -> Client:
     )
 
 
-def get_supabase_anon_client() -> Client:
+def get_supabase_anon_client() -> "SupabaseClient":
     """Get a Supabase client with anon key (for user-facing operations)."""
     settings = get_settings()
     return create_client(
@@ -28,12 +29,12 @@ def get_supabase_anon_client() -> Client:
 class Database:
     """Database operations wrapper."""
 
-    def __init__(self, client: Optional[Client] = None):
+    def __init__(self, client: Optional["SupabaseClient"] = None):
         """Initialize with optional client, otherwise use service role client."""
         self._client = client
 
     @property
-    def client(self) -> Client:
+    def client(self) -> "SupabaseClient":
         """Get or create the Supabase client."""
         if self._client is None:
             self._client = get_supabase_client()

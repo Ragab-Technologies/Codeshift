@@ -138,7 +138,7 @@ def record_usage(
             timeout=10,
         )
 
-        return response.status_code == 200
+        return bool(response.status_code == 200)
 
     except httpx.RequestError:
         # Network error, don't fail the operation
