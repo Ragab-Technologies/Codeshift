@@ -118,7 +118,7 @@ class ImportVisitor(cst.CSTVisitor):
     def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
         """Extract the string value from a Name or Attribute node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         if isinstance(node, cst.Attribute):
             base = self._get_name_value(node.value)
             if base:
@@ -231,7 +231,7 @@ class UsageVisitor(cst.CSTVisitor):
     def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
         """Extract the string value from a Name or Attribute node."""
         if isinstance(node, cst.Name):
-            return node.value
+            return str(node.value)
         if isinstance(node, cst.Attribute):
             base = self._get_name_value(node.value)
             if base:
