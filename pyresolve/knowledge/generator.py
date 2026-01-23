@@ -1,6 +1,6 @@
 """Knowledge base generator - orchestrates the knowledge acquisition pipeline."""
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pyresolve.knowledge.cache import KnowledgeCache, get_knowledge_cache
 from pyresolve.knowledge.models import (
@@ -17,9 +17,9 @@ class KnowledgeGenerator:
 
     def __init__(
         self,
-        fetcher: Optional[SourceFetcher] = None,
-        parser: Optional[ChangelogParser] = None,
-        cache: Optional[KnowledgeCache] = None,
+        fetcher: SourceFetcher | None = None,
+        parser: ChangelogParser | None = None,
+        cache: KnowledgeCache | None = None,
         use_cache: bool = True,
     ):
         """Initialize the generator.
@@ -40,7 +40,7 @@ class KnowledgeGenerator:
         package: str,
         old_version: str,
         new_version: str,
-        progress_callback: Optional[Callable[[str], None]] = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> GeneratedKnowledgeBase:
         """Generate a knowledge base for a package migration.
 
@@ -181,7 +181,7 @@ async def generate_knowledge_base(
     package: str,
     old_version: str,
     new_version: str,
-    progress_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Callable[[str], None] | None = None,
 ) -> GeneratedKnowledgeBase:
     """Async interface for generating knowledge base.
 
@@ -202,7 +202,7 @@ def generate_knowledge_base_sync(
     package: str,
     old_version: str,
     new_version: str,
-    progress_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Callable[[str], None] | None = None,
 ) -> GeneratedKnowledgeBase:
     """Synchronous interface for generating knowledge base.
 
@@ -220,7 +220,7 @@ def generate_knowledge_base_sync(
 
 
 # Singleton instance
-_default_generator: Optional[KnowledgeGenerator] = None
+_default_generator: KnowledgeGenerator | None = None
 
 
 def get_knowledge_generator() -> KnowledgeGenerator:
