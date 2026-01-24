@@ -2,7 +2,6 @@
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -16,13 +15,13 @@ class PackageInfo:
 
     name: str
     version: str
-    home_page: Optional[str] = None
-    project_url: Optional[str] = None
-    repository_url: Optional[str] = None
-    documentation_url: Optional[str] = None
+    home_page: str | None = None
+    project_url: str | None = None
+    repository_url: str | None = None
+    documentation_url: str | None = None
 
     @property
-    def github_url(self) -> Optional[str]:
+    def github_url(self) -> str | None:
         """Extract GitHub repository URL."""
         for url in [self.repository_url, self.project_url, self.home_page]:
             if url and "github.com" in url:
@@ -70,7 +69,7 @@ class SourceFetcher:
             timeout: HTTP request timeout in seconds.
         """
         self.timeout = timeout
-        self._client: Optional[httpx.Client] = None
+        self._client: httpx.Client | None = None
 
     @property
     def client(self) -> httpx.Client:
@@ -89,7 +88,7 @@ class SourceFetcher:
             self._client.close()
             self._client = None
 
-    def get_package_info(self, package: str) -> Optional[PackageInfo]:
+    def get_package_info(self, package: str) -> PackageInfo | None:
         """Fetch package information from PyPI.
 
         Args:
@@ -119,9 +118,7 @@ class SourceFetcher:
         except Exception:
             return None
 
-    def fetch_github_file(
-        self, repo_url: str, file_path: str, branch: str = "main"
-    ) -> Optional[str]:
+    def fetch_github_file(self, repo_url: str, file_path: str, branch: str = "main") -> str | None:
         """Fetch a file from a GitHub repository.
 
         Args:
@@ -156,7 +153,7 @@ class SourceFetcher:
 
         return None
 
-    def fetch_changelog(self, repo_url: str) -> Optional[ChangelogSource]:
+    def fetch_changelog(self, repo_url: str) -> ChangelogSource | None:
         """Fetch changelog from a GitHub repository.
 
         Args:
@@ -175,7 +172,7 @@ class SourceFetcher:
                 )
         return None
 
-    def fetch_migration_guide(self, repo_url: str) -> Optional[ChangelogSource]:
+    def fetch_migration_guide(self, repo_url: str) -> ChangelogSource | None:
         """Fetch migration guide from a GitHub repository.
 
         Args:
@@ -199,7 +196,7 @@ class SourceFetcher:
                     )
         return None
 
-    def fetch_release_notes(self, repo_url: str, version: str) -> Optional[ChangelogSource]:
+    def fetch_release_notes(self, repo_url: str, version: str) -> ChangelogSource | None:
         """Fetch release notes for a specific version from GitHub releases.
 
         Args:
@@ -253,7 +250,7 @@ class SourceFetcher:
         return None
 
     async def discover_sources(
-        self, package: str, target_version: Optional[str] = None
+        self, package: str, target_version: str | None = None
     ) -> list[ChangelogSource]:
         """Discover all available changelog sources for a package.
 
@@ -268,7 +265,7 @@ class SourceFetcher:
         return self.discover_sources_sync(package, target_version)
 
     def discover_sources_sync(
-        self, package: str, target_version: Optional[str] = None
+        self, package: str, target_version: str | None = None
     ) -> list[ChangelogSource]:
         """Synchronously discover all available changelog sources for a package.
 
@@ -380,7 +377,7 @@ class SourceFetcher:
 
 
 # Singleton instance
-_default_fetcher: Optional[SourceFetcher] = None
+_default_fetcher: SourceFetcher | None = None
 
 
 def get_source_fetcher() -> SourceFetcher:

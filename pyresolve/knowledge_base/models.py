@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class ChangeType(Enum):
@@ -35,11 +34,11 @@ class BreakingChange:
     from_version: str
     to_version: str
     description: str
-    replacement: Optional[str] = None  # e.g., "model_config = ConfigDict(...)"
+    replacement: str | None = None  # e.g., "model_config = ConfigDict(...)"
     has_deterministic_transform: bool = False
-    transform_name: Optional[str] = None  # e.g., "config_to_configdict"
-    migration_guide_url: Optional[str] = None
-    notes: Optional[str] = None
+    transform_name: str | None = None  # e.g., "config_to_configdict"
+    migration_guide_url: str | None = None
+    notes: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "BreakingChange":
@@ -66,7 +65,7 @@ class LibraryKnowledge:
     name: str
     display_name: str
     description: str
-    migration_guide_url: Optional[str]
+    migration_guide_url: str | None
     supported_migrations: list[tuple[str, str]]  # List of (from_version, to_version)
     breaking_changes: list[BreakingChange] = field(default_factory=list)
 

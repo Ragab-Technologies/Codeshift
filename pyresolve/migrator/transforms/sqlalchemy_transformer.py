@@ -1,7 +1,5 @@
 """SQLAlchemy 1.x to 2.0 transformation using LibCST."""
 
-from typing import Union
-
 import libcst as cst
 
 from pyresolve.migrator.ast_transforms import BaseTransformer
@@ -18,7 +16,7 @@ class SQLAlchemyTransformer(BaseTransformer):
 
     def leave_ImportFrom(
         self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> Union[cst.ImportFrom, cst.RemovalSentinel]:
+    ) -> cst.ImportFrom | cst.RemovalSentinel:
         """Transform SQLAlchemy imports."""
         if original_node.module is None:
             return updated_node

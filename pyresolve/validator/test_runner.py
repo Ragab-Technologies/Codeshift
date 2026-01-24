@@ -4,7 +4,6 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -20,7 +19,7 @@ class TestResult:
     tests_failed: int = 0
     tests_skipped: int = 0
     duration: float = 0.0
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
     @property
     def summary(self) -> str:
@@ -36,7 +35,7 @@ class TestRunner:
     def __init__(
         self,
         project_path: Path,
-        test_command: Optional[list[str]] = None,
+        test_command: list[str] | None = None,
         timeout: int = 300,
     ):
         """Initialize the test runner.
@@ -69,8 +68,8 @@ class TestRunner:
 
     def run(
         self,
-        specific_tests: Optional[list[str]] = None,
-        extra_args: Optional[list[str]] = None,
+        specific_tests: list[str] | None = None,
+        extra_args: list[str] | None = None,
     ) -> TestResult:
         """Run the project tests.
 

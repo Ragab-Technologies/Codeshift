@@ -5,7 +5,7 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -15,7 +15,7 @@ class CacheEntry:
     key: str
     value: Any
     created_at: float
-    expires_at: Optional[float] = None
+    expires_at: float | None = None
     hits: int = 0
 
     @property
@@ -31,8 +31,8 @@ class Cache:
 
     def __init__(
         self,
-        cache_dir: Optional[Path] = None,
-        default_ttl: Optional[int] = None,
+        cache_dir: Path | None = None,
+        default_ttl: int | None = None,
     ):
         """Initialize the cache.
 
@@ -60,7 +60,7 @@ class Cache:
         """Get the file path for a cache key."""
         return self.cache_dir / f"{key}.json"
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get a value from the cache.
 
         Args:
@@ -111,7 +111,7 @@ class Cache:
 
         return None
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Set a value in the cache.
 
         Args:
@@ -242,7 +242,7 @@ class LLMCache(Cache):
 
     def __init__(
         self,
-        cache_dir: Optional[Path] = None,
+        cache_dir: Path | None = None,
         default_ttl: int = 86400 * 7,  # 7 days default
     ):
         """Initialize the LLM cache.
@@ -261,7 +261,7 @@ class LLMCache(Cache):
         library: str,
         from_version: str,
         to_version: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get a cached migration result.
 
         Args:
@@ -298,8 +298,8 @@ class LLMCache(Cache):
 
 
 # Default cache instances
-_default_cache: Optional[Cache] = None
-_llm_cache: Optional[LLMCache] = None
+_default_cache: Cache | None = None
+_llm_cache: LLMCache | None = None
 
 
 def get_cache() -> Cache:

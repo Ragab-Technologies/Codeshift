@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 from rich.console import Console
@@ -47,7 +47,7 @@ def run_single_upgrade(
     project_path: Path,
     project_config: ProjectConfig,
     verbose: bool,
-) -> tuple[list[TransformResult], Optional[GeneratedKnowledgeBase]]:
+) -> tuple[list[TransformResult], GeneratedKnowledgeBase | None]:
     """Run upgrade for a single library and return results.
 
     Args:
@@ -61,7 +61,7 @@ def run_single_upgrade(
         Tuple of (list of transform results, generated knowledge base).
     """
     results: list[TransformResult] = []
-    generated_kb: Optional[GeneratedKnowledgeBase] = None
+    generated_kb: GeneratedKnowledgeBase | None = None
 
     # Get current version
     dep_parser = DependencyParser(project_path)

@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import click
 import httpx
@@ -21,7 +21,7 @@ from pyresolve.utils.config import ProjectConfig
 console = Console()
 
 
-def get_latest_version(package: str) -> Optional[str]:
+def get_latest_version(package: str) -> str | None:
     """Fetch the latest version of a package from PyPI.
 
     Args:
@@ -33,13 +33,13 @@ def get_latest_version(package: str) -> Optional[str]:
     try:
         response = httpx.get(f"https://pypi.org/pypi/{package}/json", timeout=10.0)
         if response.status_code == 200:
-            return cast(Optional[str], response.json().get("info", {}).get("version"))
+            return cast(str | None, response.json().get("info", {}).get("version"))
     except Exception:
         pass
     return None
 
 
-def parse_version(version_spec: str) -> Optional[str]:
+def parse_version(version_spec: str) -> str | None:
     """Extract a version number from a version spec.
 
     Args:

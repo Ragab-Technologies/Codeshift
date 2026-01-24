@@ -1,7 +1,7 @@
 """Usage tracking models for the PyResolve API."""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +10,7 @@ class UsageEventCreate(BaseModel):
     """Request to record a usage event."""
 
     event_type: str = Field(..., pattern="^(file_migrated|llm_call|scan|apply)$")
-    library: Optional[str] = None
+    library: str | None = None
     quantity: int = Field(default=1, ge=1)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -21,7 +21,7 @@ class UsageEvent(BaseModel):
     id: str
     user_id: str
     event_type: str
-    library: Optional[str] = None
+    library: str | None = None
     quantity: int
     metadata: dict[str, Any]
     billing_period: str
@@ -113,4 +113,4 @@ class QuotaCheckResponse(BaseModel):
     current_usage: int
     limit: int
     remaining: int
-    message: Optional[str] = None
+    message: str | None = None

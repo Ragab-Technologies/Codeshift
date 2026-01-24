@@ -1,7 +1,7 @@
 """Migration engine with tiered approach."""
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
 
 from pyresolve.knowledge import (
     Confidence,
@@ -26,7 +26,7 @@ class MigrationEngine:
 
     def __init__(
         self,
-        llm_migrator: Optional[LLMMigrator] = None,
+        llm_migrator: LLMMigrator | None = None,
     ):
         """Initialize the migration engine.
 
@@ -42,8 +42,8 @@ class MigrationEngine:
         library: str,
         old_version: str,
         new_version: str,
-        knowledge_base: Optional[GeneratedKnowledgeBase] = None,
-        progress_callback: Optional[Callable[[str], None]] = None,
+        knowledge_base: GeneratedKnowledgeBase | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> TransformResult:
         """Run migration using the appropriate tier.
 
@@ -305,7 +305,7 @@ class MigrationEngine:
             errors=[result.error or "Tier 3 migration failed"],
         )
 
-    def _get_transform_func(self, library: str) -> Optional[Callable]:
+    def _get_transform_func(self, library: str) -> Callable | None:
         """Get the transform function for a library.
 
         Args:
@@ -352,7 +352,7 @@ class MigrationEngine:
 
 
 # Singleton instance
-_default_engine: Optional[MigrationEngine] = None
+_default_engine: MigrationEngine | None = None
 
 
 def get_migration_engine() -> MigrationEngine:
@@ -369,7 +369,7 @@ def run_migration(
     library: str,
     old_version: str,
     new_version: str,
-    knowledge_base: Optional[GeneratedKnowledgeBase] = None,
+    knowledge_base: GeneratedKnowledgeBase | None = None,
 ) -> TransformResult:
     """Convenience function to run a migration.
 

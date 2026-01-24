@@ -1,7 +1,6 @@
 """Billing models for the PyResolve API."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,9 +21,9 @@ class SubscriptionInfo(BaseModel):
 
     tier: str
     status: str  # active, canceled, past_due, etc.
-    stripe_subscription_id: Optional[str] = None
-    current_period_start: Optional[datetime] = None
-    current_period_end: Optional[datetime] = None
+    stripe_subscription_id: str | None = None
+    current_period_start: datetime | None = None
+    current_period_end: datetime | None = None
     cancel_at_period_end: bool = False
 
 
@@ -32,8 +31,8 @@ class CheckoutSessionRequest(BaseModel):
     """Request to create a Stripe checkout session."""
 
     tier: str = Field(..., pattern="^(pro|unlimited)$")
-    success_url: Optional[str] = None
-    cancel_url: Optional[str] = None
+    success_url: str | None = None
+    cancel_url: str | None = None
 
 
 class CheckoutSessionResponse(BaseModel):
@@ -68,9 +67,9 @@ class InvoiceInfo(BaseModel):
     amount_paid: int
     currency: str
     created: datetime
-    due_date: Optional[datetime] = None
-    hosted_invoice_url: Optional[str] = None
-    pdf_url: Optional[str] = None
+    due_date: datetime | None = None
+    hosted_invoice_url: str | None = None
+    pdf_url: str | None = None
 
 
 class PaymentMethodInfo(BaseModel):
@@ -78,10 +77,10 @@ class PaymentMethodInfo(BaseModel):
 
     id: str
     type: str  # card, bank_account, etc.
-    card_brand: Optional[str] = None
-    card_last4: Optional[str] = None
-    card_exp_month: Optional[int] = None
-    card_exp_year: Optional[int] = None
+    card_brand: str | None = None
+    card_last4: str | None = None
+    card_exp_month: int | None = None
+    card_exp_year: int | None = None
 
 
 class BillingOverview(BaseModel):
@@ -89,5 +88,5 @@ class BillingOverview(BaseModel):
 
     subscription: SubscriptionInfo
     tier_info: TierInfo
-    payment_method: Optional[PaymentMethodInfo] = None
-    upcoming_invoice: Optional[InvoiceInfo] = None
+    payment_method: PaymentMethodInfo | None = None
+    upcoming_invoice: InvoiceInfo | None = None
