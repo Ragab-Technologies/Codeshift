@@ -24,7 +24,7 @@ CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 
 def get_api_url() -> str:
     """Get the API URL from environment or default."""
-    return os.environ.get("PYRESOLVE_API_URL", "https://api.pyresolve.dev")
+    return os.environ.get("PYRESOLVE_API_URL", "https://py-resolve.replit.app")
 
 
 def load_credentials() -> dict[str, Any] | None:
