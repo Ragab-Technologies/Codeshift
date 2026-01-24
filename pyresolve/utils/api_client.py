@@ -5,7 +5,6 @@ ensuring that LLM features are gated behind the subscription model.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 
@@ -18,8 +17,8 @@ class APIResponse:
 
     success: bool
     content: str
-    error: Optional[str] = None
-    usage: Optional[dict] = None
+    error: str | None = None
+    usage: dict | None = None
     cached: bool = False
 
 
@@ -35,8 +34,8 @@ class PyResolveAPIClient:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        api_url: Optional[str] = None,
+        api_key: str | None = None,
+        api_url: str | None = None,
         timeout: int = 60,
     ):
         """Initialize the API client.
@@ -88,7 +87,7 @@ class PyResolveAPIClient:
         library: str,
         from_version: str,
         to_version: str,
-        context: Optional[str] = None,
+        context: str | None = None,
     ) -> APIResponse:
         """Migrate code using the PyResolve API.
 
@@ -250,7 +249,7 @@ class PyResolveAPIClient:
 
 
 # Singleton instance
-_default_client: Optional[PyResolveAPIClient] = None
+_default_client: PyResolveAPIClient | None = None
 
 
 def get_api_client() -> PyResolveAPIClient:

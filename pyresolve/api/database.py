@@ -41,24 +41,24 @@ class Database:
         return self._client
 
     # Profile operations
-    def get_profile_by_id(self, user_id: str) -> Optional[dict]:
+    def get_profile_by_id(self, user_id: str) -> dict | None:
         """Get a user profile by ID."""
         result = self.client.table("profiles").select("*").eq("id", user_id).execute()
         return result.data[0] if result.data else None
 
-    def get_profile_by_email(self, email: str) -> Optional[dict]:
+    def get_profile_by_email(self, email: str) -> dict | None:
         """Get a user profile by email."""
         result = self.client.table("profiles").select("*").eq("email", email).execute()
         return result.data[0] if result.data else None
 
-    def update_profile(self, user_id: str, data: dict) -> Optional[dict]:
+    def update_profile(self, user_id: str, data: dict) -> dict | None:
         """Update a user profile."""
         result = self.client.table("profiles").update(data).eq("id", user_id).execute()
         return result.data[0] if result.data else None
 
     def update_profile_tier(
-        self, user_id: str, tier: str, stripe_customer_id: Optional[str] = None
-    ) -> Optional[dict]:
+        self, user_id: str, tier: str, stripe_customer_id: str | None = None
+    ) -> dict | None:
         """Update a user's tier and optionally their Stripe customer ID."""
         data = {"tier": tier, "updated_at": datetime.now(timezone.utc).isoformat()}
         if stripe_customer_id:
@@ -66,7 +66,7 @@ class Database:
         return self.update_profile(user_id, data)
 
     # API key operations
-    def get_api_key_by_hash(self, key_hash: str) -> Optional[dict]:
+    def get_api_key_by_hash(self, key_hash: str) -> dict | None:
         """Get an API key by its hash."""
         result = (
             self.client.table("api_keys")
@@ -77,7 +77,7 @@ class Database:
         )
         return result.data[0] if result.data else None
 
-    def get_api_key_by_prefix(self, key_prefix: str) -> Optional[dict]:
+    def get_api_key_by_prefix(self, key_prefix: str) -> dict | None:
         """Get an API key by its prefix."""
         result = (
             self.client.table("api_keys")
@@ -94,7 +94,7 @@ class Database:
         key_prefix: str,
         key_hash: str,
         name: str = "CLI Key",
-        scopes: Optional[list[str]] = None,
+        scopes: list[str] | None = None,
     ) -> dict[str, Any]:
         """Create a new API key."""
         data = {
@@ -128,9 +128,9 @@ class Database:
         self,
         user_id: str,
         event_type: str,
-        library: Optional[str] = None,
+        library: str | None = None,
         quantity: int = 1,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Record a usage event."""
         now = datetime.now(timezone.utc)
@@ -147,7 +147,7 @@ class Database:
         return cast(dict[str, Any], result.data[0])
 
     def get_usage_for_period(
-        self, user_id: str, billing_period: Optional[str] = None
+        self, user_id: str, billing_period: str | None = None
     ) -> dict[str, int]:
         """Get usage summary for a billing period."""
         if billing_period is None:
@@ -172,8 +172,8 @@ class Database:
     def get_usage_events(
         self,
         user_id: str,
-        billing_period: Optional[str] = None,
-        event_type: Optional[str] = None,
+        billing_period: str | None = None,
+        event_type: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """Get detailed usage events."""
@@ -193,7 +193,7 @@ class Database:
         result = query.order("created_at", desc=True).limit(limit).execute()
         return cast(list[dict[str, Any]], result.data)
 
-    def get_user_quota(self, user_id: str) -> Optional[dict[str, int]]:
+    def get_user_quota(self, user_id: str) -> dict[str, int] | None:
         """Get quota information for a user.
 
         Returns:
@@ -204,7 +204,7 @@ class Database:
 
 
 # Singleton instance
-_db: Optional[Database] = None
+_db: Database | None = None
 
 
 def get_database() -> Database:

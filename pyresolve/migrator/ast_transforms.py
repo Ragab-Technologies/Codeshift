@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import libcst as cst
 
@@ -27,7 +26,7 @@ class TransformChange:
     replacement: str
     transform_name: str
     confidence: float = 1.0  # 0.0 to 1.0
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 @dataclass
@@ -88,7 +87,7 @@ class BaseTransformer(cst.CSTTransformer):
         replacement: str,
         transform_name: str,
         confidence: float = 1.0,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> None:
         """Record a change made by the transformer."""
         self.changes.append(

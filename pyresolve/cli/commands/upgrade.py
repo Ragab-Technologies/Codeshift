@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import click
 from rich.console import Console
@@ -35,7 +35,7 @@ from pyresolve.utils.config import ProjectConfig
 console = Console()
 
 
-def load_state(project_path: Path) -> Optional[dict[str, Any]]:
+def load_state(project_path: Path) -> dict[str, Any] | None:
     """Load the current migration state if it exists."""
     state_file = project_path / ".pyresolve" / "state.json"
     if state_file.exists():
@@ -90,7 +90,7 @@ def upgrade(
     library: str,
     target: str,
     path: str,
-    file: Optional[str],
+    file: str | None,
     dry_run: bool,
     verbose: bool,
 ) -> None:
@@ -163,7 +163,7 @@ def upgrade(
         progress.update(task, completed=True)
 
     # Step 2: Fetch knowledge sources from GitHub
-    generated_kb: Optional[GeneratedKnowledgeBase] = None
+    generated_kb: GeneratedKnowledgeBase | None = None
 
     with Progress(
         SpinnerColumn(),
