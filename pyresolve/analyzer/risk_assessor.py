@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 from pyresolve.knowledge_base.models import BreakingChange, Severity
 from pyresolve.migrator.ast_transforms import TransformResult
@@ -42,7 +41,7 @@ class RiskFactor:
     description: str
     severity: RiskLevel
     score: float  # 0.0 to 1.0
-    mitigation: Optional[str] = None
+    mitigation: str | None = None
 
 
 @dataclass
@@ -90,8 +89,8 @@ class RiskAssessor:
     def assess(
         self,
         results: list[TransformResult],
-        breaking_changes: Optional[list[BreakingChange]] = None,
-        test_coverage: Optional[float] = None,
+        breaking_changes: list[BreakingChange] | None = None,
+        test_coverage: float | None = None,
     ) -> RiskAssessment:
         """Assess the risk of a migration.
 

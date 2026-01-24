@@ -2,7 +2,6 @@
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 from anthropic import Anthropic
 
@@ -15,7 +14,7 @@ class LLMResponse:
     model: str
     usage: dict
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class LLMClient:
@@ -26,8 +25,8 @@ class LLMClient:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        model: str | None = None,
     ):
         """Initialize the LLM client.
 
@@ -37,7 +36,7 @@ class LLMClient:
         """
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.model = model or self.DEFAULT_MODEL
-        self._client: Optional[Anthropic] = None
+        self._client: Anthropic | None = None
 
     @property
     def client(self) -> Anthropic:
@@ -59,8 +58,8 @@ class LLMClient:
     def generate(
         self,
         prompt: str,
-        system_prompt: Optional[str] = None,
-        max_tokens: Optional[int] = None,
+        system_prompt: str | None = None,
+        max_tokens: int | None = None,
         temperature: float = 0.0,
     ) -> LLMResponse:
         """Generate a response from the LLM.
@@ -122,7 +121,7 @@ class LLMClient:
         library: str,
         from_version: str,
         to_version: str,
-        context: Optional[str] = None,
+        context: str | None = None,
     ) -> LLMResponse:
         """Use the LLM to migrate code.
 
@@ -211,7 +210,7 @@ Provide a brief explanation (2-3 sentences) of what changed and why:"""
 
 
 # Singleton instance for convenience
-_default_client: Optional[LLMClient] = None
+_default_client: LLMClient | None = None
 
 
 def get_llm_client() -> LLMClient:

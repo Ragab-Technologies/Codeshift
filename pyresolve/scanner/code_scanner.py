@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
@@ -14,7 +13,7 @@ class ImportInfo:
 
     module: str  # e.g., "pydantic"
     names: list[str]  # e.g., ["BaseModel", "Field"]
-    alias: Optional[str] = None  # e.g., "pd" for "import pandas as pd"
+    alias: str | None = None  # e.g., "pd" for "import pandas as pd"
     file_path: Path = field(default_factory=Path)
     line_number: int = 0
     is_from_import: bool = False  # True for "from x import y"
@@ -115,7 +114,7 @@ class ImportVisitor(cst.CSTVisitor):
                 )
             )
 
-    def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
+    def _get_name_value(self, node: cst.BaseExpression) -> str | None:
         """Extract the string value from a Name or Attribute node."""
         if isinstance(node, cst.Name):
             return str(node.value)
@@ -228,7 +227,7 @@ class UsageVisitor(cst.CSTVisitor):
                 )
             )
 
-    def _get_name_value(self, node: cst.BaseExpression) -> Optional[str]:
+    def _get_name_value(self, node: cst.BaseExpression) -> str | None:
         """Extract the string value from a Name or Attribute node."""
         if isinstance(node, cst.Name):
             return str(node.value)
@@ -258,7 +257,7 @@ class ScanResult:
 class CodeScanner:
     """Scanner for finding library usage in Python code."""
 
-    def __init__(self, target_library: str, exclude_patterns: Optional[list[str]] = None):
+    def __init__(self, target_library: str, exclude_patterns: list[str] | None = None):
         """Initialize the scanner.
 
         Args:
