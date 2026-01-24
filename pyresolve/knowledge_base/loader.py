@@ -1,7 +1,6 @@
 """Loader for the knowledge base YAML files."""
 
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -11,7 +10,7 @@ from pyresolve.knowledge_base.models import LibraryKnowledge
 class KnowledgeBaseLoader:
     """Loads and manages library knowledge bases."""
 
-    def __init__(self, knowledge_base_dir: Optional[Path] = None):
+    def __init__(self, knowledge_base_dir: Path | None = None):
         """Initialize the loader.
 
         Args:
