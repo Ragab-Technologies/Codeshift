@@ -11,6 +11,10 @@ from supabase import create_client
 def get_supabase_client() -> "SupabaseClient":
     """Get a Supabase client instance."""
     settings = get_settings()
+    if not settings.supabase_url or not settings.supabase_service_role_key:
+        raise RuntimeError(
+            "Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+        )
     return create_client(
         settings.supabase_url,
         settings.supabase_service_role_key,
@@ -20,6 +24,8 @@ def get_supabase_client() -> "SupabaseClient":
 def get_supabase_anon_client() -> "SupabaseClient":
     """Get a Supabase client with anon key (for user-facing operations)."""
     settings = get_settings()
+    if not settings.supabase_url or not settings.supabase_anon_key:
+        raise RuntimeError("Supabase not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.")
     return create_client(
         settings.supabase_url,
         settings.supabase_anon_key,

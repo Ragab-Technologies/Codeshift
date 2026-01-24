@@ -12,7 +12,7 @@ import httpx
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Confirm
 from rich.table import Table
 
 console = Console()
@@ -129,10 +129,10 @@ def login(
 
     # Option 3: Email/password
     if not email:
-        email = Prompt.ask("Email")
+        email = click.prompt("Email")
 
     if not password:
-        password = Prompt.ask("Password", password=True)
+        password = click.prompt("Password", hide_input=True)
 
     assert email is not None
     assert password is not None
@@ -165,11 +165,11 @@ def register(
             return
 
     if not email:
-        email = Prompt.ask("Email")
+        email = click.prompt("Email")
 
     if not password:
-        password = Prompt.ask("Password (min 8 characters)", password=True)
-        password_confirm = Prompt.ask("Confirm password", password=True)
+        password = click.prompt("Password (min 8 characters)", hide_input=True)
+        password_confirm = click.prompt("Confirm password", hide_input=True)
         if password != password_confirm:
             console.print("[red]Passwords do not match[/]")
             raise SystemExit(1)
@@ -179,15 +179,41 @@ def register(
         raise SystemExit(1)
 
     if not name:
-        name = Prompt.ask("Full name (optional)", default="")
+        name = click.prompt("Full name (optional)", default="")
 
     assert email is not None
     assert password is not None
     _register_account(email, password, name if name else None)
 
 
+def _validate_email_basic(email: str) -> str | None:
+    """Basic email validation before sending to server.
+
+    Returns error message if invalid, None if OK.
+    """
+    email = email.strip()
+    if "@" not in email:
+        return "Email must contain @"
+    local, domain = email.rsplit("@", 1)
+    if not local:
+        return "Email must have a local part before @"
+    if not domain:
+        return "Email must have a domain after @"
+    if "." not in domain:
+        return f"Domain '{domain}' is missing a period (e.g., gmail.com not gmailcom)"
+    return None
+
+
 def _register_account(email: str, password: str, full_name: str | None) -> None:
     """Register a new account."""
+    # Strip whitespace and validate email format early
+    email = email.strip()
+
+    validation_error = _validate_email_basic(email)
+    if validation_error:
+        console.print(f"[red]Invalid email: {validation_error}[/]")
+        raise SystemExit(1)
+
     api_url = get_api_url()
 
     with Progress(
@@ -308,6 +334,14 @@ def _login_with_api_key(api_key: str) -> None:
 
 def _login_with_password(email: str, password: str) -> None:
     """Authenticate with email and password."""
+    # Strip whitespace and validate email format early
+    email = email.strip()
+
+    validation_error = _validate_email_basic(email)
+    if validation_error:
+        console.print(f"[red]Invalid email: {validation_error}[/]")
+        raise SystemExit(1)
+
     api_url = get_api_url()
 
     with Progress(
