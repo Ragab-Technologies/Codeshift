@@ -77,6 +77,9 @@ Issues = "https://github.com/youssefragab/PyResolve/issues"
 where = ["."]
 include = ["codeshift*"]
 
+[tool.setuptools.package-data]
+"codeshift.knowledge_base" = ["libraries/*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
