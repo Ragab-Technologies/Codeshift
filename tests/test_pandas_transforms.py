@@ -1,6 +1,6 @@
 """Tests for Pandas transformation."""
 
-from pyresolve.migrator.transforms.pandas_transformer import (
+from codeshift.migrator.transforms.pandas_transformer import (
     transform_pandas,
 )
 

@@ -408,7 +408,7 @@ PLAN_LIMITS = {
 # pyresolve/api/auth.py
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
-from pyresolve.api.database import get_supabase
+from codeshift.api.database import get_supabase
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -458,7 +458,7 @@ async def get_optional_user(api_key: str = Security(api_key_header)) -> dict | N
 # pyresolve/api/billing.py
 import os
 import stripe
-from pyresolve.api.database import get_supabase, PLAN_LIMITS
+from codeshift.api.database import get_supabase, PLAN_LIMITS
 
 stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 
@@ -557,7 +557,7 @@ async def log_usage(user_id: str, event_type: str, **kwargs):
 import os
 import stripe
 from fastapi import APIRouter, Request, HTTPException
-from pyresolve.api.database import get_supabase
+from codeshift.api.database import get_supabase
 
 router = APIRouter()
 
@@ -634,9 +634,9 @@ import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from pyresolve.api.auth import get_current_user, get_optional_user
-from pyresolve.api.billing import get_quota, create_checkout_session, create_portal_session, log_usage
-from pyresolve.api.webhooks import router as webhook_router
+from codeshift.api.auth import get_current_user, get_optional_user
+from codeshift.api.billing import get_quota, create_checkout_session, create_portal_session, log_usage
+from codeshift.api.webhooks import router as webhook_router
 
 app = FastAPI(
     title="PyResolve API",
@@ -889,7 +889,7 @@ def status():
 ```python
 # pyresolve/cli/migrate.py (add to existing)
 import httpx
-from pyresolve.cli.auth import get_api_key, API_BASE
+from codeshift.cli.auth import get_api_key, API_BASE
 
 
 def check_quota_before_migration(tier: str) -> bool:
