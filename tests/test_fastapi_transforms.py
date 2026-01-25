@@ -1,6 +1,6 @@
 """Tests for FastAPI transformation."""
 
-from pyresolve.migrator.transforms.fastapi_transformer import (
+from codeshift.migrator.transforms.fastapi_transformer import (
     transform_fastapi,
 )
 
