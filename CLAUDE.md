@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PyResolve is an AI-powered CLI tool that migrates Python code when dependencies are upgraded. Unlike tools that just bump versions, PyResolve rewrites code to be compatible with new library APIs using a tiered approach:
+Codeshift is an AI-powered CLI tool that migrates Python code when dependencies are upgraded. Unlike tools that just bump versions, Codeshift rewrites code to be compatible with new library APIs using a tiered approach:
 
 - **Tier 1**: Deterministic libcst AST transforms (Pydantic, FastAPI, SQLAlchemy, Pandas, Requests)
 - **Tier 2**: Knowledge base guided LLM migration
@@ -26,20 +26,20 @@ pytest tests/test_pydantic_transforms.py
 pytest tests/test_pydantic_transforms.py::test_dict_to_model_dump
 
 # Run tests with coverage
-pytest --cov=pyresolve --cov-report=term-missing
+pytest --cov=codeshift --cov-report=term-missing
 
 # Lint
 ruff check .
 black --check .
-mypy pyresolve --ignore-missing-imports
+mypy codeshift --ignore-missing-imports
 
 # Format code
 black .
 
 # Run the CLI
-pyresolve --help
-pyresolve scan
-pyresolve upgrade pydantic --target 2.5.0
+codeshift --help
+codeshift scan
+codeshift upgrade pydantic --target 2.5.0
 ```
 
 ## Architecture
@@ -50,11 +50,11 @@ pyresolve upgrade pydantic --target 2.5.0
 scan → DependencyParser + CodeScanner
          ↓
 upgrade → KnowledgeGenerator → MigrationEngine
-                                  ├→ Tier 1: AST Transforms (pyresolve/migrator/transforms/)
+                                  ├→ Tier 1: AST Transforms (codeshift/migrator/transforms/)
                                   ├→ Tier 2: KB + LLM (knowledge/ + llm_migrator.py)
                                   └→ Tier 3: Pure LLM
          ↓
-diff → Load state from .pyresolve/, show changes
+diff → Load state from .codeshift/, show changes
          ↓
 apply → Write to disk, record usage
 ```
@@ -63,15 +63,15 @@ apply → Write to disk, record usage
 
 | Directory | Purpose |
 |-----------|---------|
-| `pyresolve/cli/` | Click commands and quota management |
-| `pyresolve/scanner/` | libcst-based import/usage detection |
-| `pyresolve/migrator/` | Migration engine and AST transformers |
-| `pyresolve/migrator/transforms/` | Library-specific transformers (pydantic_v1_to_v2.py, etc.) |
-| `pyresolve/knowledge/` | Knowledge acquisition pipeline (fetch from GitHub, LLM parsing) |
-| `pyresolve/knowledge_base/` | Static YAML definitions in `libraries/` |
-| `pyresolve/analyzer/` | Risk assessment |
-| `pyresolve/validator/` | Syntax checking |
-| `pyresolve/api/` | FastAPI billing/auth server (optional) |
+| `codeshift/cli/` | Click commands and quota management |
+| `codeshift/scanner/` | libcst-based import/usage detection |
+| `codeshift/migrator/` | Migration engine and AST transformers |
+| `codeshift/migrator/transforms/` | Library-specific transformers (pydantic_v1_to_v2.py, etc.) |
+| `codeshift/knowledge/` | Knowledge acquisition pipeline (fetch from GitHub, LLM parsing) |
+| `codeshift/knowledge_base/` | Static YAML definitions in `libraries/` |
+| `codeshift/analyzer/` | Risk assessment |
+| `codeshift/validator/` | Syntax checking |
+| `codeshift/api/` | FastAPI billing/auth server (optional) |
 
 ### Key Data Models
 
@@ -82,9 +82,9 @@ apply → Write to disk, record usage
 
 ## Adding New Library Support
 
-1. Create YAML in `pyresolve/knowledge_base/libraries/<library>.yaml`
-2. Add transformer in `pyresolve/migrator/transforms/<library>_transformer.py`
-3. Register in `pyresolve/migrator/engine.py` `_get_transform_func()`
+1. Create YAML in `codeshift/knowledge_base/libraries/<library>.yaml`
+2. Add transformer in `codeshift/migrator/transforms/<library>_transformer.py`
+3. Register in `codeshift/migrator/engine.py` `_get_transform_func()`
 4. Add tests in `tests/test_<library>_transforms.py`
 
 ## Environment Variables

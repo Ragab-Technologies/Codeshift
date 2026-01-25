@@ -1,6 +1,6 @@
 """Tests for SQLAlchemy transformation."""
 
-from pyresolve.migrator.transforms.sqlalchemy_transformer import (
+from codeshift.migrator.transforms.sqlalchemy_transformer import (
     transform_sqlalchemy,
 )
 
