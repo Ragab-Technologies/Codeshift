@@ -28,7 +28,7 @@ repos:
           - types-toml>=0.10
           - types-PyYAML>=6.0
           - supabase>=2.3.0
-        files: ^pyresolve/
+        files: ^codeshift/
 
   # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
