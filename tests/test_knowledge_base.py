@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyresolve.knowledge_base import (
+from codeshift.knowledge_base import (
     BreakingChange,
     ChangeType,
     KnowledgeBaseLoader,
