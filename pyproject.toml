@@ -1,69 +1,29 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = [ "setuptools>=61.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "codeshift"
-version = "0.2.1"
+version = "0.3.0"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
-license = {text = "MIT"}
 requires-python = ">=3.10"
-authors = [
-    {name = "PyResolve Team"}
-]
-keywords = ["migration", "dependencies", "ast", "refactoring", "pydantic"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-]
+keywords = [ "migration", "dependencies", "ast", "refactoring", "pydantic",]
+classifiers = [ "Development Status :: 3 - Alpha", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Topic :: Software Development :: Libraries :: Python Modules",]
+dependencies = [ "click>=8.0", "libcst>=1.0", "anthropic>=0.20", "pyyaml>=6.0", "rich>=13.0", "toml>=0.10", "packaging>=23.0", "httpx>=0.25", "pytest>=8.4.2", "nox>=2025.11.12", "black>=24.10.0", "mypy>=1.19.1", "supabase>=2.27.2", "pre-commit>=4.5.1",]
+[[project.authors]]
+name = "PyResolve Team"
 
-dependencies = [
-    "click>=8.0",
-    "libcst>=1.0",
-    "anthropic>=0.20",
-    "pyyaml>=6.0",
-    "rich>=13.0",
-    "toml>=0.10",
-    "packaging>=23.0",
-    "httpx>=0.25",
-    "pytest>=8.4.2",
-    "nox>=2025.11.12",
-    "black>=24.10.0",
-    "mypy>=1.19.1",
-    "supabase>=2.27.2",
-    "pre-commit>=4.5.1",
-]
+[dependency-groups]
+dev = [ "types-pyyaml>=6.0.12.20250915", "types-toml>=0.10.8.20240310",]
+
+[project.license]
+text = "MIT"
 
 [project.optional-dependencies]
-api = [
-    "fastapi>=0.109.0",
-    "uvicorn>=0.27.0",
-    "supabase>=2.3.0",
-    "stripe>=7.0.0",
-    "pydantic-settings>=2.1.0",
-    "email-validator>=2.0.0",
-]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "black>=24.0,<25.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0",
-    "nox>=2024.0",
-    "pre-commit>=3.6.0",
-    "types-toml>=0.10",
-    "types-PyYAML>=6.0",
-]
-all = [
-    "codeshift[api,dev]",
-]
+api = [ "fastapi>=0.109.0", "uvicorn>=0.27.0", "supabase>=2.3.0", "stripe>=7.0.0", "pydantic-settings>=2.1.0", "email-validator>=2.0.0",]
+dev = [ "pytest>=7.0", "pytest-cov>=4.0", "black>=24.0,<25.0", "ruff>=0.1.0", "mypy>=1.0", "nox>=2024.0", "pre-commit>=3.6.0", "types-toml>=0.10", "types-PyYAML>=6.0",]
+all = [ "codeshift[api,dev]",]
 
 [project.scripts]
 codeshift = "codeshift.cli.main:cli"
@@ -73,48 +33,41 @@ Homepage = "https://github.com/youssefragab/PyResolve"
 Repository = "https://github.com/youssefragab/PyResolve"
 Issues = "https://github.com/youssefragab/PyResolve/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["codeshift*"]
-
-[tool.setuptools.package-data]
-"codeshift.knowledge_base" = ["libraries/*.yaml"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short"
-
 [tool.black]
 line-length = 100
-target-version = ["py310", "py311", "py312"]
+target-version = [ "py310", "py311", "py312",]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4"]
-ignore = ["E501"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["codeshift"]
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
-
 [[tool.mypy.overrides]]
 module = "supabase.*"
 ignore_missing_imports = true
 ignore_errors = true
 
-[dependency-groups]
-dev = [
-    "types-pyyaml>=6.0.12.20250915",
-    "types-toml>=0.10.8.20240310",
-]
+[tool.setuptools.package-data]
+"codeshift.knowledge_base" = [ "libraries/*.yaml",]
+
+[tool.pytest.ini_options]
+testpaths = [ "tests",]
+python_files = [ "test_*.py",]
+python_functions = [ "test_*",]
+addopts = "-v --tb=short"
+
+[tool.ruff.lint]
+select = [ "E", "F", "W", "I", "UP", "B", "C4",]
+ignore = [ "E501",]
+
+[tool.setuptools.packages.find]
+where = [ ".",]
+include = [ "codeshift*",]
+
+[tool.ruff.lint.isort]
+known-first-party = [ "codeshift",]
+section-order = [ "future", "standard-library", "third-party", "first-party", "local-folder",]
