@@ -1,6 +1,6 @@
 """Tests for Pydantic v1 to v2 transforms."""
 
-from pyresolve.migrator.transforms.pydantic_v1_to_v2 import (
+from codeshift.migrator.transforms.pydantic_v1_to_v2 import (
     transform_pydantic_v1_to_v2,
 )
 from tests.fixtures.pydantic_v1_samples import (

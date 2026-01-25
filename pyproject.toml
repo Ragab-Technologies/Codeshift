@@ -62,11 +62,11 @@ dev = [
     "types-PyYAML>=6.0",
 ]
 all = [
-    "pyresolve[api,dev]",
+    "codeshift[api,dev]",
 ]
 
 [project.scripts]
-pyresolve = "pyresolve.cli.main:cli"
+codeshift = "codeshift.cli.main:cli"
 
 [project.urls]
 Homepage = "https://github.com/youssefragab/PyResolve"
@@ -75,7 +75,7 @@ Issues = "https://github.com/youssefragab/PyResolve/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pyresolve*"]
+include = ["codeshift*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -96,7 +96,7 @@ select = ["E", "F", "W", "I", "UP", "B", "C4"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["pyresolve"]
+known-first-party = ["codeshift"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.mypy]

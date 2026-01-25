@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pyresolve.scanner import CodeScanner, DependencyParser
+from codeshift.scanner import CodeScanner, DependencyParser
 
 
 class TestCodeScanner:

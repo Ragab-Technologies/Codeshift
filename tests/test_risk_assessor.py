@@ -3,14 +3,14 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from pyresolve.analyzer.risk_assessor import (
+from codeshift.analyzer.risk_assessor import (
     RiskAssessment,
     RiskAssessor,
     RiskFactor,
     RiskLevel,
 )
-from pyresolve.knowledge_base.models import BreakingChange, ChangeType, Severity
-from pyresolve.migrator.ast_transforms import TransformResult
+from codeshift.knowledge_base.models import BreakingChange, ChangeType, Severity
+from codeshift.migrator.ast_transforms import TransformResult
 
 
 class TestRiskLevel:

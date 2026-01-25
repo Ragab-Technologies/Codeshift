@@ -1,6 +1,6 @@
 """Tests for Requests library transformation."""
 
-from pyresolve.migrator.transforms.requests_transformer import (
+from codeshift.migrator.transforms.requests_transformer import (
     transform_requests,
 )
 

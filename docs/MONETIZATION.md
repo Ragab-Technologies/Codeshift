@@ -29,7 +29,7 @@ The billing infrastructure uses **Supabase + Stripe**. See [BILLING_INFRASTRUCTU
 
 ```python
 # Example: Check user tier before LLM migration (from billing API)
-from pyresolve.billing import check_quota
+from codeshift.billing import check_quota
 
 async def migrate_with_llm(file_path, api_key: str):
     # Validates API key, checks tier, and enforces quotas via Supabase

@@ -1,6 +1,6 @@
 """Tests for syntax checker."""
 
-from pyresolve.validator.syntax_checker import (
+from codeshift.validator.syntax_checker import (
     SyntaxChecker,
     SyntaxCheckResult,
     quick_syntax_check,
