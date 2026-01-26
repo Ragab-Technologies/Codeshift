@@ -257,6 +257,7 @@ def upgrade_all(
         BarColumn(),
         TaskProgressColumn(),
         console=console,
+        transient=True,
     ) as progress:
         task = progress.add_task("Checking for updates...", total=len(dependencies))
 
@@ -347,9 +348,10 @@ def upgrade_all(
         table.add_row(str(pkg["name"]), str(pkg["current"]), str(pkg["latest"]), type_str, tier_str)
 
     console.print(table)
+    console.print()  # Ensure table is fully rendered before progress bar
 
     # Run upgrades for each package
-    console.print("\n[bold]Running migrations...[/]\n")
+    console.print("[bold]Running migrations...[/]\n")
 
     all_results: dict[str, list[dict]] = {}
     migration_summary: list[dict] = []
@@ -360,6 +362,7 @@ def upgrade_all(
         BarColumn(),
         TaskProgressColumn(),
         console=console,
+        transient=True,
     ) as progress:
         task = progress.add_task("Upgrading packages...", total=len(upgradeable))
 
