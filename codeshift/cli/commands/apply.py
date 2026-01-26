@@ -10,6 +10,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm
 
 from codeshift.cli.commands.upgrade import load_state, save_state
+from codeshift.cli.package_manager import get_install_commands, get_sync_command
 from codeshift.cli.quota import (
     QuotaError,
     check_quota,
@@ -226,11 +227,32 @@ def apply(
             state_file.unlink()
         console.print("\n[green]Migration complete![/]")
 
-    # Next steps
+    # Next steps - generate dynamic dependency sync command
     console.print("\n[bold]Recommended next steps:[/]")
     console.print("  1. Review the changes in your editor")
     console.print("  2. Run your test suite: [cyan]pytest[/]")
-    console.print("  3. Update your dependencies: [cyan]pip install pydantic>=2.0[/]")
+
+    # Generate dependency update commands based on library/libraries and package manager
+    sync_command = get_sync_command(project_path)
+
+    # Check if this is a multi-library migration (upgrade-all)
+    migrations = state.get("migrations", [])
+    if library == "multiple" and migrations:
+        # Multi-library case: show sync command and list all libraries
+        console.print(f"  3. Sync your dependencies: [cyan]{sync_command}[/]")
+        console.print("\n     [dim]Upgraded libraries:[/]")
+        for migration in migrations:
+            lib_name = migration.get("library", "unknown")
+            to_version = migration.get("to_version", "unknown")
+            console.print(f"       • {lib_name} → {to_version}")
+    else:
+        # Single library case: show sync command with specific library info
+        console.print(f"  3. Sync your dependencies: [cyan]{sync_command}[/]")
+        if library != "unknown" and target_version != "unknown":
+            libraries = [{"name": library, "version": target_version}]
+            install_commands = get_install_commands(project_path, libraries)
+            if install_commands:
+                console.print(f"\n     [dim]Or install directly:[/] {install_commands[0]}")
 
 
 @click.command()
