@@ -18,7 +18,7 @@ module.exports = {
         'revert',   // Revert a commit
       ],
     ],
-    'subject-case': [2, 'always', 'lower-case'],
+    'subject-case': [0],  // Disable - allows proper nouns like "Replit", "PyPI"
     'subject-empty': [2, 'never'],
     'type-empty': [2, 'never'],
   },
