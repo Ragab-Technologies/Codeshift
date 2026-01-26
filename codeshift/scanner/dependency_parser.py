@@ -370,7 +370,7 @@ class DependencyParser:
 
             # Pattern for standard dependencies: "pydantic>=1.0,<2.0" or "pydantic==1.10.0"
             # Match the package name followed by version specifiers
-            pattern = rf'("{name})((?:[><=!~]+[^"]*)?)"'
+            pattern = rf'"({name})((?:[><=!~]+[^"]*)?)"'
             replacement = rf'"\1>={new_version}"'
             content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
 
