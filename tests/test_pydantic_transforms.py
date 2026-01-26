@@ -101,6 +101,99 @@ class User(BaseModel):
         assert "field_validator" in import_line
 
 
+class TestValidatorPreArgTransform:
+    """Tests for @validator pre argument to mode transformation."""
+
+    def test_validator_pre_true_to_mode_before(self):
+        """Test that @validator with pre=True becomes @field_validator with mode='before'."""
+        code = """
+from pydantic import BaseModel, validator
+
+class User(BaseModel):
+    age: int
+
+    @validator("age", pre=True)
+    def parse_age(cls, v):
+        return int(v)
+"""
+        transformed, changes = transform_pydantic_v1_to_v2(code)
+
+        assert '@field_validator("age", mode="before")' in transformed
+        assert "@classmethod" in transformed
+        assert "pre=True" not in transformed
+        assert "@validator" not in transformed
+
+        # Verify syntax is valid
+        compile(transformed, "<string>", "exec")
+
+    def test_validator_pre_false_to_mode_after(self):
+        """Test that @validator with pre=False becomes @field_validator with mode='after'."""
+        code = """
+from pydantic import BaseModel, validator
+
+class User(BaseModel):
+    name: str
+
+    @validator("name", pre=False)
+    def validate_name(cls, v):
+        return v.strip()
+"""
+        transformed, changes = transform_pydantic_v1_to_v2(code)
+
+        assert '@field_validator("name", mode="after")' in transformed
+        assert "@classmethod" in transformed
+        assert "pre=False" not in transformed
+        assert "@validator" not in transformed
+
+        # Verify syntax is valid
+        compile(transformed, "<string>", "exec")
+
+    def test_validator_without_pre_arg(self):
+        """Test that @validator without pre argument transforms correctly (no mode added)."""
+        code = """
+from pydantic import BaseModel, validator
+
+class User(BaseModel):
+    name: str
+
+    @validator("name")
+    def validate_name(cls, v):
+        return v.strip()
+"""
+        transformed, changes = transform_pydantic_v1_to_v2(code)
+
+        assert '@field_validator("name")' in transformed
+        assert "@classmethod" in transformed
+        assert "mode=" not in transformed
+        assert "@validator" not in transformed
+
+        # Verify syntax is valid
+        compile(transformed, "<string>", "exec")
+
+    def test_validator_with_pre_and_other_args(self):
+        """Test that @validator with pre=True and other args preserves other args."""
+        code = """
+from pydantic import BaseModel, validator
+
+class User(BaseModel):
+    name: str
+
+    @validator("name", pre=True, always=True)
+    def validate_name(cls, v):
+        return str(v).strip()
+"""
+        transformed, changes = transform_pydantic_v1_to_v2(code)
+
+        assert "@field_validator" in transformed
+        assert 'mode="before"' in transformed
+        assert "always=True" in transformed
+        assert "pre=True" not in transformed
+        assert "@classmethod" in transformed
+
+        # Verify syntax is valid
+        compile(transformed, "<string>", "exec")
+
+
 class TestRootValidatorTransform:
     """Tests for @root_validator to @model_validator transformation."""
 

@@ -32,13 +32,50 @@ class TestImportTransforms:
         assert len(changes) == 1
         assert changes[0].transform_name == "starlette_to_fastapi_websocket"
 
-    def test_starlette_status_to_fastapi(self):
-        """Test transforming starlette.status imports to fastapi."""
+    def test_starlette_background_tasks_to_fastapi(self):
+        """Test that starlette.background.BackgroundTasks becomes fastapi.BackgroundTasks."""
+        code = """from starlette.background import BackgroundTasks"""
+        result, changes = transform_fastapi(code)
+        assert "from fastapi import BackgroundTasks" in result
+        assert "starlette.background" not in result
+        assert len(changes) == 1
+        assert changes[0].transform_name == "starlette_to_fastapi_background"
+
+    def test_starlette_background_tasks_full_example(self):
+        """Test BackgroundTasks transformation in realistic usage."""
+        code = """from starlette.background import BackgroundTasks
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/send-notification")
+async def send_notification(background_tasks: BackgroundTasks):
+    background_tasks.add_task(send_email)
+    return {"message": "Notification sent in background"}
+"""
+        result, changes = transform_fastapi(code)
+        assert "from fastapi import BackgroundTasks" in result
+        assert "from starlette.background" not in result
+        assert len(changes) == 1
+        assert changes[0].transform_name == "starlette_to_fastapi_background"
+
+    def test_starlette_status_imports_unchanged(self):
+        """Test that starlette.status imports are NOT transformed (FastAPI doesn't export them)."""
         code = """from starlette.status import HTTP_200_OK"""
         result, changes = transform_fastapi(code)
-        assert "from fastapi import" in result
-        assert len(changes) == 1
-        assert changes[0].transform_name == "starlette_to_fastapi_status"
+        # starlette.status imports should remain unchanged
+        assert "from starlette.status import HTTP_200_OK" in result
+        assert len(changes) == 0
+
+    def test_starlette_status_multiple_imports_unchanged(self):
+        """Test that multiple starlette.status imports are NOT transformed."""
+        code = """from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR"""
+        result, changes = transform_fastapi(code)
+        # All status imports should remain unchanged
+        assert "from starlette.status import" in result
+        assert "HTTP_200_OK" in result
+        assert "HTTP_404_NOT_FOUND" in result
+        assert len(changes) == 0
 
     def test_non_starlette_import_unchanged(self):
         """Test that non-starlette imports are unchanged."""
@@ -49,7 +86,7 @@ class TestImportTransforms:
 
 
 class TestFieldRegexTransforms:
-    """Tests for Field/Query/Path/Body regex -> pattern transform."""
+    """Tests for Field/Query/Path/Body/Header/Cookie regex -> pattern transform."""
 
     def test_field_regex_to_pattern(self):
         """Test Field(regex=...) to Field(pattern=...)."""
@@ -83,6 +120,24 @@ class TestFieldRegexTransforms:
         assert "pattern=" in result
         assert len(changes) == 1
         assert changes[0].transform_name == "body_regex_to_pattern"
+
+    def test_header_regex_to_pattern(self):
+        """Test Header(regex=...) to Header(pattern=...)."""
+        code = """x_token = Header(..., regex=r"^Bearer .+$")"""
+        result, changes = transform_fastapi(code)
+        assert "pattern=" in result
+        assert "regex=" not in result
+        assert len(changes) == 1
+        assert changes[0].transform_name == "header_regex_to_pattern"
+
+    def test_cookie_regex_to_pattern(self):
+        """Test Cookie(regex=...) to Cookie(pattern=...)."""
+        code = """session = Cookie(None, regex=r"^[a-f0-9]+$")"""
+        result, changes = transform_fastapi(code)
+        assert "pattern=" in result
+        assert "regex=" not in result
+        assert len(changes) == 1
+        assert changes[0].transform_name == "cookie_regex_to_pattern"
 
     def test_field_without_regex_unchanged(self):
         """Test Field without regex is unchanged."""
@@ -156,7 +211,26 @@ app = FastAPI(openapi_prefix="/api")
 """
         result, changes = transform_fastapi(code)
         assert "from fastapi.responses import" in result
-        assert "from fastapi import" in result
+        # starlette.status should remain unchanged (FastAPI doesn't export status constants)
+        assert "from starlette.status import HTTP_200_OK" in result
         assert "pattern=" in result
         assert "root_path=" in result
-        assert len(changes) == 4
+        # Only 3 changes now: responses import, regex->pattern, openapi_prefix->root_path
+        assert len(changes) == 3
+
+    def test_starlette_status_with_responses_mixed(self):
+        """Test that starlette.status is unchanged while starlette.responses is transformed."""
+        code = """from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND
+from starlette.responses import JSONResponse
+
+def handler():
+    return JSONResponse({"ok": True}, status_code=HTTP_200_OK)
+"""
+        result, changes = transform_fastapi(code)
+        # starlette.status should remain unchanged
+        assert "from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND" in result
+        # starlette.responses should be transformed to fastapi.responses
+        assert "from fastapi.responses import JSONResponse" in result
+        # Only one change: the responses import transformation
+        assert len(changes) == 1
+        assert changes[0].transform_name == "starlette_to_fastapi_responses"
