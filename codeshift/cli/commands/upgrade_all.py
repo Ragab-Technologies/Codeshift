@@ -150,6 +150,12 @@ def run_single_upgrade(
     help="Path to the project to analyze",
 )
 @click.option(
+    "--all",
+    "upgrade_all_pkgs",
+    is_flag=True,
+    help="Upgrade all outdated packages (not just Tier 1 or major upgrades)",
+)
+@click.option(
     "--tier1-only",
     is_flag=True,
     help="Only upgrade Tier 1 libraries (deterministic transforms)",
@@ -189,6 +195,7 @@ def run_single_upgrade(
 )
 def upgrade_all(
     path: str,
+    upgrade_all_pkgs: bool,
     tier1_only: bool,
     major_only: bool,
     include: tuple,
@@ -206,12 +213,15 @@ def upgrade_all(
     - All Tier 1 libraries (pydantic, fastapi, sqlalchemy, pandas, requests)
     - Any library with a major version upgrade available
 
+    Use --all to upgrade ALL outdated packages, regardless of tier or upgrade type.
+
     After migration, dependency files (pyproject.toml, requirements.txt) are
     automatically updated with the new versions unless --no-update-deps is specified.
 
     \b
     Examples:
         codeshift upgrade-all
+        codeshift upgrade-all --all
         codeshift upgrade-all --tier1-only
         codeshift upgrade-all --include pydantic --include fastapi
         codeshift upgrade-all --exclude pandas
@@ -298,7 +308,8 @@ def upgrade_all(
             continue
 
         # By default, include Tier 1 libraries and major upgrades
-        if not (tier1_only or major_only or include):
+        # Use --all to include all outdated packages
+        if not (tier1_only or major_only or include or upgrade_all_pkgs):
             if not (pkg["is_tier1"] or pkg["is_major"]):
                 continue
 
@@ -306,7 +317,9 @@ def upgrade_all(
 
     if not upgradeable:
         console.print("\n[yellow]No upgradeable packages found matching the criteria.[/]")
-        console.print("[dim]Use --verbose to see all outdated packages, or adjust filters.[/]")
+        console.print(
+            "[dim]Use --all to upgrade all outdated packages, or --verbose to see details.[/]"
+        )
 
         if verbose and outdated:
             console.print("\nOutdated packages (not matching criteria):")
@@ -398,75 +411,72 @@ def upgrade_all(
 
             progress.advance(task)
 
-    # Display results summary
-    if not migration_summary:
+    # Display code transformation results summary
+    if migration_summary:
+        console.print("\n[bold]Code Migration Summary[/]\n")
+
+        summary_table = Table()
+        summary_table.add_column("Library", style="cyan")
+        summary_table.add_column("Migration", justify="center")
+        summary_table.add_column("Files", justify="right")
+        summary_table.add_column("Changes", justify="right")
+        summary_table.add_column("Status", justify="center")
+
+        total_files = 0
+        total_changes = 0
+
+        for summary in migration_summary:
+            summary_table.add_row(
+                summary["library"],
+                f"{summary['from_version']} → {summary['to_version']}",
+                str(summary["files_changed"]),
+                str(summary["total_changes"]),
+                "[green]Ready[/]",
+            )
+            total_files += summary["files_changed"]
+            total_changes += summary["total_changes"]
+
+        console.print(summary_table)
         console.print(
-            "[green]No changes needed![/] Your code appears to be compatible with the latest versions."
+            f"\n[bold]Total:[/] [cyan]{total_changes}[/] changes across [cyan]{total_files}[/] files"
         )
-        return
 
-    console.print("\n[bold]Migration Summary[/]\n")
-
-    summary_table = Table()
-    summary_table.add_column("Library", style="cyan")
-    summary_table.add_column("Migration", justify="center")
-    summary_table.add_column("Files", justify="right")
-    summary_table.add_column("Changes", justify="right")
-    summary_table.add_column("Status", justify="center")
-
-    total_files = 0
-    total_changes = 0
-
-    for summary in migration_summary:
-        summary_table.add_row(
-            summary["library"],
-            f"{summary['from_version']} → {summary['to_version']}",
-            str(summary["files_changed"]),
-            str(summary["total_changes"]),
-            "[green]Ready[/]",
+        # Show detailed changes if verbose
+        if verbose:
+            console.print("\n[bold]Change Details[/]")
+            for lib_name, lib_results in all_results.items():
+                console.print(f"\n[bold cyan]{lib_name}[/]")
+                for result_dict in lib_results:
+                    try:
+                        display_path = str(
+                            Path(str(result_dict["file_path"])).relative_to(project_path)
+                        )
+                    except ValueError:
+                        display_path = str(result_dict["file_path"])
+                    console.print(f"  [cyan]{display_path}[/]:")
+                    for change_dict in result_dict["changes"]:
+                        console.print(f"    • {change_dict['description']}")
+    else:
+        console.print(
+            "\n[green]No code changes needed.[/] Your code is compatible with the new versions."
         )
-        total_files += summary["files_changed"]
-        total_changes += summary["total_changes"]
 
-    console.print(summary_table)
-    console.print(
-        f"\n[bold]Total:[/] [cyan]{total_changes}[/] changes across [cyan]{total_files}[/] files"
-    )
-
-    # Show detailed changes if verbose
-    if verbose:
-        console.print("\n[bold]Change Details[/]")
-        for lib_name, lib_results in all_results.items():
-            console.print(f"\n[bold cyan]{lib_name}[/]")
-            for result_dict in lib_results:
-                try:
-                    display_path = str(
-                        Path(str(result_dict["file_path"])).relative_to(project_path)
-                    )
-                except ValueError:
-                    display_path = str(result_dict["file_path"])
-                console.print(f"  [cyan]{display_path}[/]:")
-                for change_dict in result_dict["changes"]:
-                    console.print(f"    • {change_dict['description']}")
-
-    # Update dependency files with new versions
-    if update_deps and migration_summary:
+    # Update dependency files with new versions for ALL upgradeable packages
+    if update_deps and upgradeable:
         console.print("\n[bold]Updating dependency files...[/]\n")
 
         dep_parser = DependencyParser(project_path)
         dep_updates: list[tuple[str, str, list[tuple[Path, bool]]]] = []
 
-        for summary in migration_summary:
+        for pkg in upgradeable:
             if not dry_run:
                 update_results = dep_parser.update_dependency_version(
-                    str(summary["library"]), str(summary["to_version"])
+                    str(pkg["name"]), str(pkg["latest"])
                 )
-                dep_updates.append(
-                    (str(summary["library"]), str(summary["to_version"]), update_results)
-                )
+                dep_updates.append((str(pkg["name"]), str(pkg["latest"]), update_results))
             else:
                 # In dry run, just show what would be updated
-                dep_updates.append((str(summary["library"]), str(summary["to_version"]), []))
+                dep_updates.append((str(pkg["name"]), str(pkg["latest"]), []))
 
         # Display update results
         if dry_run:
@@ -491,8 +501,8 @@ def upgrade_all(
                     "[dim]No dependency files were updated (dependencies may not be pinned)[/]"
                 )
 
-    # Save state
-    if not dry_run:
+    # Save state only if there are code changes to review
+    if not dry_run and migration_summary:
         # Merge all results into a combined state format
         # This maintains compatibility with diff/apply commands
         combined_results: list[dict[str, Any]] = []
@@ -514,5 +524,9 @@ def upgrade_all(
         console.print("\nNext steps:")
         console.print("  [cyan]codeshift diff[/]    - View detailed diff of proposed changes")
         console.print("  [cyan]codeshift apply[/]   - Apply changes to your files")
-    else:
-        console.print("\n[dim]Dry run mode - no state saved[/]")
+    elif dry_run:
+        console.print("\n[dim]Dry run mode - no changes applied[/]")
+    elif not migration_summary and upgradeable:
+        console.print(
+            "\n[green]Dependencies updated.[/] No code changes required for this upgrade."
+        )
