@@ -44,6 +44,42 @@ class TestImportTransforms:
         assert result == code
         assert len(changes) == 0
 
+    def test_requests_packages_urllib3_top_level(self):
+        """Test that 'from requests.packages import urllib3' becomes 'import urllib3'."""
+        code = """from requests.packages import urllib3
+import requests
+
+urllib3.disable_warnings()
+session = requests.Session()
+"""
+        result, changes = transform_requests(code)
+        assert "import urllib3" in result
+        assert "from requests.packages import urllib3" not in result
+        assert any(c.transform_name == "urllib3_top_level_import_fix" for c in changes)
+
+    def test_requests_packages_urllib3_submodules_still_work(self):
+        """Test that sub-module imports still transform correctly."""
+        code = """from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+"""
+        result, changes = transform_requests(code)
+        assert "from urllib3.util.retry import Retry" in result
+        assert "from urllib3.exceptions import InsecureRequestWarning" in result
+        assert "requests.packages" not in result
+        assert len([c for c in changes if c.transform_name == "urllib3_import_fix"]) == 2
+
+    def test_requests_packages_urllib3_top_level_with_usage(self):
+        """Test that urllib3 usage still works after transformation."""
+        code = """from requests.packages import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+"""
+        result, changes = transform_requests(code)
+        assert "import urllib3" in result
+        assert "from requests.packages import urllib3" not in result
+        # The usage should remain unchanged since it's just referencing urllib3
+        assert "urllib3.disable_warnings" in result
+
 
 class TestTimeoutWarnings:
     """Tests for timeout parameter warnings."""

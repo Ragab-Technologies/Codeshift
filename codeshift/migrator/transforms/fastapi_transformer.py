@@ -59,14 +59,19 @@ class FastAPITransformer(BaseTransformer):
             )
             return updated_node.with_changes(module=cst.Name("fastapi"))
 
-        # Transform starlette.status imports
-        if module_name == "starlette.status":
+        # NOTE: starlette.status imports are intentionally NOT transformed.
+        # FastAPI does not export status constants (HTTP_200_OK, etc.) directly.
+        # These imports should remain as `from starlette.status import ...`
+        # since FastAPI depends on Starlette and these imports work correctly.
+
+        # Transform starlette.background imports (BackgroundTasks)
+        if module_name == "starlette.background":
             self.record_change(
-                description="Import status from fastapi instead of starlette",
+                description="Import BackgroundTasks from fastapi instead of starlette.background",
                 line_number=1,
                 original=f"from {module_name}",
-                replacement="from fastapi import status",
-                transform_name="starlette_to_fastapi_status",
+                replacement="from fastapi",
+                transform_name="starlette_to_fastapi_background",
             )
             return updated_node.with_changes(module=cst.Name("fastapi"))
 
@@ -74,10 +79,10 @@ class FastAPITransformer(BaseTransformer):
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Transform FastAPI function calls."""
-        # Handle Field, Query, Path, Body regex -> pattern
+        # Handle Field, Query, Path, Body, Header, Cookie regex -> pattern
         if isinstance(updated_node.func, cst.Name):
             func_name = updated_node.func.value
-            if func_name in ("Field", "Query", "Path", "Body"):
+            if func_name in ("Field", "Query", "Path", "Body", "Header", "Cookie"):
                 new_args = []
                 changed = False
                 for arg in updated_node.args:
