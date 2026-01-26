@@ -1,4 +1,4 @@
-name: Publish to TestPyPI (Manual)
+name: Publish to PyPI (Manual)
 
 on:
   workflow_dispatch:
@@ -6,10 +6,10 @@ on:
       target:
         description: 'Publish target'
         required: true
-        default: 'testpypi'
+        default: 'pypi'
         type: choice
         options:
-          - testpypi
+          - pypi
 
 jobs:
   build:
@@ -39,12 +39,12 @@ jobs:
           name: dist
           path: dist/
 
-  publish-testpypi:
+  publish-pypi:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/project/codeshift/
+      name: pypi
+      url: https://pypi.org/project/codeshift/
     permissions:
       id-token: write
     steps:
@@ -54,7 +54,5 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Publish to TestPyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
