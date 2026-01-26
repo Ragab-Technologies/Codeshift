@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
 
 jobs:
   release:
@@ -15,85 +16,74 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install toml packaging
-
-      - name: Analyze commits and determine version bump
+      - name: Get version from tag
         id: version
         run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches pyproject.toml
+        run: |
+          pip install toml
           python << 'EOF'
-          import subprocess
           import toml
           import os
-          from packaging.version import Version
+
+          with open('pyproject.toml', 'r') as f:
+              config = toml.load(f)
+
+          pyproject_version = config['project']['version']
+          tag_version = os.environ['TAG_VERSION']
+
+          if pyproject_version != tag_version:
+              print(f"ERROR: Tag version ({tag_version}) does not match pyproject.toml ({pyproject_version})")
+              exit(1)
+
+          print(f"Version verified: {pyproject_version}")
+          EOF
+        env:
+          TAG_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          pip install packaging
+          python << 'EOF'
+          import subprocess
+          import os
 
           # Get commits since last tag
           try:
-              last_tag = subprocess.check_output(
-                  ['git', 'describe', '--tags', '--abbrev=0'],
+              tags = subprocess.check_output(
+                  ['git', 'tag', '--sort=-creatordate'],
                   stderr=subprocess.DEVNULL
-              ).decode().strip()
-              commit_range = f"{last_tag}..HEAD"
+              ).decode().strip().split('\n')
+
+              # Find previous tag (skip current)
+              current_tag = os.environ['GITHUB_REF'].replace('refs/tags/', '')
+              prev_tag = None
+              for tag in tags:
+                  if tag and tag != current_tag:
+                      prev_tag = tag
+                      break
+
+              if prev_tag:
+                  commit_range = f"{prev_tag}..{current_tag}"
+              else:
+                  commit_range = current_tag
           except subprocess.CalledProcessError:
-              # No tags yet, get all commits
               commit_range = "HEAD"
-              last_tag = "v0.0.0"
 
           # Get commit messages
           commits = subprocess.check_output(
               ['git', 'log', commit_range, '--pretty=format:%s']
           ).decode().strip().split('\n')
-
-          if not commits or commits == ['']:
-              print("No new commits since last release")
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write("skip=true\n")
-              exit(0)
-
-          # Determine bump type
-          bump = None
-          for msg in commits:
-              msg_lower = msg.lower()
-              if msg_lower.startswith('feat'):
-                  if bump != 'major':
-                      bump = 'minor'
-              elif msg_lower.startswith(('fix', 'perf')):
-                  if bump is None:
-                      bump = 'patch'
-              elif 'breaking change' in msg_lower or '!' in msg.split(':')[0]:
-                  bump = 'major'
-
-          if bump is None:
-              print("No version-bumping commits (feat, fix, perf, breaking)")
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write("skip=true\n")
-              exit(0)
-
-          # Read current version
-          with open('pyproject.toml', 'r') as f:
-              config = toml.load(f)
-
-          current = Version(config['project']['version'])
-
-          # Calculate new version
-          if bump == 'major':
-              new_version = f"{current.major + 1}.0.0"
-          elif bump == 'minor':
-              new_version = f"{current.major}.{current.minor + 1}.0"
-          else:
-              new_version = f"{current.major}.{current.minor}.{current.micro + 1}"
-
-          print(f"Bump type: {bump}")
-          print(f"Current version: {current}")
-          print(f"New version: {new_version}")
 
           # Generate changelog
           changelog_lines = ["## What's Changed\n"]
@@ -102,6 +92,8 @@ jobs:
           others = []
 
           for msg in commits:
+              if not msg:
+                  continue
               if msg.lower().startswith('feat'):
                   features.append(f"- {msg}")
               elif msg.lower().startswith('fix'):
@@ -118,46 +110,22 @@ jobs:
 
           changelog = "\n".join(changelog_lines)
 
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"skip=false\n")
-              f.write(f"new_version={new_version}\n")
-              f.write(f"bump={bump}\n")
-
-          # Write changelog to file for release body
           with open('/tmp/changelog.md', 'w') as f:
               f.write(changelog)
 
-          # Update pyproject.toml
-          config['project']['version'] = new_version
-          with open('pyproject.toml', 'w') as f:
-              toml.dump(config, f)
-
           EOF
 
-      - name: Commit version bump
-        if: steps.version.outputs.skip != 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml
-          git commit -m "chore(release): bump version to ${{ steps.version.outputs.new_version }}"
-          git push
-
       - name: Create GitHub Release
-        if: steps.version.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.new_version }}
-          name: v${{ steps.version.outputs.new_version }}
+          name: v${{ steps.version.outputs.version }}
           body_path: /tmp/changelog.md
           generate_release_notes: false
 
       - name: Build package
-        if: steps.version.outputs.skip != 'true'
         run: |
           pip install build
           python -m build
 
       - name: Publish to PyPI
-        if: steps.version.outputs.skip != 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
