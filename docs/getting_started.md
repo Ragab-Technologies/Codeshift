@@ -1,19 +1,19 @@
-# Getting Started with PyResolve
+# Getting Started with Codeshift
 
-This guide will help you get up and running with PyResolve in minutes.
+This guide will help you get up and running with Codeshift in minutes.
 
 ## Installation
 
-Install PyResolve using pip:
+Install Codeshift using pip:
 
 ```bash
-pip install pyresolve
+pip install codeshift
 ```
 
 Verify the installation:
 
 ```bash
-pyresolve --help
+codeshift --help
 ```
 
 ## Prerequisites
@@ -26,7 +26,7 @@ For LLM-powered features (auto-generated knowledge bases, complex migrations), y
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
-Without an API key, PyResolve will still work for Tier 1 libraries (Pydantic, FastAPI, SQLAlchemy, Pandas, Requests) using deterministic AST transforms.
+Without an API key, Codeshift will still work for Tier 1 libraries (Pydantic, FastAPI, SQLAlchemy, Pandas, Requests) using deterministic AST transforms.
 
 ### GitHub Token (Optional)
 
@@ -44,7 +44,7 @@ First, scan your project to see what dependencies could be upgraded:
 
 ```bash
 cd your-project
-pyresolve scan
+codeshift scan
 ```
 
 This will show you:
@@ -71,10 +71,10 @@ Outdated Dependencies (2)
 Choose a library to upgrade and analyze what changes would be needed:
 
 ```bash
-pyresolve upgrade pydantic --target 2.5.0
+codeshift upgrade pydantic --target 2.5.0
 ```
 
-PyResolve will:
+Codeshift will:
 1. Fetch the knowledge base (or generate it from changelogs)
 2. Scan your code for usage of the library
 3. Identify all breaking changes that affect your code
@@ -85,7 +85,7 @@ PyResolve will:
 View the proposed changes with the diff command:
 
 ```bash
-pyresolve diff
+codeshift diff
 ```
 
 This shows a detailed diff with explanations:
@@ -119,13 +119,13 @@ This shows a detailed diff with explanations:
 Once you're happy with the proposed changes, apply them:
 
 ```bash
-pyresolve apply
+codeshift apply
 ```
 
 Use `--backup` to create backup files:
 
 ```bash
-pyresolve apply --backup
+codeshift apply --backup
 ```
 
 ### Step 5: Run Your Tests
@@ -141,7 +141,7 @@ pytest
 To scan and upgrade all outdated dependencies at once:
 
 ```bash
-pyresolve upgrade-all
+codeshift upgrade-all
 ```
 
 This will:
@@ -157,7 +157,7 @@ This will:
 Preview changes without saving state:
 
 ```bash
-pyresolve upgrade pydantic --target 2.5.0 --dry-run
+codeshift upgrade pydantic --target 2.5.0 --dry-run
 ```
 
 ### Fetch Detailed Breaking Changes
@@ -165,7 +165,7 @@ pyresolve upgrade pydantic --target 2.5.0 --dry-run
 Get detailed breaking change analysis during scan:
 
 ```bash
-pyresolve scan --fetch-changes
+codeshift scan --fetch-changes
 ```
 
 ### JSON Output
@@ -173,7 +173,7 @@ pyresolve scan --fetch-changes
 Get machine-readable output for CI integration:
 
 ```bash
-pyresolve scan --json-output
+codeshift scan --json-output
 ```
 
 ### Custom Paths
@@ -181,8 +181,8 @@ pyresolve scan --json-output
 Analyze a specific directory:
 
 ```bash
-pyresolve scan --path ./src
-pyresolve upgrade pydantic --target 2.5.0 --path ./src
+codeshift scan --path ./src
+codeshift upgrade pydantic --target 2.5.0 --path ./src
 ```
 
 ## Configuration
@@ -190,7 +190,7 @@ pyresolve upgrade pydantic --target 2.5.0 --path ./src
 Create a `pyproject.toml` configuration:
 
 ```toml
-[tool.pyresolve]
+[tool.codeshift]
 # Paths to exclude from scanning
 exclude = ["tests/*", "migrations/*", ".venv/*"]
 
@@ -198,7 +198,7 @@ exclude = ["tests/*", "migrations/*", ".venv/*"]
 use_llm = true
 
 # Cache directory for knowledge bases
-# cache_dir = ".pyresolve"
+# cache_dir = ".codeshift"
 ```
 
 ## Troubleshooting

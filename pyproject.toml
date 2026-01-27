@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codeshift"
-version = "0.3.4"
+version = "0.3.5"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,9 +29,9 @@ all = [ "codeshift[api,dev]",]
 codeshift = "codeshift.cli.main:cli"
 
 [project.urls]
-Homepage = "https://github.com/youssefragab/PyResolve"
-Repository = "https://github.com/youssefragab/PyResolve"
-Issues = "https://github.com/youssefragab/PyResolve/issues"
+Homepage = "https://github.com/Ragab-Technologies/Codeshift"
+Repository = "https://github.com/Ragab-Technologies/Codeshift"
+Issues = "https://github.com/Ragab-Technologies/Codeshift/issues"
 
 [tool.black]
 line-length = 100
