@@ -27,6 +27,8 @@ class SQLAlchemyTransformer(BaseTransformer):
         self._has_text_import = False
         # Track declarative_base variable name for transformation
         self._declarative_base_var_name: str | None = None
+        # Track engine variable names from create_engine() calls
+        self._engine_var_names: set[str] = set()
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool:
         """Track existing imports."""
@@ -149,6 +151,17 @@ class SQLAlchemyTransformer(BaseTransformer):
 
         return updated_node
 
+    def visit_Assign(self, node: cst.Assign) -> bool:
+        """Track engine variable names from create_engine() calls."""
+        if len(node.targets) == 1:
+            target = node.targets[0].target
+            if isinstance(target, cst.Name) and isinstance(node.value, cst.Call):
+                call = node.value
+                # Check if this is a create_engine() call
+                if isinstance(call.func, cst.Name) and call.func.value == "create_engine":
+                    self._engine_var_names.add(target.value)
+        return True
+
     def leave_SimpleStatementLine(
         self,
         original_node: cst.SimpleStatementLine,
@@ -226,6 +239,27 @@ class SQLAlchemyTransformer(BaseTransformer):
             isinstance(updated_node.func, cst.Attribute)
             and updated_node.func.attr.value == "execute"
         ):
+            # Check if this is engine.execute() - which requires manual migration
+            # to use with engine.connect() as conn: conn.execute()
+            if self._is_engine_execute_call(updated_node):
+                self.record_change(
+                    description="engine.execute() is removed in SQLAlchemy 2.0. "
+                    "Use 'with engine.connect() as conn: conn.execute(...)' instead",
+                    line_number=1,
+                    original="engine.execute(...)",
+                    replacement="with engine.connect() as conn:\n    conn.execute(...)",
+                    transform_name="engine_execute_to_connect",
+                    confidence=0.5,
+                    notes="MANUAL MIGRATION REQUIRED: This transformation requires "
+                    "restructuring the code to use a context manager. The execute() call "
+                    "must be moved inside a 'with engine.connect() as conn:' block, and "
+                    "raw SQL strings should be wrapped with text(). If the result is used, "
+                    "ensure proper handling within the context manager scope.",
+                )
+                # Don't transform the code - just record the warning
+                # The code still needs to have text() wrapping applied if applicable
+                # Fall through to the text wrapping logic below
+
             if updated_node.args:
                 first_arg = updated_node.args[0]
                 # Check if the first argument is a string literal (raw SQL)
@@ -252,6 +286,38 @@ class SQLAlchemyTransformer(BaseTransformer):
                     return updated_node.with_changes(args=new_args)
 
         return updated_node
+
+    def _is_engine_execute_call(self, node: cst.Call) -> bool:
+        """Check if a call is engine.execute() where engine is likely a SQLAlchemy engine.
+
+        Uses heuristics:
+        1. The variable is known to be assigned from create_engine()
+        2. The variable name contains 'engine' (case insensitive)
+
+        Args:
+            node: The Call node to check (already verified to be *.execute())
+
+        Returns:
+            True if this appears to be an engine.execute() call
+        """
+        if not isinstance(node.func, cst.Attribute):
+            return False
+
+        caller = node.func.value
+        if not isinstance(caller, cst.Name):
+            return False
+
+        var_name = caller.value
+
+        # Check if this variable was assigned from create_engine()
+        if var_name in self._engine_var_names:
+            return True
+
+        # Heuristic: check if variable name contains 'engine'
+        if "engine" in var_name.lower():
+            return True
+
+        return False
 
     def _transform_query_call(self, node: cst.Call) -> cst.BaseExpression | None:
         """Transform session.query(...) patterns to session.execute(select(...)).
@@ -323,12 +389,13 @@ class SQLAlchemyTransformer(BaseTransformer):
         # Walk up the chain collecting .filter() and .filter_by() calls
         while True:
             if isinstance(current, cst.Call):
-                if isinstance(current.func, cst.Attribute):
-                    method_name = current.func.attr.value
+                func = current.func
+                if isinstance(func, cst.Attribute):
+                    method_name = func.attr.value
 
                     if method_name == "query":
                         # Found the root .query() call
-                        session_node = current.func.value
+                        session_node = func.value
                         if current.args:
                             model_node = current.args[0].value
                             return (
@@ -344,7 +411,7 @@ class SQLAlchemyTransformer(BaseTransformer):
                         # Collect filter arguments
                         for arg in current.args:
                             filters.append(arg.value)
-                        current = current.func.value
+                        current = func.value
 
                     elif method_name == "filter_by":
                         # Convert filter_by(key=val) to Model.key == val
@@ -352,7 +419,7 @@ class SQLAlchemyTransformer(BaseTransformer):
                         for arg in current.args:
                             if arg.keyword is not None:
                                 filters.append(_FilterByArg(arg.keyword.value, arg.value))
-                        current = current.func.value
+                        current = func.value
 
                     elif method_name in {
                         "order_by",
@@ -365,7 +432,7 @@ class SQLAlchemyTransformer(BaseTransformer):
                         "outerjoin",
                     }:
                         # Skip these for now - they can be added to the select() later
-                        current = current.func.value
+                        current = func.value
 
                     else:
                         # Unknown method, not a query chain we can handle
