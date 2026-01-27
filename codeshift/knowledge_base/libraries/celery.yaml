@@ -1,0 +1,244 @@
+# Celery Knowledge Base
+# Breaking changes from 4.x to 5.x
+
+name: celery
+display_name: Celery
+description: Distributed task queue for Python
+migration_guide_url: https://docs.celeryq.dev/en/stable/history/whatsnew-5.0.html
+
+supported_migrations:
+  - from: "4.0"
+    to: "5.0"
+
+breaking_changes:
+  # Module removal: celery.task
+  - symbol: "celery.task"
+    change_type: removed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "The celery.task module has been removed"
+    replacement: "from celery import Task"
+    has_deterministic_transform: true
+    transform_name: import_celery_task_module
+    notes: "Use 'from celery import Task' instead of 'from celery.task import Task'"
+
+  # Module removal: celery.decorators
+  - symbol: "celery.decorators"
+    change_type: removed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "The celery.decorators module has been removed"
+    replacement: "from celery import shared_task"
+    has_deterministic_transform: true
+    transform_name: import_celery_decorators
+    notes: "Use 'from celery import shared_task' instead of 'from celery.decorators import task'"
+
+  # Import: celery.task.Task -> celery.Task
+  - symbol: "from celery.task import Task"
+    change_type: renamed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Task class import path changed"
+    replacement: "from celery import Task"
+    has_deterministic_transform: true
+    transform_name: import_task_class
+
+  # Import: celery.task.task -> celery.shared_task
+  - symbol: "from celery.task import task"
+    change_type: renamed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "task decorator import path changed"
+    replacement: "from celery import shared_task"
+    has_deterministic_transform: true
+    transform_name: import_task_decorator
+
+  # Import: celery.decorators.task -> celery.shared_task
+  - symbol: "from celery.decorators import task"
+    change_type: renamed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "task decorator from celery.decorators changed"
+    replacement: "from celery import shared_task"
+    has_deterministic_transform: true
+    transform_name: import_decorators_task
+
+  # Import: celery.task.periodic_task removed
+  - symbol: "from celery.task import periodic_task"
+    change_type: removed
+    severity: high
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "periodic_task decorator has been removed"
+    replacement: "Use beat_schedule configuration"
+    has_deterministic_transform: false
+    notes: "Configure periodic tasks via beat_schedule in celery config"
+
+  # Import: celery.task.schedules -> celery.schedules
+  - symbol: "from celery.task.schedules import crontab"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "schedules module moved from celery.task.schedules to celery.schedules"
+    replacement: "from celery.schedules import crontab"
+    has_deterministic_transform: true
+    transform_name: import_schedules
+
+  # Import: celery.utils.encoding removed
+  - symbol: "celery.utils.encoding"
+    change_type: removed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "celery.utils.encoding module removed, use kombu.utils.encoding"
+    replacement: "from kombu.utils.encoding import ..."
+    has_deterministic_transform: true
+    transform_name: import_utils_encoding
+
+  # Configuration: CELERY_RESULT_BACKEND -> result_backend
+  - symbol: "CELERY_RESULT_BACKEND"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_RESULT_BACKEND renamed to result_backend"
+    replacement: "result_backend"
+    has_deterministic_transform: true
+    transform_name: config_result_backend
+
+  # Configuration: CELERY_BROKER_URL -> broker_url
+  - symbol: "CELERY_BROKER_URL"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_BROKER_URL renamed to broker_url"
+    replacement: "broker_url"
+    has_deterministic_transform: true
+    transform_name: config_broker_url
+
+  # Configuration: CELERY_TASK_ALWAYS_EAGER -> task_always_eager
+  - symbol: "CELERY_TASK_ALWAYS_EAGER"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_TASK_ALWAYS_EAGER renamed to task_always_eager"
+    replacement: "task_always_eager"
+    has_deterministic_transform: true
+    transform_name: config_task_always_eager
+
+  # Configuration: CELERY_TASK_SERIALIZER -> task_serializer
+  - symbol: "CELERY_TASK_SERIALIZER"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_TASK_SERIALIZER renamed to task_serializer"
+    replacement: "task_serializer"
+    has_deterministic_transform: true
+    transform_name: config_task_serializer
+
+  # Configuration: CELERY_RESULT_SERIALIZER -> result_serializer
+  - symbol: "CELERY_RESULT_SERIALIZER"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_RESULT_SERIALIZER renamed to result_serializer"
+    replacement: "result_serializer"
+    has_deterministic_transform: true
+    transform_name: config_result_serializer
+
+  # Configuration: CELERY_ACCEPT_CONTENT -> accept_content
+  - symbol: "CELERY_ACCEPT_CONTENT"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_ACCEPT_CONTENT renamed to accept_content"
+    replacement: "accept_content"
+    has_deterministic_transform: true
+    transform_name: config_accept_content
+
+  # Configuration: CELERY_TIMEZONE -> timezone
+  - symbol: "CELERY_TIMEZONE"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_TIMEZONE renamed to timezone"
+    replacement: "timezone"
+    has_deterministic_transform: true
+    transform_name: config_timezone
+
+  # Configuration: CELERY_ENABLE_UTC -> enable_utc
+  - symbol: "CELERY_ENABLE_UTC"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_ENABLE_UTC renamed to enable_utc"
+    replacement: "enable_utc"
+    has_deterministic_transform: true
+    transform_name: config_enable_utc
+
+  # Configuration: CELERYD_CONCURRENCY -> worker_concurrency
+  - symbol: "CELERYD_CONCURRENCY"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERYD_CONCURRENCY renamed to worker_concurrency"
+    replacement: "worker_concurrency"
+    has_deterministic_transform: true
+    transform_name: config_worker_concurrency
+
+  # Configuration: CELERYD_PREFETCH_MULTIPLIER -> worker_prefetch_multiplier
+  - symbol: "CELERYD_PREFETCH_MULTIPLIER"
+    change_type: renamed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERYD_PREFETCH_MULTIPLIER renamed to worker_prefetch_multiplier"
+    replacement: "worker_prefetch_multiplier"
+    has_deterministic_transform: true
+    transform_name: config_worker_prefetch
+
+  # Configuration: CELERY_BEAT_SCHEDULE -> beat_schedule
+  - symbol: "CELERY_BEAT_SCHEDULE"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "Configuration key CELERY_BEAT_SCHEDULE renamed to beat_schedule"
+    replacement: "beat_schedule"
+    has_deterministic_transform: true
+    transform_name: config_beat_schedule
+
+  # app.conf attribute access changes
+  - symbol: "app.conf.CELERY_RESULT_BACKEND"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "app.conf.CELERY_RESULT_BACKEND changed to app.conf.result_backend"
+    replacement: "app.conf.result_backend"
+    has_deterministic_transform: true
+    transform_name: attr_result_backend
+
+  - symbol: "app.conf.CELERY_BROKER_URL"
+    change_type: renamed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "app.conf.CELERY_BROKER_URL changed to app.conf.broker_url"
+    replacement: "app.conf.broker_url"
+    has_deterministic_transform: true
+    transform_name: attr_broker_url
