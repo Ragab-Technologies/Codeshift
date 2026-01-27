@@ -1,5 +1,5 @@
 // ============================================
-// PyResolve Landing Page - Supabase Integration
+// Codeshift Landing Page - Supabase Integration
 // ============================================
 
 // Supabase configuration for waitlist signups
@@ -160,6 +160,42 @@ function trackConversion(email) {
 }
 
 // ============================================
+// Copy Install Command
+// ============================================
+
+function copyInstall() {
+    const text = 'pip install codeshift';
+    navigator.clipboard.writeText(text).then(() => {
+        const buttons = document.querySelectorAll('.copy-btn');
+        buttons.forEach(btn => {
+            btn.classList.add('copied');
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            `;
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                `;
+            }, 2000);
+        });
+    }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    });
+}
+
+// ============================================
 // Smooth Scroll for Anchor Links
 // ============================================
 
@@ -238,7 +274,7 @@ function initTerminalAnimation() {
 // ============================================
 
 function initCardAnimations() {
-    const cards = document.querySelectorAll('.feature-card, .step-card');
+    const cards = document.querySelectorAll('.feature-card, .step-card, .library-card, .stat-item, .pricing-card');
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -249,12 +285,43 @@ function initCardAnimations() {
         });
     }, { threshold: 0.1 });
 
-    cards.forEach(card => {
+    cards.forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
-        card.style.transition = 'opacity 0.5s, transform 0.5s';
+        card.style.transition = `opacity 0.5s ${index % 6 * 0.05}s, transform 0.5s ${index % 6 * 0.05}s`;
         observer.observe(card);
     });
+}
+
+function initCountUpAnimation() {
+    const statNumbers = document.querySelectorAll('.stat-number');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const text = el.textContent;
+                const num = parseInt(text);
+
+                if (!isNaN(num) && num > 0) {
+                    let current = 0;
+                    const increment = Math.ceil(num / 30);
+                    const suffix = text.replace(/[0-9]/g, '');
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= num) {
+                            current = num;
+                            clearInterval(timer);
+                        }
+                        el.textContent = current + suffix;
+                    }, 30);
+                }
+                observer.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    statNumbers.forEach(el => observer.observe(el));
 }
 
 // ============================================
@@ -282,8 +349,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavbarScroll();
     initTerminalAnimation();
     initCardAnimations();
+    initCountUpAnimation();
 
-    console.log('PyResolve landing page initialized');
+    console.log('Codeshift landing page initialized');
 });
 
 // ============================================
