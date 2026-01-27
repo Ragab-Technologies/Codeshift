@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codeshift"
-version = "0.3.4"
+version = "0.3.5"
 description = "AI-powered CLI tool that migrates Python code to handle breaking dependency changes"
 readme = "README.md"
 requires-python = ">=3.10"
