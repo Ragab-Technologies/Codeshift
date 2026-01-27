@@ -1,0 +1,192 @@
+# Pytest Knowledge Base
+# Breaking changes from 6.x to 7.x/8.x
+
+name: pytest
+display_name: Pytest
+description: Python testing framework
+migration_guide_url: https://docs.pytest.org/en/stable/deprecations.html
+
+supported_migrations:
+  - from: "6.0"
+    to: "7.0"
+  - from: "7.0"
+    to: "8.0"
+  - from: "6.0"
+    to: "8.0"
+
+breaking_changes:
+  # yield_fixture deprecation (removed in 8.0)
+  - symbol: "@pytest.yield_fixture"
+    change_type: renamed
+    severity: high
+    from_version: "6.0"
+    to_version: "8.0"
+    description: "@pytest.yield_fixture is deprecated and removed, use @pytest.fixture instead"
+    replacement: "@pytest.fixture"
+    has_deterministic_transform: true
+    transform_name: yield_fixture_to_fixture
+    notes: "yield_fixture has been an alias for fixture since pytest 3.0"
+
+  # tmpdir to tmp_path fixture preference
+  - symbol: "tmpdir"
+    change_type: deprecated
+    severity: medium
+    from_version: "6.0"
+    to_version: "8.0"
+    description: "tmpdir fixture (py.path.local) is deprecated, use tmp_path (pathlib.Path) instead"
+    replacement: "tmp_path"
+    has_deterministic_transform: true
+    transform_name: tmpdir_to_tmp_path
+    notes: "Requires updating code that uses py.path.local methods to pathlib.Path methods"
+
+  # tmpdir_factory to tmp_path_factory
+  - symbol: "tmpdir_factory"
+    change_type: deprecated
+    severity: medium
+    from_version: "6.0"
+    to_version: "8.0"
+    description: "tmpdir_factory fixture is deprecated, use tmp_path_factory instead"
+    replacement: "tmp_path_factory"
+    has_deterministic_transform: true
+    transform_name: tmpdir_factory_to_tmp_path_factory
+
+  # pytest.config global removal
+  - symbol: "pytest.config"
+    change_type: removed
+    severity: high
+    from_version: "6.0"
+    to_version: "7.0"
+    description: "pytest.config global is removed, use request.config fixture instead"
+    replacement: "request.config"
+    has_deterministic_transform: false
+    notes: "Requires adding request fixture to function parameters"
+
+  # msg parameter renamed to reason
+  - symbol: "pytest.skip(msg=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "msg parameter renamed to reason in pytest.skip(), pytest.fail(), pytest.exit()"
+    replacement: "pytest.skip(reason=...)"
+    has_deterministic_transform: true
+    transform_name: skip_msg_to_reason
+
+  - symbol: "pytest.fail(msg=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "msg parameter renamed to reason in pytest.fail()"
+    replacement: "pytest.fail(reason=...)"
+    has_deterministic_transform: true
+    transform_name: fail_msg_to_reason
+
+  - symbol: "pytest.exit(msg=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "msg parameter renamed to reason in pytest.exit()"
+    replacement: "pytest.exit(reason=...)"
+    has_deterministic_transform: true
+    transform_name: exit_msg_to_reason
+
+  # pytest.warns(None) removal
+  - symbol: "pytest.warns(None)"
+    change_type: removed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "pytest.warns(None) is removed, use pytest.warns() without arguments instead"
+    replacement: "pytest.warns()"
+    has_deterministic_transform: true
+    transform_name: warns_none_to_warns
+
+  # funcargnames to fixturenames
+  - symbol: "funcargnames"
+    change_type: renamed
+    severity: low
+    from_version: "6.0"
+    to_version: "7.0"
+    description: "funcargnames attribute renamed to fixturenames"
+    replacement: "fixturenames"
+    has_deterministic_transform: true
+    transform_name: funcargnames_to_fixturenames
+
+  # Node.fspath to Node.path
+  - symbol: "node.fspath"
+    change_type: renamed
+    severity: medium
+    from_version: "6.0"
+    to_version: "7.0"
+    description: "Node.fspath (py.path.local) deprecated in favor of Node.path (pathlib.Path)"
+    replacement: "node.path"
+    has_deterministic_transform: true
+    transform_name: fspath_to_path
+    notes: "fspath returns py.path.local, path returns pathlib.Path"
+
+  # Hook path argument changes
+  - symbol: "pytest_collect_file(path=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Hook argument 'path' renamed to 'file_path' (pathlib.Path)"
+    replacement: "pytest_collect_file(file_path=...)"
+    has_deterministic_transform: true
+    transform_name: hook_path_to_file_path
+
+  - symbol: "pytest_ignore_collect(path=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Hook argument 'path' renamed to 'collection_path' (pathlib.Path)"
+    replacement: "pytest_ignore_collect(collection_path=...)"
+    has_deterministic_transform: true
+    transform_name: hook_path_to_collection_path
+
+  - symbol: "pytest_pycollect_makemodule(path=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Hook argument 'path' renamed to 'module_path' (pathlib.Path)"
+    replacement: "pytest_pycollect_makemodule(module_path=...)"
+    has_deterministic_transform: true
+    transform_name: hook_path_to_module_path
+
+  # setup/teardown method renames (nose compatibility removal)
+  - symbol: "setup()"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Nose-style setup() method deprecated, use setup_method() instead"
+    replacement: "setup_method()"
+    has_deterministic_transform: true
+    transform_name: setup_to_setup_method
+    notes: "Only applies to methods in test classes, not module-level functions"
+
+  - symbol: "teardown()"
+    change_type: renamed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Nose-style teardown() method deprecated, use teardown_method() instead"
+    replacement: "teardown_method()"
+    has_deterministic_transform: true
+    transform_name: teardown_to_teardown_method
+    notes: "Only applies to methods in test classes, not module-level functions"
+
+  # pytest.importorskip exc_type
+  - symbol: "pytest.importorskip()"
+    change_type: behavior_change
+    severity: low
+    from_version: "8.0"
+    to_version: "8.2"
+    description: "pytest.importorskip now warns when catching ImportError without exc_type parameter"
+    replacement: "pytest.importorskip(..., exc_type=ImportError)"
+    has_deterministic_transform: false
+    notes: "Only needed if intentionally catching ImportError, not ModuleNotFoundError"

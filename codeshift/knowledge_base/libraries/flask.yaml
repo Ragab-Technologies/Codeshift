@@ -1,0 +1,270 @@
+# Flask Knowledge Base
+# Breaking changes from Flask 1.x to 2.x/3.x
+
+name: flask
+display_name: Flask
+description: Lightweight WSGI web application framework
+migration_guide_url: https://flask.palletsprojects.com/en/stable/changes/
+
+supported_migrations:
+  - from: "1.0"
+    to: "2.0"
+  - from: "2.0"
+    to: "3.0"
+
+breaking_changes:
+  # Import changes (Flask 2.3/3.0)
+  - symbol: "flask.escape"
+    change_type: moved
+    severity: high
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "escape function moved from flask to markupsafe"
+    replacement: "from markupsafe import escape"
+    has_deterministic_transform: true
+    transform_name: flask_escape_to_markupsafe
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  - symbol: "flask.Markup"
+    change_type: moved
+    severity: high
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "Markup class moved from flask to markupsafe"
+    replacement: "from markupsafe import Markup"
+    has_deterministic_transform: true
+    transform_name: flask_markup_to_markupsafe
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  # send_file parameter changes (Flask 2.0)
+  - symbol: "send_file(attachment_filename=...)"
+    change_type: renamed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "attachment_filename parameter renamed to download_name"
+    replacement: "send_file(download_name=...)"
+    has_deterministic_transform: true
+    transform_name: send_file_attachment_filename_to_download_name
+    notes: "Deprecated in 2.0, removed in 2.2"
+
+  - symbol: "send_file(cache_timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "cache_timeout parameter renamed to max_age"
+    replacement: "send_file(max_age=...)"
+    has_deterministic_transform: true
+    transform_name: send_file_cache_timeout_to_max_age
+    notes: "Deprecated in 2.0, removed in 2.2"
+
+  - symbol: "send_file(add_etags=...)"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "add_etags parameter renamed to etag"
+    replacement: "send_file(etag=...)"
+    has_deterministic_transform: true
+    transform_name: send_file_add_etags_to_etag
+    notes: "Deprecated in 2.0, removed in 2.2"
+
+  # send_from_directory parameter changes (Flask 2.0)
+  - symbol: "send_from_directory(filename=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "filename parameter renamed to path in send_from_directory"
+    replacement: "send_from_directory(path=...)"
+    has_deterministic_transform: true
+    transform_name: send_from_directory_filename_to_path
+    notes: "Deprecated in 2.0, removed in 2.2"
+
+  # Decorator removals (Flask 2.2/3.0)
+  - symbol: "@app.before_first_request"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.2"
+    description: "before_first_request decorator is deprecated, run setup code when creating the app"
+    replacement: "Run setup in create_app() function or use app_context"
+    has_deterministic_transform: false
+    transform_name: before_first_request_removal
+    notes: "Deprecated in 2.2, removed in 3.0. Requires manual migration."
+
+  - symbol: "@bp.before_app_first_request"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.2"
+    description: "Blueprint before_app_first_request decorator is deprecated"
+    replacement: "Run setup in create_app() function"
+    has_deterministic_transform: false
+    transform_name: bp_before_app_first_request_removal
+    notes: "Deprecated in 2.2, removed in 3.0. Requires manual migration."
+
+  # JSON encoder/decoder changes (Flask 2.2/3.0)
+  - symbol: "app.json_encoder"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.2"
+    description: "json_encoder attribute replaced with app.json provider"
+    replacement: "app.json = CustomJSONProvider(app)"
+    has_deterministic_transform: false
+    transform_name: json_encoder_to_provider
+    notes: "Deprecated in 2.2, removed in 3.0. Requires creating a JSONProvider subclass."
+
+  - symbol: "app.json_decoder"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.2"
+    description: "json_decoder attribute replaced with app.json provider"
+    replacement: "app.json = CustomJSONProvider(app)"
+    has_deterministic_transform: false
+    transform_name: json_decoder_to_provider
+    notes: "Deprecated in 2.2, removed in 3.0. Requires creating a JSONProvider subclass."
+
+  - symbol: "flask.json.JSONEncoder"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "3.0"
+    description: "JSONEncoder class removed, use JSONProvider instead"
+    replacement: "Subclass DefaultJSONProvider"
+    has_deterministic_transform: false
+    notes: "Fully removed in 3.0"
+
+  # Context stack removals (Flask 2.3/3.0)
+  - symbol: "flask.globals._app_ctx_stack"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "_app_ctx_stack is deprecated, use flask.g instead"
+    replacement: "flask.g"
+    has_deterministic_transform: true
+    transform_name: app_ctx_stack_to_g
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  - symbol: "flask.globals._request_ctx_stack"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "_request_ctx_stack is deprecated, use flask.g instead"
+    replacement: "flask.g"
+    has_deterministic_transform: true
+    transform_name: request_ctx_stack_to_g
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  # Environment configuration removals (Flask 2.3/3.0)
+  - symbol: "FLASK_ENV"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "FLASK_ENV environment variable is deprecated, use FLASK_DEBUG"
+    replacement: "FLASK_DEBUG=1 or flask --debug"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.2, removed in 2.3"
+
+  - symbol: "app.env"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "app.env property is deprecated"
+    replacement: "app.debug"
+    has_deterministic_transform: true
+    transform_name: app_env_to_debug
+    notes: "Deprecated in 2.2, removed in 2.3"
+
+  - symbol: "config['ENV']"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "ENV config key is deprecated"
+    replacement: "Use DEBUG config key"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.2, removed in 2.3"
+
+  # Utility function removals (Flask 2.1)
+  - symbol: "flask.safe_join"
+    change_type: moved
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "safe_join moved to werkzeug.utils"
+    replacement: "from werkzeug.utils import safe_join"
+    has_deterministic_transform: true
+    transform_name: flask_safe_join_to_werkzeug
+    notes: "Deprecated in 2.0, removed in 2.1"
+
+  # Config loading changes (Flask 2.1)
+  - symbol: "app.config.from_json"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.1"
+    description: "from_json removed, use from_file with json.load"
+    replacement: "app.config.from_file('config.json', load=json.load)"
+    has_deterministic_transform: true
+    transform_name: config_from_json_to_from_file
+    notes: "Removed in 2.1"
+
+  # Test client changes (Flask 2.1)
+  - symbol: "client.get(as_tuple=True)"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "Test client as_tuple parameter removed, use response.request.environ"
+    replacement: "response = client.get(...); environ = response.request.environ"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.0, removed in 2.1"
+
+  # JSON config keys removed (Flask 2.3/3.0)
+  - symbol: "config['JSON_AS_ASCII']"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "JSON_AS_ASCII config key removed, configure on app.json provider"
+    replacement: "Configure via app.json provider"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  - symbol: "config['JSON_SORT_KEYS']"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "JSON_SORT_KEYS config key removed, configure on app.json provider"
+    replacement: "Configure via app.json provider"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  - symbol: "config['JSONIFY_MIMETYPE']"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "JSONIFY_MIMETYPE config key removed, configure on app.json provider"
+    replacement: "Configure via app.json provider"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.3, removed in 3.0"
+
+  - symbol: "config['JSONIFY_PRETTYPRINT_REGULAR']"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.3"
+    description: "JSONIFY_PRETTYPRINT_REGULAR config key removed, configure on app.json provider"
+    replacement: "Configure via app.json provider"
+    has_deterministic_transform: false
+    notes: "Deprecated in 2.3, removed in 3.0"

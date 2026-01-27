@@ -219,18 +219,63 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         return updated_node
 
     def _transform_validator_decorator(self, node: cst.Decorator) -> cst.Decorator:
-        """Transform @validator("field") to @field_validator("field")."""
+        """Transform @validator("field") to @field_validator("field").
+
+        Also handles pre=True -> mode="before" and pre=False -> mode="after".
+        """
         if isinstance(node.decorator, cst.Call):
             # @validator("field_name", ...)
-            new_call = node.decorator.with_changes(func=cst.Name("field_validator"))
+            # Check for pre=True/False and convert to mode="before"/"after"
+            mode: str | None = None
+            new_args = []
 
-            self.record_change(
-                description="Convert @validator to @field_validator",
-                line_number=1,
-                original="@validator(...)",
-                replacement="@field_validator(...)",
-                transform_name="validator_to_field_validator",
+            for arg in node.decorator.args:
+                if isinstance(arg.keyword, cst.Name) and arg.keyword.value == "pre":
+                    # Found pre argument - determine mode
+                    if isinstance(arg.value, cst.Name):
+                        if arg.value.value == "True":
+                            mode = "before"
+                        elif arg.value.value == "False":
+                            mode = "after"
+                    # Skip adding this argument (we'll add mode instead if needed)
+                else:
+                    # Keep other arguments
+                    new_args.append(arg)
+
+            # Add mode argument if pre was present
+            if mode is not None:
+                new_args.append(
+                    cst.Arg(
+                        keyword=cst.Name("mode"),
+                        value=cst.SimpleString(f'"{mode}"'),
+                        equal=cst.AssignEqual(
+                            whitespace_before=cst.SimpleWhitespace(""),
+                            whitespace_after=cst.SimpleWhitespace(""),
+                        ),
+                    )
+                )
+
+            new_call = cst.Call(
+                func=cst.Name("field_validator"),
+                args=new_args,
             )
+
+            if mode is not None:
+                self.record_change(
+                    description=f"Convert @validator to @field_validator with mode='{mode}'",
+                    line_number=1,
+                    original="@validator(..., pre=...)",
+                    replacement=f'@field_validator(..., mode="{mode}")',
+                    transform_name="validator_to_field_validator",
+                )
+            else:
+                self.record_change(
+                    description="Convert @validator to @field_validator",
+                    line_number=1,
+                    original="@validator(...)",
+                    replacement="@field_validator(...)",
+                    transform_name="validator_to_field_validator",
+                )
 
             return node.with_changes(decorator=new_call)
         else:
