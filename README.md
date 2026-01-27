@@ -1,6 +1,5 @@
 # Codeshift
 
-[![CI](https://github.com/Ragab-Technologies/Codeshift/actions/workflows/ci.yml/badge.svg)](https://github.com/Ragab-Technologies/Codeshift/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/codeshift.svg)](https://pypi.org/project/codeshift/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
