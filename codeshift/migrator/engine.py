@@ -345,6 +345,66 @@ class MigrationEngine:
                 )
 
                 return transform_requests
+            elif library == "numpy":
+                from codeshift.migrator.transforms.numpy_transformer import (
+                    transform_numpy,
+                )
+
+                return transform_numpy
+            elif library == "marshmallow":
+                from codeshift.migrator.transforms.marshmallow_transformer import (
+                    transform_marshmallow,
+                )
+
+                return transform_marshmallow
+            elif library == "pytest":
+                from codeshift.migrator.transforms.pytest_transformer import (
+                    transform_pytest,
+                )
+
+                return transform_pytest
+            elif library == "attrs":
+                from codeshift.migrator.transforms.attrs_transformer import (
+                    transform_attrs,
+                )
+
+                return transform_attrs
+            elif library == "django":
+                from codeshift.migrator.transforms.django_transformer import (
+                    transform_django,
+                )
+
+                return transform_django
+            elif library == "flask":
+                from codeshift.migrator.transforms.flask_transformer import (
+                    transform_flask,
+                )
+
+                return transform_flask
+            elif library == "celery":
+                from codeshift.migrator.transforms.celery_transformer import (
+                    transform_celery,
+                )
+
+                return transform_celery
+            elif library == "click":
+                from codeshift.migrator.transforms.click_transformer import (
+                    transform_click,
+                )
+
+                return transform_click
+            elif library == "httpx":
+                from codeshift.migrator.transforms.httpx_transformer import (
+                    transform_httpx,
+                )
+
+                return transform_httpx
+            elif library == "aiohttp":
+                from codeshift.migrator.transforms.aiohttp_transformer import (
+                    transform_aiohttp,
+                )
+
+                return transform_aiohttp
         except ImportError:
             pass
 

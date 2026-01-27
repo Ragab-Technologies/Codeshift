@@ -1,0 +1,183 @@
+# HTTPX Knowledge Base
+# Breaking changes from 0.x to 1.x (including 0.27.x and 0.28.x breaking changes)
+
+name: httpx
+display_name: HTTPX
+description: A fully featured HTTP client for Python 3, with sync and async APIs
+migration_guide_url: https://www.python-httpx.org/
+
+supported_migrations:
+  - from: "0.23"
+    to: "0.28"
+  - from: "0.24"
+    to: "0.28"
+  - from: "0.25"
+    to: "0.28"
+  - from: "0.26"
+    to: "0.28"
+  - from: "0.27"
+    to: "0.28"
+
+breaking_changes:
+  # Timeout parameter changes
+  - symbol: "Timeout(timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.28"
+    description: "Timeout first positional argument name simplified"
+    replacement: "Timeout(...) - use positional argument directly"
+    has_deterministic_transform: true
+    transform_name: timeout_keyword_to_positional
+    notes: "httpx.Timeout(timeout=5) becomes httpx.Timeout(5.0)"
+
+  - symbol: "Timeout(connect_timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.28"
+    description: "connect_timeout parameter renamed to connect"
+    replacement: "Timeout(connect=...)"
+    has_deterministic_transform: true
+    transform_name: timeout_connect_timeout_to_connect
+
+  - symbol: "Timeout(read_timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.28"
+    description: "read_timeout parameter renamed to read"
+    replacement: "Timeout(read=...)"
+    has_deterministic_transform: true
+    transform_name: timeout_read_timeout_to_read
+
+  - symbol: "Timeout(write_timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.28"
+    description: "write_timeout parameter renamed to write"
+    replacement: "Timeout(write=...)"
+    has_deterministic_transform: true
+    transform_name: timeout_write_timeout_to_write
+
+  - symbol: "Timeout(pool_timeout=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.28"
+    description: "pool_timeout parameter renamed to pool"
+    replacement: "Timeout(pool=...)"
+    has_deterministic_transform: true
+    transform_name: timeout_pool_timeout_to_pool
+
+  # Client/AsyncClient proxies parameter removal
+  - symbol: "Client(proxies=...)"
+    change_type: removed
+    severity: high
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "proxies parameter removed, use proxy for single proxy or mounts for multiple"
+    replacement: "Client(proxy=...) or Client(mounts={...})"
+    has_deterministic_transform: true
+    transform_name: client_proxies_to_proxy
+    notes: "Simple single proxy can use proxy=, complex setups need mounts with HTTPTransport"
+
+  - symbol: "AsyncClient(proxies=...)"
+    change_type: removed
+    severity: high
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "proxies parameter removed, use proxy for single proxy or mounts for multiple"
+    replacement: "AsyncClient(proxy=...) or AsyncClient(mounts={...})"
+    has_deterministic_transform: true
+    transform_name: async_client_proxies_to_proxy
+    notes: "Simple single proxy can use proxy=, complex setups need mounts with HTTPTransport"
+
+  # App parameter removal
+  - symbol: "Client(app=...)"
+    change_type: removed
+    severity: high
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "app parameter removed, use transport=httpx.WSGITransport(app=...)"
+    replacement: "Client(transport=httpx.WSGITransport(app=...))"
+    has_deterministic_transform: true
+    transform_name: client_app_to_wsgi_transport
+    notes: "Explicit transport style is now required"
+
+  - symbol: "AsyncClient(app=...)"
+    change_type: removed
+    severity: high
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "app parameter removed, use transport=httpx.ASGITransport(app=...)"
+    replacement: "AsyncClient(transport=httpx.ASGITransport(app=...))"
+    has_deterministic_transform: true
+    transform_name: async_client_app_to_asgi_transport
+    notes: "Explicit transport style is now required"
+
+  # Response.iter_lines() behavior change
+  - symbol: "Response.iter_lines()"
+    change_type: behavior_change
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.24"
+    description: "iter_lines() no longer includes trailing newline characters"
+    replacement: "iter_lines() - behavior changed, may need code adjustment"
+    has_deterministic_transform: false
+    notes: "This is a behavior change that may require manual review"
+
+  # NetRC authentication change
+  - symbol: "trust_env=True"
+    change_type: behavior_change
+    severity: medium
+    from_version: "0.23"
+    to_version: "0.24"
+    description: "Automatic NetRC authentication removed, use explicit NetRCAuth"
+    replacement: "auth=httpx.NetRCAuth()"
+    has_deterministic_transform: false
+    notes: "If relying on automatic netrc handling, add explicit auth=httpx.NetRCAuth()"
+
+  # Query parameter encoding change
+  - symbol: "params encoding"
+    change_type: behavior_change
+    severity: low
+    from_version: "0.23"
+    to_version: "0.24"
+    description: "Query parameters now use %20 for spaces instead of +"
+    replacement: "No code change needed, but URL encoding differs from requests library"
+    has_deterministic_transform: false
+    notes: "May affect URL comparisons in tests"
+
+  # SSL/TLS changes
+  - symbol: "verify=<path>"
+    change_type: deprecated
+    severity: medium
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "verify parameter as string path is deprecated"
+    replacement: "Use ssl.create_default_context() with ssl_context parameter"
+    has_deterministic_transform: false
+    notes: "String paths for SSL verification are deprecated"
+
+  - symbol: "cert=..."
+    change_type: deprecated
+    severity: medium
+    from_version: "0.27"
+    to_version: "0.28"
+    description: "cert parameter is deprecated"
+    replacement: "Configure SSL context directly with ssl_context parameter"
+    has_deterministic_transform: false
+    notes: "Client certificate configuration via cert is deprecated"
+
+  # Follow redirects default change
+  - symbol: "follow_redirects"
+    change_type: behavior_change
+    severity: high
+    from_version: "0.19"
+    to_version: "0.20"
+    description: "Redirects are no longer automatically followed by default"
+    replacement: "Add follow_redirects=True to restore old behavior"
+    has_deterministic_transform: false
+    notes: "Must explicitly enable redirect following if needed"
