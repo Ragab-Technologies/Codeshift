@@ -29,9 +29,9 @@ all = [ "codeshift[api,dev]",]
 codeshift = "codeshift.cli.main:cli"
 
 [project.urls]
-Homepage = "https://github.com/youssefragab/PyResolve"
-Repository = "https://github.com/youssefragab/PyResolve"
-Issues = "https://github.com/youssefragab/PyResolve/issues"
+Homepage = "https://github.com/Ragab-Technologies/Codeshift"
+Repository = "https://github.com/Ragab-Technologies/Codeshift"
+Issues = "https://github.com/Ragab-Technologies/Codeshift/issues"
 
 [tool.black]
 line-length = 100
