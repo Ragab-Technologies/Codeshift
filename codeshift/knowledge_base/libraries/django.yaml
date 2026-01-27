@@ -1,0 +1,355 @@
+# Django Knowledge Base
+# Breaking changes from Django 2.2/3.x to 4.x/5.x
+
+name: django
+display_name: Django
+description: High-level Python web framework for rapid development
+migration_guide_url: https://docs.djangoproject.com/en/stable/howto/upgrade-version/
+
+supported_migrations:
+  - from: "2.2"
+    to: "4.0"
+  - from: "3.0"
+    to: "4.0"
+  - from: "3.1"
+    to: "4.0"
+  - from: "3.2"
+    to: "4.0"
+  - from: "4.0"
+    to: "5.0"
+  - from: "4.1"
+    to: "5.0"
+  - from: "4.2"
+    to: "5.0"
+
+breaking_changes:
+  # URL Configuration Changes (Django 4.0)
+  - symbol: "django.conf.urls.url"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "4.0"
+    description: "url() function removed, use path() or re_path() instead"
+    replacement: "django.urls.path or django.urls.re_path"
+    has_deterministic_transform: true
+    transform_name: url_to_path_or_re_path
+    notes: "url() with regex patterns should use re_path(), simple patterns should use path()"
+
+  - symbol: "django.conf.urls.include"
+    change_type: moved
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "include() should be imported from django.urls instead of django.conf.urls"
+    replacement: "from django.urls import include"
+    has_deterministic_transform: true
+    transform_name: include_import_fix
+
+  # Encoding Functions Removed (Django 4.0/5.0)
+  - symbol: "django.utils.encoding.force_text"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "force_text() removed, use force_str() instead"
+    replacement: "django.utils.encoding.force_str"
+    has_deterministic_transform: true
+    transform_name: force_text_to_force_str
+
+  - symbol: "django.utils.encoding.smart_text"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "smart_text() removed, use smart_str() instead"
+    replacement: "django.utils.encoding.smart_str"
+    has_deterministic_transform: true
+    transform_name: smart_text_to_smart_str
+
+  # Translation Functions Removed (Django 4.0)
+  - symbol: "django.utils.translation.ugettext"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "ugettext() removed, use gettext() instead"
+    replacement: "django.utils.translation.gettext"
+    has_deterministic_transform: true
+    transform_name: ugettext_to_gettext
+
+  - symbol: "django.utils.translation.ugettext_lazy"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "ugettext_lazy() removed, use gettext_lazy() instead"
+    replacement: "django.utils.translation.gettext_lazy"
+    has_deterministic_transform: true
+    transform_name: ugettext_lazy_to_gettext_lazy
+
+  - symbol: "django.utils.translation.ugettext_noop"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "ugettext_noop() removed, use gettext_noop() instead"
+    replacement: "django.utils.translation.gettext_noop"
+    has_deterministic_transform: true
+    transform_name: ugettext_noop_to_gettext_noop
+
+  - symbol: "django.utils.translation.ungettext"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "ungettext() removed, use ngettext() instead"
+    replacement: "django.utils.translation.ngettext"
+    has_deterministic_transform: true
+    transform_name: ungettext_to_ngettext
+
+  - symbol: "django.utils.translation.ungettext_lazy"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "ungettext_lazy() removed, use ngettext_lazy() instead"
+    replacement: "django.utils.translation.ngettext_lazy"
+    has_deterministic_transform: true
+    transform_name: ungettext_lazy_to_ngettext_lazy
+
+  # HTTP Utilities Removed (Django 4.0)
+  - symbol: "django.utils.http.urlquote"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "urlquote() removed, use urllib.parse.quote instead"
+    replacement: "urllib.parse.quote"
+    has_deterministic_transform: true
+    transform_name: urlquote_to_urllib_quote
+
+  - symbol: "django.utils.http.urlquote_plus"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "urlquote_plus() removed, use urllib.parse.quote_plus instead"
+    replacement: "urllib.parse.quote_plus"
+    has_deterministic_transform: true
+    transform_name: urlquote_plus_to_urllib
+
+  - symbol: "django.utils.http.urlunquote"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "urlunquote() removed, use urllib.parse.unquote instead"
+    replacement: "urllib.parse.unquote"
+    has_deterministic_transform: true
+    transform_name: urlunquote_to_urllib
+
+  - symbol: "django.utils.http.urlunquote_plus"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "urlunquote_plus() removed, use urllib.parse.unquote_plus instead"
+    replacement: "urllib.parse.unquote_plus"
+    has_deterministic_transform: true
+    transform_name: urlunquote_plus_to_urllib
+
+  - symbol: "django.utils.http.is_safe_url"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "is_safe_url() renamed to url_has_allowed_host_and_scheme()"
+    replacement: "django.utils.http.url_has_allowed_host_and_scheme"
+    has_deterministic_transform: true
+    transform_name: is_safe_url_to_url_has_allowed
+
+  # Model Field Changes (Django 4.0)
+  - symbol: "NullBooleanField"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "NullBooleanField removed, use BooleanField(null=True) instead"
+    replacement: "BooleanField(null=True)"
+    has_deterministic_transform: true
+    transform_name: null_boolean_field_to_boolean_field
+    notes: "Except for historical migrations"
+
+  - symbol: "django.contrib.postgres.fields.JSONField"
+    change_type: moved
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "PostgreSQL-specific JSONField moved to django.db.models.JSONField"
+    replacement: "django.db.models.JSONField"
+    has_deterministic_transform: true
+    transform_name: postgres_jsonfield_to_models
+    notes: "The cross-database JSONField is now preferred"
+
+  # Request Methods Removed (Django 4.0)
+  - symbol: "request.is_ajax()"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "HttpRequest.is_ajax() method removed"
+    replacement: "request.headers.get('X-Requested-With') == 'XMLHttpRequest'"
+    has_deterministic_transform: true
+    transform_name: is_ajax_to_header_check
+    notes: "Check X-Requested-With header directly"
+
+  # Timezone Changes (Django 5.0)
+  - symbol: "django.utils.timezone.utc"
+    change_type: removed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "django.utils.timezone.utc removed, use datetime.timezone.utc"
+    replacement: "datetime.timezone.utc"
+    has_deterministic_transform: true
+    transform_name: timezone_utc_to_datetime
+
+  # Settings Changes (Django 5.0)
+  - symbol: "USE_L10N"
+    change_type: removed
+    severity: low
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "USE_L10N setting removed, localization is always enabled"
+    replacement: "Remove USE_L10N from settings"
+    has_deterministic_transform: false
+    notes: "Remove this setting entirely, localization is now always enabled"
+
+  - symbol: "PASSWORD_RESET_TIMEOUT_DAYS"
+    change_type: removed
+    severity: medium
+    from_version: "2.0"
+    to_version: "4.0"
+    description: "PASSWORD_RESET_TIMEOUT_DAYS removed, use PASSWORD_RESET_TIMEOUT (in seconds)"
+    replacement: "PASSWORD_RESET_TIMEOUT"
+    has_deterministic_transform: false
+    notes: "Multiply days by 86400 to convert to seconds"
+
+  - symbol: "default_app_config"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "default_app_config in __init__.py is no longer needed"
+    replacement: "Remove default_app_config"
+    has_deterministic_transform: true
+    transform_name: remove_default_app_config
+    notes: "Django now automatically discovers AppConfig"
+
+  # Template Tag Changes (Django 4.0)
+  - symbol: "{% ifequal %}"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "{% ifequal %} template tag removed, use {% if %} instead"
+    replacement: "{% if var1 == var2 %}"
+    has_deterministic_transform: false
+    notes: "Manual template migration required"
+
+  - symbol: "{% ifnotequal %}"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "{% ifnotequal %} template tag removed, use {% if %} instead"
+    replacement: "{% if var1 != var2 %}"
+    has_deterministic_transform: false
+    notes: "Manual template migration required"
+
+  # Admin Changes (Django 4.0)
+  - symbol: "django.contrib.admin.util"
+    change_type: moved
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "django.contrib.admin.util moved to django.contrib.admin.utils"
+    replacement: "django.contrib.admin.utils"
+    has_deterministic_transform: true
+    transform_name: admin_util_to_utils
+
+  # Form Changes (Django 4.0)
+  - symbol: "django.forms.util"
+    change_type: moved
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "django.forms.util moved to django.forms.utils"
+    replacement: "django.forms.utils"
+    has_deterministic_transform: true
+    transform_name: forms_util_to_utils
+
+  # GIS Admin Changes (Django 5.0)
+  - symbol: "django.contrib.gis.admin.GeoModelAdmin"
+    change_type: removed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "GeoModelAdmin deprecated and removed, use ModelAdmin with GISModelAdmin mixin"
+    replacement: "django.contrib.admin.ModelAdmin"
+    has_deterministic_transform: false
+    notes: "Manual migration may be needed for GIS-specific features"
+
+  - symbol: "django.contrib.gis.admin.OSMGeoAdmin"
+    change_type: removed
+    severity: medium
+    from_version: "4.0"
+    to_version: "5.0"
+    description: "OSMGeoAdmin deprecated and removed"
+    replacement: "django.contrib.admin.ModelAdmin with OSM widget"
+    has_deterministic_transform: false
+    notes: "Configure OSM widget manually"
+
+  # Session Serializer (Django 4.1)
+  - symbol: "django.contrib.sessions.serializers.PickleSerializer"
+    change_type: removed
+    severity: high
+    from_version: "4.0"
+    to_version: "4.1"
+    description: "PickleSerializer removed due to security risks"
+    replacement: "django.contrib.sessions.serializers.JSONSerializer"
+    has_deterministic_transform: true
+    transform_name: pickle_serializer_to_json
+
+  # Database Backend Changes (Django 3.0)
+  - symbol: "django.db.backends.postgresql_psycopg2"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "3.0"
+    description: "postgresql_psycopg2 backend renamed to postgresql"
+    replacement: "django.db.backends.postgresql"
+    has_deterministic_transform: false
+    notes: "Update DATABASES ENGINE setting"
+
+  # Static Files (Django 4.1)
+  - symbol: "django.contrib.staticfiles.storage.CachedStaticFilesStorage"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "4.1"
+    description: "CachedStaticFilesStorage removed, use ManifestStaticFilesStorage"
+    replacement: "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    has_deterministic_transform: true
+    transform_name: cached_storage_to_manifest
+
+  # Test Runner Changes (Django 4.0)
+  - symbol: "django.test.runner.reorder_suite"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "4.0"
+    description: "reorder_suite() renamed to reorder_tests()"
+    replacement: "django.test.runner.reorder_tests"
+    has_deterministic_transform: true
+    transform_name: reorder_suite_to_reorder_tests
