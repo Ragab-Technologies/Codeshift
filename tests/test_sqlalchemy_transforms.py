@@ -493,3 +493,96 @@ query = session.query(User)
         result, changes = transform_sqlalchemy(code)
         assert "session.query(User)" in result
         assert "select" not in result
+
+
+class TestEngineExecuteDetection:
+    """Tests for engine.execute() detection and warning."""
+
+    def test_engine_execute_detected_by_create_engine_assignment(self):
+        """Test engine.execute() is detected when engine is from create_engine()."""
+        code = """from sqlalchemy import create_engine
+engine = create_engine("sqlite:///test.db")
+result = engine.execute("SELECT * FROM users")
+"""
+        result, changes = transform_sqlalchemy(code)
+        # Should record a warning with low confidence
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 1
+        assert engine_changes[0].confidence == 0.5
+        assert "MANUAL MIGRATION REQUIRED" in engine_changes[0].notes
+        # The code should still have text() wrapping applied
+        assert 'engine.execute(text("SELECT * FROM users"))' in result
+
+    def test_engine_execute_detected_by_variable_name(self):
+        """Test engine.execute() is detected by variable name containing 'engine'."""
+        code = """from sqlalchemy import create_engine
+db_engine = some_factory()
+result = db_engine.execute("SELECT * FROM users")
+"""
+        result, changes = transform_sqlalchemy(code)
+        # Should record a warning based on name heuristic
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 1
+        assert engine_changes[0].confidence == 0.5
+
+    def test_engine_execute_detected_simple_name(self):
+        """Test engine.execute() is detected when variable is just 'engine'."""
+        code = """from sqlalchemy import create_engine
+engine = get_engine()
+result = engine.execute("SELECT 1")
+"""
+        result, changes = transform_sqlalchemy(code)
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 1
+
+    def test_conn_execute_not_flagged_as_engine(self):
+        """Test conn.execute() is not flagged as engine.execute()."""
+        code = """from sqlalchemy import create_engine
+engine = create_engine("sqlite:///test.db")
+with engine.connect() as conn:
+    conn.execute("SELECT * FROM users")
+"""
+        result, changes = transform_sqlalchemy(code)
+        # Should not have engine_execute_to_connect warning for conn.execute
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        # Only the engine.execute on line 3 should be detected, not conn.execute
+        # Actually there's no engine.execute in this code, so 0 changes expected
+        assert len(engine_changes) == 0
+        # But text wrapping should still happen
+        assert 'conn.execute(text("SELECT * FROM users"))' in result
+
+    def test_session_execute_not_flagged_as_engine(self):
+        """Test session.execute() is not flagged as engine.execute()."""
+        code = """from sqlalchemy import create_engine
+session.execute("SELECT * FROM users")
+"""
+        result, changes = transform_sqlalchemy(code)
+        # Should not have engine_execute_to_connect warning
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 0
+        # Text wrapping should still happen
+        assert 'session.execute(text("SELECT * FROM users"))' in result
+
+    def test_engine_execute_with_text_already_wrapped(self):
+        """Test engine.execute() with text() already applied still gets warning."""
+        code = """from sqlalchemy import create_engine, text
+engine = create_engine("sqlite:///test.db")
+result = engine.execute(text("SELECT * FROM users"))
+"""
+        result, changes = transform_sqlalchemy(code)
+        # Should still record the warning even if text() is already used
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 1
+        # Code should be unchanged since text() already wraps it
+        assert 'engine.execute(text("SELECT * FROM users"))' in result
+
+    def test_engine_execute_multiple_calls(self):
+        """Test multiple engine.execute() calls each get warnings."""
+        code = """from sqlalchemy import create_engine
+engine = create_engine("sqlite:///test.db")
+result1 = engine.execute("SELECT * FROM users")
+result2 = engine.execute("SELECT * FROM orders")
+"""
+        result, changes = transform_sqlalchemy(code)
+        engine_changes = [c for c in changes if c.transform_name == "engine_execute_to_connect"]
+        assert len(engine_changes) == 2

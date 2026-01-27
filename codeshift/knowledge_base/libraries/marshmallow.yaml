@@ -1,0 +1,238 @@
+# Marshmallow Knowledge Base
+# Breaking changes from v2.x to v3.x
+
+name: marshmallow
+display_name: Marshmallow
+description: Object serialization/deserialization library
+migration_guide_url: https://marshmallow.readthedocs.io/en/stable/upgrading.html
+
+supported_migrations:
+  - from: "2.0"
+    to: "3.0"
+
+breaking_changes:
+  # Return value changes - Schema.dump() and Schema.load()
+  - symbol: "Schema.dump().data"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Schema.dump() no longer returns (data, errors) tuple, returns data directly"
+    replacement: "Schema.dump()"
+    has_deterministic_transform: true
+    transform_name: dump_data_to_dump
+    notes: "Validation errors now raise ValidationError exception"
+
+  - symbol: "Schema.load().data"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Schema.load() no longer returns (data, errors) tuple, returns data directly"
+    replacement: "Schema.load()"
+    has_deterministic_transform: true
+    transform_name: load_data_to_load
+    notes: "Validation errors now raise ValidationError exception"
+
+  - symbol: "Schema.dumps().data"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Schema.dumps() no longer returns (data, errors) tuple, returns data directly"
+    replacement: "Schema.dumps()"
+    has_deterministic_transform: true
+    transform_name: dumps_data_to_dumps
+
+  - symbol: "Schema.loads().data"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Schema.loads() no longer returns (data, errors) tuple, returns data directly"
+    replacement: "Schema.loads()"
+    has_deterministic_transform: true
+    transform_name: loads_data_to_loads
+
+  # Field parameter renames
+  - symbol: "fields.Field(missing=...)"
+    change_type: renamed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Field 'missing' parameter renamed to 'load_default'"
+    replacement: "fields.Field(load_default=...)"
+    has_deterministic_transform: true
+    transform_name: missing_to_load_default
+
+  - symbol: "fields.Field(default=...)"
+    change_type: renamed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Field 'default' parameter renamed to 'dump_default'"
+    replacement: "fields.Field(dump_default=...)"
+    has_deterministic_transform: true
+    transform_name: default_to_dump_default
+
+  - symbol: "fields.Field(load_from=...)"
+    change_type: renamed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Field 'load_from' parameter renamed to 'data_key'"
+    replacement: "fields.Field(data_key=...)"
+    has_deterministic_transform: true
+    transform_name: load_from_to_data_key
+
+  - symbol: "fields.Field(dump_to=...)"
+    change_type: renamed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Field 'dump_to' parameter renamed to 'data_key'"
+    replacement: "fields.Field(data_key=...)"
+    has_deterministic_transform: true
+    transform_name: dump_to_to_data_key
+    notes: "In v3, load_from and dump_to are merged into data_key"
+
+  # Schema.Meta.strict removal
+  - symbol: "Schema.Meta.strict"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Meta.strict option removed, schemas are always strict in v3"
+    replacement: "# Remove strict option"
+    has_deterministic_transform: true
+    transform_name: remove_meta_strict
+    notes: "Schemas always raise ValidationError on invalid data in v3"
+
+  # Schema strict parameter removal
+  - symbol: "Schema(strict=...)"
+    change_type: removed
+    severity: high
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Schema strict parameter removed, schemas are always strict"
+    replacement: "Schema()"
+    has_deterministic_transform: true
+    transform_name: remove_schema_strict
+    notes: "Remove strict=True from schema instantiation"
+
+  # Decorator changes
+  - symbol: "@post_load(pass_many=True)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Decorated methods now receive 'many' as keyword argument"
+    replacement: "@post_load and add **kwargs to method signature"
+    has_deterministic_transform: true
+    transform_name: post_load_pass_many
+    notes: "Remove pass_many parameter, add **kwargs to method"
+
+  - symbol: "@pre_load(pass_many=True)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Decorated methods now receive 'many' as keyword argument"
+    replacement: "@pre_load and add **kwargs to method signature"
+    has_deterministic_transform: true
+    transform_name: pre_load_pass_many
+
+  - symbol: "@post_dump(pass_many=True)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Decorated methods now receive 'many' as keyword argument"
+    replacement: "@post_dump and add **kwargs to method signature"
+    has_deterministic_transform: true
+    transform_name: post_dump_pass_many
+
+  - symbol: "@pre_dump(pass_many=True)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Decorated methods now receive 'many' as keyword argument"
+    replacement: "@pre_dump and add **kwargs to method signature"
+    has_deterministic_transform: true
+    transform_name: pre_dump_pass_many
+
+  - symbol: "@validates_schema(pass_many=True)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Decorated methods now receive 'many' and 'partial' as kwargs"
+    replacement: "@validates_schema and add **kwargs to method signature"
+    has_deterministic_transform: true
+    transform_name: validates_schema_pass_many
+
+  # Method signature changes
+  - symbol: "Schema.get_attribute(attr, obj, default)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "get_attribute parameter order changed to (obj, attr, default)"
+    replacement: "Schema.get_attribute(obj, attr, default)"
+    has_deterministic_transform: false
+    notes: "Requires manual review - parameter order swap"
+
+  - symbol: "Schema.handle_error(error, data)"
+    change_type: signature_changed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "handle_error now accepts 'many' and 'partial' keyword arguments"
+    replacement: "Schema.handle_error(error, data, *, many, partial)"
+    has_deterministic_transform: false
+    notes: "Add **kwargs to handle_error override"
+
+  # Custom field changes
+  - symbol: "self.fail(key)"
+    change_type: renamed
+    severity: medium
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Field.fail() replaced with raise self.make_error()"
+    replacement: "raise self.make_error(key)"
+    has_deterministic_transform: true
+    transform_name: fail_to_make_error
+
+  # json_module deprecation
+  - symbol: "Schema.Meta.json_module"
+    change_type: renamed
+    severity: low
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Meta.json_module renamed to Meta.render_module"
+    replacement: "Schema.Meta.render_module"
+    has_deterministic_transform: true
+    transform_name: json_module_to_render_module
+
+  # Boolean validation changes
+  - symbol: "fields.Boolean()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Boolean field truthy/falsy handling changed"
+    replacement: "fields.Boolean(truthy=..., falsy=...)"
+    has_deterministic_transform: false
+    notes: "Review boolean field behavior if custom truthy/falsy needed"
+
+  # Number field boolean rejection
+  - symbol: "fields.Number()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "2.0"
+    to_version: "3.0"
+    description: "Number fields no longer accept booleans as valid input"
+    replacement: "fields.Number()"
+    has_deterministic_transform: false
+    notes: "May cause validation errors if booleans were passed to number fields"

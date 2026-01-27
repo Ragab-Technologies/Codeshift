@@ -177,7 +177,8 @@ def root(request: Request):
 - `from starlette.responses` → `from fastapi.responses`
 - `from starlette.requests` → `from fastapi`
 - `from starlette.websockets` → `from fastapi`
-- `from starlette.status` → `from fastapi`
+
+**Note:** `from starlette.status` imports are intentionally NOT transformed. FastAPI does not re-export status constants (HTTP_200_OK, HTTP_404_NOT_FOUND, etc.) directly. These imports should remain as `from starlette.status import ...` since FastAPI depends on Starlette and these imports work correctly.
 
 ---
 

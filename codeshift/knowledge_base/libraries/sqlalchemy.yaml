@@ -121,8 +121,9 @@ breaking_changes:
     to_version: "2.0"
     description: "engine.execute() removed, use with engine.connect()"
     replacement: "with engine.connect() as conn: conn.execute()"
-    has_deterministic_transform: true
+    has_deterministic_transform: false
     transform_name: engine_execute_to_connect
+    notes: "Requires manual migration - transformation involves restructuring code to use a context manager"
 
   - symbol: "connection.execute(string)"
     change_type: removed
