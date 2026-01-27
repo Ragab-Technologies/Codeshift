@@ -1,0 +1,195 @@
+# Click Knowledge Base
+# Breaking changes from 7.x to 8.x
+
+name: click
+display_name: Click
+description: Python package for creating command line interfaces
+migration_guide_url: https://click.palletsprojects.com/en/stable/changes/
+
+supported_migrations:
+  - from: "7.0"
+    to: "8.0"
+  - from: "7.x"
+    to: "8.1"
+
+breaking_changes:
+  # Shell completion parameter rename
+  - symbol: "@click.option(..., autocompletion=...)"
+    change_type: renamed
+    severity: high
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "autocompletion parameter renamed to shell_complete with new callback signature"
+    replacement: "@click.option(..., shell_complete=...)"
+    has_deterministic_transform: true
+    transform_name: autocompletion_to_shell_complete
+    notes: "Callback signature changed from (ctx, args, incomplete) to (ctx, param, incomplete)"
+
+  - symbol: "@click.argument(..., autocompletion=...)"
+    change_type: renamed
+    severity: high
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "autocompletion parameter renamed to shell_complete for arguments"
+    replacement: "@click.argument(..., shell_complete=...)"
+    has_deterministic_transform: true
+    transform_name: autocompletion_to_shell_complete
+
+  # Deprecated function removals
+  - symbol: "click.get_terminal_size()"
+    change_type: removed
+    severity: high
+    from_version: "7.0"
+    to_version: "8.1"
+    description: "click.get_terminal_size() removed, use shutil.get_terminal_size() from stdlib"
+    replacement: "shutil.get_terminal_size()"
+    has_deterministic_transform: true
+    transform_name: get_terminal_size_to_shutil
+    notes: "Returns named tuple with .columns and .lines attributes instead of indexing"
+
+  - symbol: "click.get_os_args()"
+    change_type: removed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.1"
+    description: "click.get_os_args() removed, use sys.argv[1:] instead"
+    replacement: "sys.argv[1:]"
+    has_deterministic_transform: true
+    transform_name: get_os_args_to_sys_argv
+
+  # Group/MultiCommand changes
+  - symbol: "Group.resultcallback"
+    change_type: renamed
+    severity: high
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "resultcallback decorator renamed to result_callback"
+    replacement: "@group.result_callback()"
+    has_deterministic_transform: true
+    transform_name: resultcallback_to_result_callback
+
+  - symbol: "MultiCommand"
+    change_type: deprecated
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.1"
+    description: "MultiCommand class deprecated, use Group as base class"
+    replacement: "Group"
+    has_deterministic_transform: true
+    transform_name: multicommand_to_group
+
+  - symbol: "BaseCommand"
+    change_type: deprecated
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.1"
+    description: "BaseCommand class deprecated, use Command as base class"
+    replacement: "Command"
+    has_deterministic_transform: true
+    transform_name: basecommand_to_command
+
+  # CliRunner changes
+  - symbol: "CliRunner(..., mix_stderr=...)"
+    change_type: removed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.2"
+    description: "mix_stderr parameter removed from CliRunner, stdout and stderr now independent"
+    replacement: "Remove mix_stderr parameter"
+    has_deterministic_transform: true
+    transform_name: clirunner_remove_mix_stderr
+
+  - symbol: "result.output_bytes"
+    change_type: removed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Result.output_bytes removed, encode result.output instead"
+    replacement: "result.output.encode()"
+    has_deterministic_transform: true
+    transform_name: output_bytes_to_encode
+
+  # Parameter source changes
+  - symbol: "click.core.ParameterSource"
+    change_type: behavior_changed
+    severity: low
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "ParameterSource is now an enum.Enum subclass"
+    replacement: "Use enum comparison instead of string comparison"
+    has_deterministic_transform: false
+    notes: "May require changes if comparing ParameterSource as strings"
+
+  # Context changes
+  - symbol: "Context.invoke()"
+    change_type: behavior_changed
+    severity: low
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Context.invoke() now handles async callbacks properly"
+    replacement: "No code changes required"
+    has_deterministic_transform: false
+
+  # Command name changes
+  - symbol: "function_name_with_underscores"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Command function names with underscores are now auto-converted to dashes"
+    replacement: "Use explicit name= parameter if underscore is required"
+    has_deterministic_transform: false
+    notes: "my_command becomes my-command in CLI"
+
+  # IntRange changes
+  - symbol: "click.IntRange(min, max)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "IntRange validation behavior updated for edge cases"
+    replacement: "Review IntRange usage for boundary conditions"
+    has_deterministic_transform: false
+
+  # Version import deprecation
+  - symbol: "click.__version__"
+    change_type: deprecated
+    severity: low
+    from_version: "7.0"
+    to_version: "8.2"
+    description: "__version__ attribute deprecated"
+    replacement: "importlib.metadata.version('click')"
+    has_deterministic_transform: true
+    transform_name: version_attr_to_importlib
+    notes: "Use importlib.metadata for version information"
+
+  # Default value changes
+  - symbol: "nargs=-1 default"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "Parameters with nargs=-1 now default to empty tuple instead of None"
+    replacement: "Update code that checks for None default"
+    has_deterministic_transform: false
+    notes: "May affect conditional logic checking for None"
+
+  # Echo file parameter
+  - symbol: "click.echo(file=...)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "click.echo() file parameter encoding handling changed"
+    replacement: "Ensure file is opened with proper encoding"
+    has_deterministic_transform: false
+
+  # Style color changes
+  - symbol: "click.style(fg=..., bg=...)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "7.0"
+    to_version: "8.0"
+    description: "click.style() color parameter handling updated for better terminal support"
+    replacement: "No code changes required"
+    has_deterministic_transform: false

@@ -162,7 +162,17 @@ class KnowledgeGenerator:
 
 
 # Tier 1 libraries with deterministic AST transforms
-TIER_1_LIBRARIES = {"pydantic", "fastapi", "sqlalchemy", "pandas", "requests"}
+TIER_1_LIBRARIES = {
+    "pydantic",
+    "fastapi",
+    "sqlalchemy",
+    "pandas",
+    "requests",
+    "numpy",
+    "pytest",
+    "marshmallow",
+    "flask",
+}
 
 
 def is_tier_1_library(library: str) -> bool:

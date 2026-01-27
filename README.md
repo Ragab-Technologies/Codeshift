@@ -28,6 +28,16 @@ PyResolve is an AI-powered CLI tool that migrates Python code to handle breaking
 | SQLAlchemy | 1.4 → 2.0 | ✅ Supported |
 | Pandas | 1.x → 2.x | ✅ Supported |
 | Requests | Various | ✅ Supported |
+| Django | 3.x → 4.x/5.x | ✅ Supported |
+| Flask | 1.x → 2.x/3.x | ✅ Supported |
+| NumPy | 1.x → 2.x | ✅ Supported |
+| attrs | attr → attrs | ✅ Supported |
+| Celery | 4.x → 5.x | ✅ Supported |
+| Click | 7.x → 8.x | ✅ Supported |
+| aiohttp | 2.x → 3.x | ✅ Supported |
+| httpx | 0.x → 0.24+ | ✅ Supported |
+| Marshmallow | 2.x → 3.x | ✅ Supported |
+| pytest | 6.x → 7.x/8.x | ✅ Supported |
 
 ### Any Library (Auto-Generated Knowledge Base)
 
@@ -48,7 +58,10 @@ pyresolve scan
 # Scan with detailed breaking change analysis
 pyresolve scan --fetch-changes
 
-# Analyze and propose changes for a specific library
+# Upgrade all outdated packages at once
+pyresolve upgrade-all
+
+# Or analyze and propose changes for a specific library
 pyresolve upgrade pydantic --target 2.5.0
 
 # View detailed diff of proposed changes
@@ -175,6 +188,35 @@ pyresolve apply
 #   --file, -f      Apply changes to specific file only
 ```
 
+### Upgrade-All Command
+
+Upgrade all outdated packages to their latest versions in one go:
+
+```bash
+pyresolve upgrade-all
+
+# Options:
+#   --all, -a       Include all outdated packages (not just Tier 1)
+#   --path, -p      Path to analyze (default: current directory)
+#   --dry-run       Show what would be changed without saving state
+```
+
+### Libraries Command
+
+List all supported libraries and their migration paths:
+
+```bash
+pyresolve libraries
+```
+
+### Status Command
+
+Show current migration status, pending changes, and quota information:
+
+```bash
+pyresolve status
+```
+
 ## How It Works
 
 ```text
@@ -205,7 +247,7 @@ pyresolve apply
 2. **Parse Changes**: Uses LLM to extract breaking changes with confidence levels (HIGH/MEDIUM/LOW)
 3. **Scan Codebase**: Finds imports and usage of the target library
 4. **Tiered Migration**:
-   - **Tier 1**: Deterministic AST transforms for known libraries (pydantic, fastapi, sqlalchemy, pandas, requests)
+   - **Tier 1**: Deterministic AST transforms for 15 supported libraries (Pydantic, FastAPI, SQLAlchemy, Django, Flask, NumPy, Pandas, Requests, attrs, Celery, Click, aiohttp, httpx, Marshmallow, pytest)
    - **Tier 2**: Knowledge base guided migration with LLM assistance
    - **Tier 3**: Pure LLM migration for unknown patterns
 5. **Validate**: Runs syntax checks and optionally your test suite
@@ -247,7 +289,7 @@ PyResolve uses a tiered pricing model:
 
 | Tier | Price | Features |
 |------|-------|----------|
-| **Free** | $0/month | Tier 1 deterministic transforms (Pydantic, FastAPI, SQLAlchemy, Pandas, Requests) |
+| **Free** | $0/month | Tier 1 deterministic transforms (15 libraries including Pydantic, Django, Flask, SQLAlchemy, and more) |
 | **Pro** | $19/month | Tier 2 KB-guided LLM migrations for any library |
 | **Unlimited** | $49/month | Tier 3 pure LLM migrations + priority support |
 

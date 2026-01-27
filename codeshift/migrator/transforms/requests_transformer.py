@@ -10,15 +10,41 @@ class RequestsTransformer(BaseTransformer):
 
     def __init__(self) -> None:
         super().__init__()
+        self._imports_to_add: list[str] = []
 
     def leave_ImportFrom(
         self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.ImportFrom:
+    ) -> cst.ImportFrom | cst.RemovalSentinel:
         """Transform requests imports."""
         if original_node.module is None:
             return updated_node
 
         module_name = self._get_module_name(original_node.module)
+
+        # Transform 'from requests.packages import urllib3' to 'import urllib3'
+        if module_name == "requests.packages":
+            if isinstance(updated_node.names, cst.ImportStar):
+                return updated_node
+
+            remaining_names = []
+            for name in updated_node.names:
+                if isinstance(name, cst.ImportAlias) and isinstance(name.name, cst.Name):
+                    if name.name.value == "urllib3":
+                        self.record_change(
+                            description="Import urllib3 directly instead of through requests.packages",
+                            line_number=1,
+                            original="from requests.packages import urllib3",
+                            replacement="import urllib3",
+                            transform_name="urllib3_top_level_import_fix",
+                        )
+                        self._imports_to_add.append("urllib3")
+                        continue
+                remaining_names.append(name)
+
+            if len(remaining_names) == 0:
+                return cst.RemovalSentinel.REMOVE
+            elif len(remaining_names) < len(updated_node.names):
+                return updated_node.with_changes(names=remaining_names)
 
         # Transform requests.packages.urllib3 imports
         if module_name == "requests.packages.urllib3" or module_name.startswith(
@@ -145,6 +171,53 @@ class RequestsTransformer(BaseTransformer):
                         )
 
         return updated_node
+
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
+        """Add new imports at the top of the module."""
+        if not self._imports_to_add:
+            return updated_node
+
+        # Create new import statements
+        new_imports = []
+        for module_name in self._imports_to_add:
+            new_import = cst.SimpleStatementLine(
+                body=[cst.Import(names=[cst.ImportAlias(name=cst.Name(module_name))])]
+            )
+            new_imports.append(new_import)
+
+        # Find the position to insert - after docstrings and __future__ imports
+        insert_pos = 0
+        for i, statement in enumerate(updated_node.body):
+            if isinstance(statement, cst.SimpleStatementLine):
+                # Check if it's a docstring
+                if (
+                    i == 0
+                    and len(statement.body) == 1
+                    and isinstance(statement.body[0], cst.Expr)
+                    and isinstance(
+                        statement.body[0].value, cst.SimpleString | cst.ConcatenatedString
+                    )
+                ):
+                    insert_pos = i + 1
+                    continue
+                # Check if it's a __future__ import
+                if len(statement.body) == 1 and isinstance(statement.body[0], cst.ImportFrom):
+                    import_from = statement.body[0]
+                    if (
+                        isinstance(import_from.module, cst.Name)
+                        and import_from.module.value == "__future__"
+                    ):
+                        insert_pos = i + 1
+                        continue
+            break
+
+        # Insert the new imports
+        new_body = (
+            list(updated_node.body[:insert_pos])
+            + new_imports
+            + list(updated_node.body[insert_pos:])
+        )
+        return updated_node.with_changes(body=new_body)
 
     def _get_module_name(self, module: cst.BaseExpression) -> str:
         """Get the full module name from a Name or Attribute node."""

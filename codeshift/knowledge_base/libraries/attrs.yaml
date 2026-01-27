@@ -1,0 +1,181 @@
+# attrs Knowledge Base
+# Breaking changes from 21.x to 23.x+
+
+name: attrs
+display_name: attrs
+description: Python Classes Without Boilerplate - declarative classes with validation
+migration_guide_url: https://www.attrs.org/en/stable/changelog.html
+
+supported_migrations:
+  - from: "21.0"
+    to: "23.0"
+
+breaking_changes:
+  # Decorator changes - attr.s to attrs.define
+  - symbol: "@attr.s"
+    change_type: renamed
+    severity: high
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "@attr.s decorator replaced with @attrs.define (modern API)"
+    replacement: "@attrs.define"
+    has_deterministic_transform: true
+    transform_name: attr_s_to_attrs_define
+    notes: "The modern API has slots=True and auto_attribs=True as defaults"
+
+  - symbol: "@attr.attrs"
+    change_type: renamed
+    severity: high
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "@attr.attrs decorator replaced with @attrs.define"
+    replacement: "@attrs.define"
+    has_deterministic_transform: true
+    transform_name: attr_attrs_to_attrs_define
+
+  - symbol: "@attr.s(auto_attribs=True)"
+    change_type: renamed
+    severity: high
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "@attr.s with auto_attribs=True becomes @attrs.define (auto_attribs is default)"
+    replacement: "@attrs.define"
+    has_deterministic_transform: true
+    transform_name: attr_s_auto_attribs_to_define
+    notes: "auto_attribs=True is the default in @attrs.define"
+
+  - symbol: "@attr.s(slots=True)"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "@attr.s with slots=True becomes @attrs.define (slots is default)"
+    replacement: "@attrs.define"
+    has_deterministic_transform: true
+    transform_name: attr_s_slots_to_define
+    notes: "slots=True is the default in @attrs.define"
+
+  - symbol: "@attr.s(frozen=True)"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "@attr.s with frozen=True becomes @attrs.frozen"
+    replacement: "@attrs.frozen"
+    has_deterministic_transform: true
+    transform_name: attr_s_frozen_to_attrs_frozen
+
+  # Field/attribute definition changes
+  - symbol: "attr.ib()"
+    change_type: renamed
+    severity: high
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.ib() replaced with attrs.field()"
+    replacement: "attrs.field()"
+    has_deterministic_transform: true
+    transform_name: attr_ib_to_attrs_field
+
+  - symbol: "attr.attrib()"
+    change_type: renamed
+    severity: high
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.attrib() replaced with attrs.field()"
+    replacement: "attrs.field()"
+    has_deterministic_transform: true
+    transform_name: attr_attrib_to_attrs_field
+
+  - symbol: "attr.Factory"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.Factory replaced with attrs.Factory"
+    replacement: "attrs.Factory"
+    has_deterministic_transform: true
+    transform_name: attr_factory_to_attrs_factory
+
+  # Function changes
+  - symbol: "attr.asdict()"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.asdict() replaced with attrs.asdict()"
+    replacement: "attrs.asdict()"
+    has_deterministic_transform: true
+    transform_name: attr_asdict_to_attrs_asdict
+
+  - symbol: "attr.astuple()"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.astuple() replaced with attrs.astuple()"
+    replacement: "attrs.astuple()"
+    has_deterministic_transform: true
+    transform_name: attr_astuple_to_attrs_astuple
+
+  - symbol: "attr.fields()"
+    change_type: renamed
+    severity: low
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.fields() replaced with attrs.fields()"
+    replacement: "attrs.fields()"
+    has_deterministic_transform: true
+    transform_name: attr_fields_to_attrs_fields
+
+  - symbol: "attr.has()"
+    change_type: renamed
+    severity: low
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.has() replaced with attrs.has()"
+    replacement: "attrs.has()"
+    has_deterministic_transform: true
+    transform_name: attr_has_to_attrs_has
+
+  - symbol: "attr.evolve()"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.evolve() replaced with attrs.evolve()"
+    replacement: "attrs.evolve()"
+    has_deterministic_transform: true
+    transform_name: attr_evolve_to_attrs_evolve
+
+  # Parameter deprecations
+  - symbol: "cmp"
+    change_type: removed
+    severity: high
+    from_version: "21.0"
+    to_version: "22.1"
+    description: "cmp parameter removed from @attr.s and attr.ib(), use eq and order instead"
+    replacement: "eq=..., order=..."
+    has_deterministic_transform: true
+    transform_name: cmp_to_eq_order
+    notes: "cmp=True becomes eq=True, order=True; cmp=False becomes eq=False, order=False"
+
+  # Import path changes for validators and converters
+  - symbol: "attr.validators"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.validators module replaced with attrs.validators"
+    replacement: "attrs.validators"
+    has_deterministic_transform: true
+    transform_name: attr_validators_to_attrs_validators
+
+  - symbol: "attr.converters"
+    change_type: renamed
+    severity: medium
+    from_version: "21.0"
+    to_version: "23.0"
+    description: "attr.converters module replaced with attrs.converters"
+    replacement: "attrs.converters"
+    has_deterministic_transform: true
+    transform_name: attr_converters_to_attrs_converters

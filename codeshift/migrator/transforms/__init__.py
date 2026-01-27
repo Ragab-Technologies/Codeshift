@@ -1,6 +1,7 @@
 """Library-specific transformation modules."""
 
 from codeshift.migrator.transforms.fastapi_transformer import FastAPITransformer
+from codeshift.migrator.transforms.marshmallow_transformer import MarshmallowTransformer
 from codeshift.migrator.transforms.pandas_transformer import (
     PandasAppendTransformer,
     PandasTransformer,
@@ -16,4 +17,5 @@ __all__ = [
     "PandasTransformer",
     "PandasAppendTransformer",
     "RequestsTransformer",
+    "MarshmallowTransformer",
 ]

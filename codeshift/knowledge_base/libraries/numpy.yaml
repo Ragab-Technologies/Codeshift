@@ -1,0 +1,429 @@
+# NumPy Knowledge Base
+# Breaking changes from 1.x to 2.0
+
+name: numpy
+display_name: NumPy
+description: Fundamental package for scientific computing in Python
+migration_guide_url: https://numpy.org/doc/stable/numpy_2_0_migration_guide.html
+
+supported_migrations:
+  - from: "1.0"
+    to: "2.0"
+
+breaking_changes:
+  # Type alias removals - These aliases conflicted with Python builtins
+  - symbol: "numpy.bool"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.bool removed, use numpy.bool_ or Python bool"
+    replacement: "numpy.bool_"
+    has_deterministic_transform: true
+    transform_name: bool_to_bool_
+    notes: "Type alias that shadowed Python builtin bool"
+
+  - symbol: "numpy.int"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.int removed, use numpy.int_ or numpy.intp"
+    replacement: "numpy.int_"
+    has_deterministic_transform: true
+    transform_name: int_to_int_
+    notes: "Type alias that shadowed Python builtin int"
+
+  - symbol: "numpy.float"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.float removed, use numpy.float64"
+    replacement: "numpy.float64"
+    has_deterministic_transform: true
+    transform_name: float_to_float64
+    notes: "Type alias that shadowed Python builtin float"
+
+  - symbol: "numpy.complex"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.complex removed, use numpy.complex128"
+    replacement: "numpy.complex128"
+    has_deterministic_transform: true
+    transform_name: complex_to_complex128
+    notes: "Type alias that shadowed Python builtin complex"
+
+  - symbol: "numpy.object"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.object removed, use numpy.object_"
+    replacement: "numpy.object_"
+    has_deterministic_transform: true
+    transform_name: object_to_object_
+    notes: "Type alias that shadowed Python builtin object"
+
+  - symbol: "numpy.str"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.str removed, use numpy.str_"
+    replacement: "numpy.str_"
+    has_deterministic_transform: true
+    transform_name: str_to_str_
+    notes: "Type alias that shadowed Python builtin str"
+
+  - symbol: "numpy.unicode_"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.unicode_ renamed to numpy.str_"
+    replacement: "numpy.str_"
+    has_deterministic_transform: true
+    transform_name: unicode_to_str_
+
+  - symbol: "numpy.string_"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.string_ renamed to numpy.bytes_"
+    replacement: "numpy.bytes_"
+    has_deterministic_transform: true
+    transform_name: string_to_bytes_
+
+  # Additional type alias removals
+  - symbol: "numpy.float_"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.float_ removed, use numpy.float64"
+    replacement: "numpy.float64"
+    has_deterministic_transform: true
+    transform_name: float__to_float64
+
+  - symbol: "numpy.complex_"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.complex_ removed, use numpy.complex128"
+    replacement: "numpy.complex128"
+    has_deterministic_transform: true
+    transform_name: complex__to_complex128
+
+  - symbol: "numpy.cfloat"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.cfloat removed, use numpy.complex128"
+    replacement: "numpy.complex128"
+    has_deterministic_transform: true
+    transform_name: cfloat_to_complex128
+
+  - symbol: "numpy.singlecomplex"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.singlecomplex removed, use numpy.complex64"
+    replacement: "numpy.complex64"
+    has_deterministic_transform: true
+    transform_name: singlecomplex_to_complex64
+
+  - symbol: "numpy.longfloat"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.longfloat removed, use numpy.longdouble"
+    replacement: "numpy.longdouble"
+    has_deterministic_transform: true
+    transform_name: longfloat_to_longdouble
+
+  - symbol: "numpy.longcomplex"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.longcomplex removed, use numpy.clongdouble"
+    replacement: "numpy.clongdouble"
+    has_deterministic_transform: true
+    transform_name: longcomplex_to_clongdouble
+
+  - symbol: "numpy.clongfloat"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.clongfloat removed, use numpy.clongdouble"
+    replacement: "numpy.clongdouble"
+    has_deterministic_transform: true
+    transform_name: clongfloat_to_clongdouble
+
+  # Function removals and renames
+  - symbol: "numpy.alltrue"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.alltrue() removed, use numpy.all()"
+    replacement: "numpy.all()"
+    has_deterministic_transform: true
+    transform_name: alltrue_to_all
+
+  - symbol: "numpy.sometrue"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.sometrue() removed, use numpy.any()"
+    replacement: "numpy.any()"
+    has_deterministic_transform: true
+    transform_name: sometrue_to_any
+
+  - symbol: "numpy.product"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.product() removed, use numpy.prod()"
+    replacement: "numpy.prod()"
+    has_deterministic_transform: true
+    transform_name: product_to_prod
+
+  - symbol: "numpy.cumproduct"
+    change_type: removed
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.cumproduct() removed, use numpy.cumprod()"
+    replacement: "numpy.cumprod()"
+    has_deterministic_transform: true
+    transform_name: cumproduct_to_cumprod
+
+  - symbol: "numpy.trapz"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.trapz() renamed to numpy.trapezoid()"
+    replacement: "numpy.trapezoid()"
+    has_deterministic_transform: true
+    transform_name: trapz_to_trapezoid
+
+  - symbol: "numpy.in1d"
+    change_type: renamed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.in1d() renamed to numpy.isin()"
+    replacement: "numpy.isin()"
+    has_deterministic_transform: true
+    transform_name: in1d_to_isin
+
+  - symbol: "numpy.row_stack"
+    change_type: renamed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.row_stack() renamed to numpy.vstack()"
+    replacement: "numpy.vstack()"
+    has_deterministic_transform: true
+    transform_name: row_stack_to_vstack
+
+  - symbol: "numpy.msort"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.msort() removed, use numpy.sort(a, axis=0)"
+    replacement: "numpy.sort(a, axis=0)"
+    has_deterministic_transform: true
+    transform_name: msort_to_sort_axis0
+    notes: "msort(a) was equivalent to sort(a, axis=0)"
+
+  # Constant removals
+  - symbol: "numpy.Inf"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.Inf removed, use numpy.inf"
+    replacement: "numpy.inf"
+    has_deterministic_transform: true
+    transform_name: Inf_to_inf
+
+  - symbol: "numpy.Infinity"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.Infinity removed, use numpy.inf"
+    replacement: "numpy.inf"
+    has_deterministic_transform: true
+    transform_name: Infinity_to_inf
+
+  - symbol: "numpy.infty"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.infty removed, use numpy.inf"
+    replacement: "numpy.inf"
+    has_deterministic_transform: true
+    transform_name: infty_to_inf
+
+  - symbol: "numpy.NaN"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.NaN removed, use numpy.nan"
+    replacement: "numpy.nan"
+    has_deterministic_transform: true
+    transform_name: NaN_to_nan
+
+  - symbol: "numpy.PINF"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.PINF removed, use numpy.inf"
+    replacement: "numpy.inf"
+    has_deterministic_transform: true
+    transform_name: PINF_to_inf
+
+  - symbol: "numpy.NINF"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.NINF removed, use -numpy.inf"
+    replacement: "-numpy.inf"
+    has_deterministic_transform: true
+    transform_name: NINF_to_neg_inf
+
+  - symbol: "numpy.PZERO"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.PZERO removed, use 0.0"
+    replacement: "0.0"
+    has_deterministic_transform: true
+    transform_name: PZERO_to_zero
+
+  - symbol: "numpy.NZERO"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.NZERO removed, use -0.0"
+    replacement: "-0.0"
+    has_deterministic_transform: true
+    transform_name: NZERO_to_neg_zero
+
+  # Removed utility functions
+  - symbol: "numpy.asfarray"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.asfarray() removed, use numpy.asarray(a, dtype=float)"
+    replacement: "numpy.asarray(a, dtype=float)"
+    has_deterministic_transform: true
+    transform_name: asfarray_to_asarray
+    notes: "asfarray converted input to float array"
+
+  - symbol: "numpy.issubsctype"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.issubsctype() removed, use numpy.issubdtype()"
+    replacement: "numpy.issubdtype()"
+    has_deterministic_transform: true
+    transform_name: issubsctype_to_issubdtype
+
+  - symbol: "numpy.issubclass_"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.issubclass_() removed, use builtin issubclass()"
+    replacement: "issubclass()"
+    has_deterministic_transform: true
+    transform_name: issubclass__to_builtin
+
+  # Matrix deprecation
+  - symbol: "numpy.matrix"
+    change_type: deprecated
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.matrix is deprecated, use numpy.ndarray with @ operator for matrix multiplication"
+    replacement: "numpy.ndarray"
+    has_deterministic_transform: false
+    notes: "Migration requires significant code changes, use np.array and @ for matrix multiply"
+
+  - symbol: "numpy.mat"
+    change_type: deprecated
+    severity: high
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.mat is deprecated, use numpy.asarray() instead"
+    replacement: "numpy.asarray()"
+    has_deterministic_transform: false
+    notes: "Migration requires significant code changes"
+
+  # ndarray method removals
+  - symbol: "ndarray.newbyteorder"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "ndarray.newbyteorder() removed, use arr.view(arr.dtype.newbyteorder(order))"
+    replacement: "arr.view(arr.dtype.newbyteorder(order))"
+    has_deterministic_transform: false
+    notes: "Requires understanding of the order argument"
+
+  - symbol: "ndarray.ptp"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "ndarray.ptp() method removed, use numpy.ptp(arr) function"
+    replacement: "numpy.ptp(arr)"
+    has_deterministic_transform: false
+    notes: "ptp = peak to peak (max - min)"
+
+  # Namespace changes
+  - symbol: "numpy.core"
+    change_type: removed
+    severity: low
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.core namespace made private, access functions through main numpy namespace"
+    replacement: "numpy"
+    has_deterministic_transform: false
+    notes: "numpy.core is now numpy._core (private)"
+
+  # Random module changes
+  - symbol: "numpy.random.random_integers"
+    change_type: removed
+    severity: medium
+    from_version: "1.0"
+    to_version: "2.0"
+    description: "numpy.random.random_integers() removed, use numpy.random.randint()"
+    replacement: "numpy.random.randint(low, high+1)"
+    has_deterministic_transform: false
+    notes: "random_integers included high endpoint, randint excludes it"
