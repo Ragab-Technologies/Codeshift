@@ -71,7 +71,6 @@ apply → Write to disk, record usage
 | `codeshift/knowledge_base/` | Static YAML definitions in `libraries/` |
 | `codeshift/analyzer/` | Risk assessment |
 | `codeshift/validator/` | Syntax checking |
-| `codeshift/api/` | FastAPI billing/auth server (optional) |
 
 ### Key Data Models
 
