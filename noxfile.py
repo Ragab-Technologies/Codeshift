@@ -11,7 +11,7 @@ def lint(session: nox.Session) -> None:
     session.install("-e", ".[dev]")
     session.run("ruff", "check", ".")
     session.run("black", "--check", ".")
-    session.run("mypy", "pyresolve", "--ignore-missing-imports")
+    session.run("mypy", "codeshift", "--ignore-missing-imports")
 
 
 @nox.session
@@ -25,7 +25,7 @@ def test(session: nox.Session) -> None:
 def test_cov(session: nox.Session) -> None:
     """Run tests with coverage."""
     session.install("-e", ".[dev]")
-    session.run("pytest", "--cov=pyresolve", "--cov-report=term-missing")
+    session.run("pytest", "--cov=codeshift", "--cov-report=term-missing")
 
 
 @nox.session

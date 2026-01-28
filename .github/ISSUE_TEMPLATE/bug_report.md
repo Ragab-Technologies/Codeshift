@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug or unexpected behavior in PyResolve
+about: Report a bug or unexpected behavior in Codeshift
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -12,7 +12,7 @@ A clear and concise description of the bug.
 
 ## Steps to Reproduce
 
-1. Run `pyresolve ...`
+1. Run `codeshift ...`
 2. With file containing `...`
 3. See error
 
@@ -28,7 +28,7 @@ What actually happened. Include any error messages.
 
 - OS: [e.g., macOS 14.0, Ubuntu 22.04, Windows 11]
 - Python version: [e.g., 3.11.5]
-- PyResolve version: [e.g., 0.1.0]
+- Codeshift version: [e.g., 0.1.0]
 - Library being migrated: [e.g., pydantic 1.10 → 2.5]
 
 ## Code Sample
@@ -39,7 +39,7 @@ If applicable, provide a minimal code example that reproduces the issue:
 # Your code here
 ```
 
-## PyResolve Output
+## Codeshift Output
 
 ```
 # Paste the command output here

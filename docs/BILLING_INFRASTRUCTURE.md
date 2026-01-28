@@ -1,6 +1,6 @@
 # Billing Infrastructure Implementation Guide
 
-This guide covers implementing user management, usage tracking, and payments for PyResolve using a simplified SaaS stack.
+This guide covers implementing user management, usage tracking, and payments for Codeshift using a simplified SaaS stack.
 
 ## Tech Stack
 
@@ -23,18 +23,18 @@ This guide covers implementing user management, usage tracking, and payments for
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PyResolve CLI                            │
+│                        Codeshift CLI                            │
 │                                                                 │
-│  $ pyresolve upgrade pydantic --target 2.0                      │
+│  $ codeshift upgrade pydantic --target 2.0                      │
 │                                                                 │
-│  Config: ~/.pyresolve/config.toml                               │
+│  Config: ~/.codeshift/config.toml                               │
 │  api_key = "pyr_live_abc123..."                                 │
 └─────────────────────┬───────────────────────────────────────────┘
                       │ API Request + API Key
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  PyResolve API (FastAPI)                        │
-│                  api.pyresolve.dev                              │
+│                  Codeshift API (FastAPI)                        │
+│                  api.codeshift.dev                              │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │ Middleware: Validate API Key → Get User                  │  │
@@ -67,7 +67,7 @@ This guide covers implementing user management, usage tracking, and payments for
 ### 1.1 Create Supabase Project
 
 1. Go to [supabase.com](https://supabase.com) and create account
-2. Create new project "pyresolve"
+2. Create new project "codeshift"
 3. Note your project URL and keys from Settings → API
 
 ### 1.2 Environment Variables
@@ -326,13 +326,13 @@ In Stripe Dashboard → Products, create:
 
 | Product | Price | Price ID |
 | ------- | ----- | -------- |
-| PyResolve Pro | $19/month | `price_pro_xxxxx` |
-| PyResolve Unlimited | $49/month | `price_unlimited_xxxxx` |
+| Codeshift Pro | $19/month | `price_pro_xxxxx` |
+| Codeshift Unlimited | $49/month | `price_unlimited_xxxxx` |
 
 Or use Stripe CLI:
 
 ```bash
-stripe products create --name="PyResolve Pro" \
+stripe products create --name="Codeshift Pro" \
   --description="50 migrations/month, all tiers"
 
 stripe prices create \
@@ -365,7 +365,7 @@ pip install fastapi uvicorn supabase stripe python-dotenv
 ### 3.2 Project Structure
 
 ```
-pyresolve/
+codeshift/
 ├── api/
 │   ├── __init__.py
 │   ├── main.py          # FastAPI app
@@ -380,7 +380,7 @@ pyresolve/
 ### 3.3 Database Client
 
 ```python
-# pyresolve/api/database.py
+# codeshift/api/database.py
 import os
 from supabase import create_client, Client
 from functools import lru_cache
@@ -405,7 +405,7 @@ PLAN_LIMITS = {
 ### 3.4 Authentication
 
 ```python
-# pyresolve/api/auth.py
+# codeshift/api/auth.py
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
 from codeshift.api.database import get_supabase
@@ -418,7 +418,7 @@ async def get_current_user(api_key: str = Security(api_key_header)) -> dict:
     if not api_key:
         raise HTTPException(
             status_code=401,
-            detail="API key required. Get one at https://pyresolve.dev"
+            detail="API key required. Get one at https://codeshift.dev"
         )
 
     if not api_key.startswith("pyr_live_"):
@@ -455,7 +455,7 @@ async def get_optional_user(api_key: str = Security(api_key_header)) -> dict | N
 ### 3.5 Billing Logic
 
 ```python
-# pyresolve/api/billing.py
+# codeshift/api/billing.py
 import os
 import stripe
 from codeshift.api.database import get_supabase, PLAN_LIMITS
@@ -514,8 +514,8 @@ async def create_checkout_session(user: dict, price_id: str) -> str:
         customer=customer_id,
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
-        success_url="https://pyresolve.dev/billing?success=true",
-        cancel_url="https://pyresolve.dev/billing?canceled=true",
+        success_url="https://codeshift.dev/billing?success=true",
+        cancel_url="https://codeshift.dev/billing?canceled=true",
         metadata={"user_id": str(user["user_id"])}
     )
 
@@ -529,7 +529,7 @@ async def create_portal_session(user: dict) -> str:
 
     session = stripe.billing_portal.Session.create(
         customer=user["stripe_customer_id"],
-        return_url="https://pyresolve.dev/billing"
+        return_url="https://codeshift.dev/billing"
     )
 
     return session.url
@@ -553,7 +553,7 @@ async def log_usage(user_id: str, event_type: str, **kwargs):
 ### 3.6 Webhook Handler
 
 ```python
-# pyresolve/api/webhooks.py
+# codeshift/api/webhooks.py
 import os
 import stripe
 from fastapi import APIRouter, Request, HTTPException
@@ -629,7 +629,7 @@ async def stripe_webhook(request: Request):
 ### 3.7 FastAPI Application
 
 ```python
-# pyresolve/api/main.py
+# codeshift/api/main.py
 import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -639,14 +639,14 @@ from codeshift.api.billing import get_quota, create_checkout_session, create_por
 from codeshift.api.webhooks import router as webhook_router
 
 app = FastAPI(
-    title="PyResolve API",
-    description="API for PyResolve migration tool",
+    title="Codeshift API",
+    description="API for Codeshift migration tool",
     version="0.1.0"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pyresolve.dev", "http://localhost:3000"],
+    allow_origins=["https://codeshift.dev", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -676,7 +676,7 @@ class CheckoutRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"service": "PyResolve API", "version": "0.1.0"}
+    return {"service": "Codeshift API", "version": "0.1.0"}
 
 
 @app.get("/quota")
@@ -738,7 +738,7 @@ async def portal_endpoint(user: dict = Depends(get_current_user)):
     if not user.get("stripe_customer_id"):
         raise HTTPException(
             status_code=400,
-            detail="No billing account. Subscribe first at https://pyresolve.dev/pricing"
+            detail="No billing account. Subscribe first at https://codeshift.dev/pricing"
         )
 
     url = await create_portal_session(user)
@@ -761,15 +761,15 @@ async def health():
 ### 4.1 Add Auth Commands
 
 ```python
-# pyresolve/cli/auth.py
+# codeshift/cli/auth.py
 import os
 import click
 import httpx
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / ".pyresolve"
+CONFIG_DIR = Path.home() / ".codeshift"
 CONFIG_FILE = CONFIG_DIR / "config.toml"
-API_BASE = os.environ.get("PYRESOLVE_API_URL", "https://api.pyresolve.dev")
+API_BASE = os.environ.get("PYRESOLVE_API_URL", "https://api.codeshift.dev")
 
 
 def get_api_key() -> str | None:
@@ -807,12 +807,12 @@ def save_api_key(api_key: str):
 
 
 @click.command()
-@click.option("--key", prompt="Enter your API key", hide_input=True, help="Your PyResolve API key")
+@click.option("--key", prompt="Enter your API key", hide_input=True, help="Your Codeshift API key")
 def login(key: str):
-    """Authenticate with PyResolve."""
+    """Authenticate with Codeshift."""
     if not key.startswith("pyr_live_"):
         click.echo("❌ Invalid API key format. Keys start with 'pyr_live_'")
-        click.echo("   Get your key at https://pyresolve.dev/settings")
+        click.echo("   Get your key at https://codeshift.dev/settings")
         return
 
     # Verify key with API
@@ -832,7 +832,7 @@ def login(key: str):
             click.echo(f"  Migrations remaining: {user['quota']['migrations_remaining']}")
         else:
             click.echo("❌ Invalid API key")
-            click.echo("   Get your key at https://pyresolve.dev/settings")
+            click.echo("   Get your key at https://codeshift.dev/settings")
 
     except httpx.RequestError as e:
         click.echo(f"❌ Connection error: {e}")
@@ -855,7 +855,7 @@ def status():
 
     if not api_key:
         click.echo("Not logged in")
-        click.echo("Run: pyresolve login")
+        click.echo("Run: codeshift login")
         return
 
     try:
@@ -878,7 +878,7 @@ def status():
             click.echo(f"  LLM access: {'✓' if quota['llm_allowed'] else '✗ (upgrade to Pro)'}")
         else:
             click.echo("❌ Invalid or expired API key")
-            click.echo("Run: pyresolve login")
+            click.echo("Run: codeshift login")
 
     except httpx.RequestError as e:
         click.echo(f"❌ Connection error: {e}")
@@ -887,7 +887,7 @@ def status():
 ### 4.2 Add Quota Check to Migrations
 
 ```python
-# pyresolve/cli/migrate.py (add to existing)
+# codeshift/cli/migrate.py (add to existing)
 import httpx
 from codeshift.cli.auth import get_api_key, API_BASE
 
@@ -908,8 +908,8 @@ def check_quota_before_migration(tier: str) -> bool:
         click.echo("⚠️  LLM-powered migrations require authentication")
         click.echo("")
         click.echo("Options:")
-        click.echo("  1. Run: pyresolve login")
-        click.echo("  2. Get free account: https://pyresolve.dev")
+        click.echo("  1. Run: codeshift login")
+        click.echo("  2. Get free account: https://codeshift.dev")
         click.echo("  3. Use --tier1-only flag for AST-only migration")
         return False
 
@@ -926,7 +926,7 @@ def check_quota_before_migration(tier: str) -> bool:
             )
 
         if response.status_code == 401:
-            click.echo("❌ Invalid API key. Run: pyresolve login")
+            click.echo("❌ Invalid API key. Run: codeshift login")
             return False
 
         quota = response.json()
@@ -934,13 +934,13 @@ def check_quota_before_migration(tier: str) -> bool:
         # Check migration limit
         if not quota["can_migrate"]:
             click.echo(f"❌ Monthly limit reached ({quota['migrations_limit']} migrations)")
-            click.echo("   Upgrade at https://pyresolve.dev/pricing")
+            click.echo("   Upgrade at https://codeshift.dev/pricing")
             return False
 
         # Check LLM access
         if tier in ("tier2", "tier3") and not quota["llm_allowed"]:
             click.echo("❌ LLM migrations require Pro plan")
-            click.echo("   Upgrade at https://pyresolve.dev/pricing")
+            click.echo("   Upgrade at https://codeshift.dev/pricing")
             click.echo("   Or use --tier1-only for free AST migration")
             return False
 
@@ -1014,14 +1014,14 @@ Create `vercel.json`:
 {
   "builds": [
     {
-      "src": "pyresolve/api/main.py",
+      "src": "codeshift/api/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "pyresolve/api/main.py"
+      "dest": "codeshift/api/main.py"
     }
   ]
 }
@@ -1037,11 +1037,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY pyresolve/ pyresolve/
+COPY codeshift/ codeshift/
 
 EXPOSE 8000
 
-CMD ["uvicorn", "pyresolve.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "codeshift.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ---
@@ -1061,7 +1061,7 @@ STRIPE_PRICE_PRO=price_xxxxx
 STRIPE_PRICE_UNLIMITED=price_xxxxx
 
 # App
-PYRESOLVE_API_URL=https://api.pyresolve.dev
+PYRESOLVE_API_URL=https://api.codeshift.dev
 ```
 
 ---
@@ -1087,9 +1087,9 @@ PYRESOLVE_API_URL=https://api.pyresolve.dev
 
 ### Phase 3: CLI
 
-- [ ] Add `pyresolve login` command
-- [ ] Add `pyresolve logout` command
-- [ ] Add `pyresolve status` command
+- [ ] Add `codeshift login` command
+- [ ] Add `codeshift logout` command
+- [ ] Add `codeshift status` command
 - [ ] Add quota check before migrations
 - [ ] Add usage logging after migrations
 

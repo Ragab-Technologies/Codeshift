@@ -1,4 +1,4 @@
-"""Main CLI entry point for PyResolve."""
+"""Main CLI entry point for Codeshift."""
 
 import click
 from rich.console import Console
@@ -26,7 +26,7 @@ console = Console()
 @click.version_option(version=__version__, prog_name="codeshift")
 @click.pass_context
 def cli(ctx: click.Context) -> None:
-    """PyResolve - AI-powered Python dependency migration tool.
+    """Codeshift - AI-powered Python dependency migration tool.
 
     Don't just flag the update. Fix the break.
 

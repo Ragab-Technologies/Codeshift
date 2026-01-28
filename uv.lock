@@ -1001,7 +1001,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pyresolve"
+name = "codeshift"
 version = "0.2.0b1"
 source = { editable = "." }
 dependencies = [
@@ -1083,7 +1083,7 @@ requires-dist = [
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pydantic-settings", marker = "extra == 'api'", specifier = ">=2.1.0" },
-    { name = "pyresolve", extras = ["api", "dev"], marker = "extra == 'all'" },
+    { name = "codeshift", extras = ["api", "dev"], marker = "extra == 'all'" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },

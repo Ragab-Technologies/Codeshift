@@ -10,12 +10,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from codeshift.cli.quota import (
-    QuotaError,
-    check_quota,
-    record_usage,
-    show_quota_exceeded_message,
-)
+from codeshift.cli.quota import QuotaError, check_quota, record_usage, show_quota_exceeded_message
 from codeshift.knowledge import (
     Confidence,
     GeneratedKnowledgeBase,
@@ -130,7 +125,7 @@ def upgrade(
             f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
             f"{knowledge.description}\n"
             f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
-            title="PyResolve Migration",
+            title="Codeshift Migration",
         )
     )
 

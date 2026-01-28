@@ -1,4 +1,4 @@
-"""CLI commands for PyResolve."""
+"""CLI commands for Codeshift."""
 
 from codeshift.cli.commands.apply import apply
 from codeshift.cli.commands.diff import diff
