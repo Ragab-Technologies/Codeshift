@@ -1,6 +1,6 @@
 """LLM-based migration for complex cases.
 
-LLM migrations (Tier 2/3) are routed through the PyResolve API,
+LLM migrations (Tier 2/3) are routed through the Codeshift API,
 which handles authentication, quota checking, and billing.
 Users must have a Pro or Unlimited subscription to use LLM features.
 
@@ -11,12 +11,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from codeshift.migrator.ast_transforms import (
-    TransformChange,
-    TransformResult,
-    TransformStatus,
-)
-from codeshift.utils.api_client import PyResolveAPIClient, get_api_client
+from codeshift.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
+from codeshift.utils.api_client import CodeshiftAPIClient, get_api_client
 from codeshift.utils.cache import LLMCache, get_llm_cache
 from codeshift.validator.syntax_checker import quick_syntax_check
 
@@ -35,10 +31,10 @@ class LLMMigrationResult:
 
 
 class LLMMigrator:
-    """Handles complex migrations using LLM via the PyResolve API.
+    """Handles complex migrations using LLM via the Codeshift API.
 
     LLM migrations require authentication and a Pro or Unlimited subscription.
-    All LLM calls are routed through the PyResolve API, which handles:
+    All LLM calls are routed through the Codeshift API, which handles:
     - Authentication and authorization
     - Quota checking and billing
     - Server-side Anthropic API calls
@@ -49,7 +45,7 @@ class LLMMigrator:
 
     def __init__(
         self,
-        client: PyResolveAPIClient | None = None,
+        client: CodeshiftAPIClient | None = None,
         cache: LLMCache | None = None,
         use_cache: bool = True,
         validate_output: bool = True,
@@ -80,7 +76,7 @@ class LLMMigrator:
         to_version: str,
         context: str | None = None,
     ) -> LLMMigrationResult:
-        """Migrate code using the LLM via PyResolve API.
+        """Migrate code using the LLM via Codeshift API.
 
         Args:
             code: Source code to migrate
@@ -114,7 +110,7 @@ class LLMMigrator:
                     used_cache=True,
                 )
 
-        # Call PyResolve API (which calls Anthropic server-side)
+        # Call Codeshift API (which calls Anthropic server-side)
         response = self.client.migrate_code(
             code=code,
             library=library,

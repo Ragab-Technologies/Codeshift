@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature or enhancement for PyResolve
+about: Suggest a new feature or enhancement for Codeshift
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
@@ -10,7 +10,7 @@ assignees: ''
 
 A clear description of the problem or limitation you're experiencing.
 
-Example: "I need to migrate my codebase from library X to Y, but PyResolve doesn't support it yet."
+Example: "I need to migrate my codebase from library X to Y, but Codeshift doesn't support it yet."
 
 ## Proposed Solution
 

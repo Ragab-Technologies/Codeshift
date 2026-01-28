@@ -1,1 +1,1 @@
-"""Tests for PyResolve."""
+"""Tests for Codeshift."""

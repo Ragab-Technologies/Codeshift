@@ -1,14 +1,14 @@
-# PyResolve Monetization Strategy
+# Codeshift Monetization Strategy
 
 ## Overview
 
-This document outlines monetization strategies for PyResolve, an AI-powered Python dependency migration tool licensed under Elastic License 2.0 with a freemium SaaS model.
+This document outlines monetization strategies for Codeshift, an AI-powered Python dependency migration tool licensed under Elastic License 2.0 with a freemium SaaS model.
 
 ---
 
 ## 1. Usage-Based Pricing (Primary Revenue Stream)
 
-PyResolve has a built-in cost driver: **Anthropic API calls** for Tier 2/3 migrations.
+Codeshift has a built-in cost driver: **Anthropic API calls** for Tier 2/3 migrations.
 
 | Tier | Migrations/Month | LLM Access | Price |
 |------|------------------|------------|-------|
@@ -38,7 +38,7 @@ async def migrate_with_llm(file_path, api_key: str):
     if quota.tier == "free":
         raise UpgradeRequiredError(
             f"LLM migrations require Pro tier. "
-            f"Upgrade at https://pyresolve.dev/pricing"
+            f"Upgrade at https://codeshift.dev/pricing"
         )
 
     if quota.remaining <= 0:
@@ -60,7 +60,7 @@ Build a web interface for teams who prefer GUI over CLI.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  PyResolve Cloud                         [Pro] $29/mo  │
+│  Codeshift Cloud                         [Pro] $29/mo  │
 ├─────────────────────────────────────────────────────────┤
 │  Projects (3)           Migrations This Month: 12/50   │
 │                                                         │
@@ -103,8 +103,8 @@ Automated migrations in the development workflow.
 ### How It Works
 
 ```yaml
-# .github/workflows/pyresolve.yml
-name: PyResolve Auto-Migration
+# .github/workflows/codeshift.yml
+name: Codeshift Auto-Migration
 
 on:
   schedule:
@@ -117,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pyresolve/action@v1
+      - uses: codeshift/action@v1
         with:
           api_key: ${{ secrets.PYRESOLVE_API_KEY }}
           auto_pr: true
@@ -136,7 +136,7 @@ jobs:
 ### Value Proposition
 
 - "Never merge a PR that breaks on the next dependency update"
-- "Dependabot bumps versions, PyResolve fixes the code"
+- "Dependabot bumps versions, Codeshift fixes the code"
 
 ---
 
@@ -201,7 +201,7 @@ User-generated migration patterns create a network effect.
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ boto3 (common patterns)                         │   │
 │  │ ⭐ 4.9 (567 reviews)  |  3,421 uses             │   │
-│  │ By: PyResolve Team                               │   │
+│  │ By: Codeshift Team                               │   │
 │  │ Price: Free          |  [Use This KB]           │   │
 │  └─────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
@@ -212,19 +212,19 @@ User-generated migration patterns create a network effect.
 | Party | Share |
 |-------|-------|
 | KB Creator | 70% |
-| PyResolve | 30% |
+| Codeshift | 30% |
 
 ### Example Economics
 
 - Popular KB used 1,000 times at $5/use = $5,000
 - Creator earns: $3,500
-- PyResolve earns: $1,500
+- Codeshift earns: $1,500
 
 ### Incentives
 
 - Creators build reputation and passive income
 - Users get high-quality, community-validated migrations
-- PyResolve scales without building every KB internally
+- Codeshift scales without building every KB internally
 
 ---
 
@@ -367,7 +367,7 @@ Month 5-6: Pro Tier Launch
 
 ```
 Month 7-8: GitHub Action
-├── Launch pyresolve/action
+├── Launch codeshift/action
 ├── Free tier for Tier 1 only
 ├── Paid tiers for full functionality
 └── Goal: 100 repos using action
@@ -454,7 +454,7 @@ Q4: Consulting Practice
 
 ## Exit Opportunities
 
-PyResolve could be an attractive acquisition target for:
+Codeshift could be an attractive acquisition target for:
 
 | Company Type | Strategic Fit | Example Acquirers |
 |--------------|---------------|-------------------|

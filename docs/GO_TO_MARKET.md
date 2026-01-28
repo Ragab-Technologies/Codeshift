@@ -1,8 +1,8 @@
-# PyResolve Go-to-Market Plan
+# Codeshift Go-to-Market Plan
 
 ## Executive Summary
 
-PyResolve is an AI-powered CLI tool that migrates Python code to handle breaking dependency changes. This document outlines the strategy for launching a public beta with 50+ testers, leading to a freemium SaaS offering.
+Codeshift is an AI-powered CLI tool that migrates Python code to handle breaking dependency changes. This document outlines the strategy for launching a public beta with 50+ testers, leading to a freemium SaaS offering.
 
 ---
 
@@ -23,7 +23,7 @@ PyResolve is an AI-powered CLI tool that migrates Python code to handle breaking
 - [ ] Create stable release (v0.2.0 for beta)
 - [ ] Test on Python 3.9, 3.10, 3.11, 3.12
 - [ ] Publish to TestPyPI first
-- [ ] Verify `pip install pyresolve` works
+- [ ] Verify `pip install codeshift` works
 
 ### Billing Infrastructure (See [BILLING_INFRASTRUCTURE.md](./BILLING_INFRASTRUCTURE.md))
 
@@ -66,7 +66,7 @@ Week 1: Make repo public, soft launch
         └─ Collect initial feedback, fix critical bugs
 
 Week 2: TestPyPI release
-        └─ pip install --index-url https://test.pypi.org/simple/ pyresolve
+        └─ pip install --index-url https://test.pypi.org/simple/ codeshift
         └─ Test installation flow
 
 Week 3: Public announcement
@@ -75,7 +75,7 @@ Week 3: Public announcement
         └─ Share in Python Discord communities
 
 Week 4: Hacker News "Show HN"
-        └─ Title: "Show HN: PyResolve – AI tool that rewrites code for breaking dependency changes"
+        └─ Title: "Show HN: Codeshift – AI tool that rewrites code for breaking dependency changes"
         └─ Be available to answer questions
 ```
 
@@ -118,7 +118,7 @@ Week 4: Hacker News "Show HN"
 - **Authentication & Database**: Supabase (PostgreSQL + Auth)
 - **Payments**: Stripe (subscriptions, billing portal)
 - **API**: FastAPI backend for API key management
-- **CLI**: API key-based auth with `pyresolve login`
+- **CLI**: API key-based auth with `codeshift login`
 
 See [BILLING_INFRASTRUCTURE.md](./BILLING_INFRASTRUCTURE.md) for full implementation details.
 
@@ -143,7 +143,7 @@ Month 9:    Enterprise tier launch
    - "Building AST Transforms for Python Migration"
 
 2. **Tutorials**
-   - YouTube: "Migrate FastAPI to 0.100+ with PyResolve"
+   - YouTube: "Migrate FastAPI to 0.100+ with Codeshift"
    - Dev.to series on Python AST manipulation
 
 3. **Conference Talks**
@@ -191,7 +191,7 @@ Month 9:    Enterprise tier launch
 
 ## Competitive Analysis
 
-| Tool | Approach | Weakness PyResolve Addresses |
+| Tool | Approach | Weakness Codeshift Addresses |
 |------|----------|------------------------------|
 | Dependabot | Bumps versions only | Doesn't rewrite code |
 | Renovate | Bumps versions only | Doesn't rewrite code |
@@ -199,7 +199,7 @@ Month 9:    Enterprise tier launch
 | 2to3 | Python 2→3 only | Outdated, narrow scope |
 | Ruff/Black | Formatting only | No semantic changes |
 
-**PyResolve's Unique Value**: Only tool that rewrites code to handle breaking library changes.
+**Codeshift's Unique Value**: Only tool that rewrites code to handle breaking library changes.
 
 ---
 

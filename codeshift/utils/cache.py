@@ -27,7 +27,7 @@ class CacheEntry:
 
 
 class Cache:
-    """Simple file-based cache for PyResolve."""
+    """Simple file-based cache for Codeshift."""
 
     def __init__(
         self,

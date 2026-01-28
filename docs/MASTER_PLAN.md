@@ -1,4 +1,4 @@
-# PyResolve Master Plan
+# Codeshift Master Plan
 
 This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZATION.md`, and `docs/BILLING_INFRASTRUCTURE.md` into an actionable implementation plan.
 
@@ -14,7 +14,7 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 - Tests (11 files, 138 tests passing)
 - Landing page with GitHub Pages deployment
 - MIT License
-- Server-side LLM architecture: Tier 2/3 migrations routed through PyResolve API
+- Server-side LLM architecture: Tier 2/3 migrations routed through Codeshift API
 
 **What's Missing:**
 - Supabase/Stripe account setup (user action required)
@@ -57,7 +57,7 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 ## Phase 2: Billing Infrastructure (Supabase + Stripe)
 
 ### 2.1 Supabase Setup
-- [x] Create Supabase project "pyresolve" (schema ready in `pyresolve/api/migrations/001_initial_schema.sql`)
+- [x] Create Supabase project "codeshift" (schema ready in `codeshift/api/migrations/001_initial_schema.sql`)
 - [x] Run database schema SQL:
   - `profiles` table (extends Supabase auth)
   - `api_keys` table with hashing
@@ -70,12 +70,12 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 ### 2.2 Stripe Setup
 - [x] Create Stripe account (user action required)
 - [x] Create products and prices (user action required):
-  - PyResolve Pro: $19/month
-  - PyResolve Unlimited: $49/month
+  - Codeshift Pro: $19/month
+  - Codeshift Unlimited: $49/month
 - [x] Configure webhook endpoint (user action required)
 
 ### 2.3 FastAPI Billing API
-- [x] Create `pyresolve/api/` directory structure:
+- [x] Create `codeshift/api/` directory structure:
   - `main.py` - FastAPI app
   - `auth.py` - API key validation
   - `routers/billing.py` - Stripe integration
@@ -91,9 +91,9 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 - [ ] Deploy API (Railway or Vercel) (user action required)
 
 ### 2.4 CLI Authentication
-- [x] Add `pyresolve login` command
-- [x] Add `pyresolve logout` command
-- [x] Update `pyresolve status` to show quota
+- [x] Add `codeshift login` command
+- [x] Add `codeshift logout` command
+- [x] Update `codeshift status` to show quota
 - [x] Add quota check before migrations
 - [x] Add usage logging after migrations
 - [x] Support offline mode (allow tier1 without auth)
@@ -106,7 +106,7 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 - [ ] Make repository public
 - [ ] Set up GitHub Discussions
 - [ ] Create GitHub Release v0.2.0-beta
-- [ ] Verify `pip install pyresolve` works
+- [ ] Verify `pip install codeshift` works
 
 ### 3.2 Beta Launch Sequence
 - [ ] Week 1: Soft launch with close colleagues (5-10)
@@ -140,7 +140,7 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 ## Phase 5: Growth Features
 
 ### 5.1 CI/CD Integration (GitHub Action)
-- [ ] Create `pyresolve/action` repository
+- [ ] Create `codeshift/action` repository
 - [ ] Implement weekly scan workflow
 - [ ] Add auto-PR creation for migrations
 - [ ] Pricing: Free (tier1), $10/mo (developer), $50/mo (team)
@@ -234,7 +234,7 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 - [x] FastAPI billing API (code complete)
 - [x] CLI auth commands (login, logout, whoami, quota, upgrade-plan)
 - [x] Server-side LLM migration endpoint
-- [x] API client for CLI to call PyResolve API
+- [x] API client for CLI to call Codeshift API
 
 ### Sprint 3: Beta Launch
 - Make repo public
@@ -251,26 +251,26 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 ## Files to Create/Modify
 
 ### New Files (Phase 2 - COMPLETED):
-- [x] `pyresolve/api/__init__.py`
-- [x] `pyresolve/api/main.py` - FastAPI application
-- [x] `pyresolve/api/auth.py` - API key validation
-- [x] `pyresolve/api/config.py` - API settings
-- [x] `pyresolve/api/database.py` - Supabase client
-- [x] `pyresolve/api/models/__init__.py` - Pydantic models
-- [x] `pyresolve/api/models/auth.py` - Auth models
-- [x] `pyresolve/api/models/billing.py` - Billing models
-- [x] `pyresolve/api/models/usage.py` - Usage models
-- [x] `pyresolve/api/models/migrate.py` - Migration API models
-- [x] `pyresolve/api/routers/__init__.py` - Router exports
-- [x] `pyresolve/api/routers/auth.py` - Auth endpoints
-- [x] `pyresolve/api/routers/billing.py` - Billing endpoints
-- [x] `pyresolve/api/routers/usage.py` - Usage endpoints
-- [x] `pyresolve/api/routers/webhooks.py` - Stripe webhooks
-- [x] `pyresolve/api/routers/migrate.py` - LLM migration endpoints (server-side Anthropic calls)
-- [x] `pyresolve/api/migrations/001_initial_schema.sql` - Database schema
-- [x] `pyresolve/cli/commands/auth.py` - CLI auth commands
-- [x] `pyresolve/cli/quota.py` - Quota checking utilities
-- [x] `pyresolve/utils/api_client.py` - API client for CLI to call PyResolve API
+- [x] `codeshift/api/__init__.py`
+- [x] `codeshift/api/main.py` - FastAPI application
+- [x] `codeshift/api/auth.py` - API key validation
+- [x] `codeshift/api/config.py` - API settings
+- [x] `codeshift/api/database.py` - Supabase client
+- [x] `codeshift/api/models/__init__.py` - Pydantic models
+- [x] `codeshift/api/models/auth.py` - Auth models
+- [x] `codeshift/api/models/billing.py` - Billing models
+- [x] `codeshift/api/models/usage.py` - Usage models
+- [x] `codeshift/api/models/migrate.py` - Migration API models
+- [x] `codeshift/api/routers/__init__.py` - Router exports
+- [x] `codeshift/api/routers/auth.py` - Auth endpoints
+- [x] `codeshift/api/routers/billing.py` - Billing endpoints
+- [x] `codeshift/api/routers/usage.py` - Usage endpoints
+- [x] `codeshift/api/routers/webhooks.py` - Stripe webhooks
+- [x] `codeshift/api/routers/migrate.py` - LLM migration endpoints (server-side Anthropic calls)
+- [x] `codeshift/api/migrations/001_initial_schema.sql` - Database schema
+- [x] `codeshift/cli/commands/auth.py` - CLI auth commands
+- [x] `codeshift/cli/quota.py` - Quota checking utilities
+- [x] `codeshift/utils/api_client.py` - API client for CLI to call Codeshift API
 
 ### New Files (Phase 1 - COMPLETED):
 - [x] `.github/workflows/ci.yml` (test pipeline)
@@ -281,11 +281,11 @@ This document consolidates all goals from `docs/GO_TO_MARKET.md`, `docs/MONETIZA
 - [x] `.github/PULL_REQUEST_TEMPLATE.md`
 
 ### Modified Files (Phase 2 - COMPLETED):
-- [x] `pyresolve/cli/main.py` - Add auth commands
-- [x] `pyresolve/cli/commands/upgrade.py` - Add quota check
-- [x] `pyresolve/cli/commands/apply.py` - Add usage recording
+- [x] `codeshift/cli/main.py` - Add auth commands
+- [x] `codeshift/cli/commands/upgrade.py` - Add quota check
+- [x] `codeshift/cli/commands/apply.py` - Add usage recording
 - [x] `pyproject.toml` - Add new dependencies (supabase, stripe, fastapi)
-- [x] `pyresolve/migrator/llm_migrator.py` - Refactored to use PyResolve API instead of direct Anthropic calls
+- [x] `codeshift/migrator/llm_migrator.py` - Refactored to use Codeshift API instead of direct Anthropic calls
 
 ### Pending:
 - [x] `README.md` - Add commercial contact email
@@ -308,7 +308,7 @@ STRIPE_PRICE_PRO=price_xxxxx
 STRIPE_PRICE_UNLIMITED=price_xxxxx
 
 # App
-PYRESOLVE_API_URL=https://api.pyresolve.dev
+PYRESOLVE_API_URL=https://api.codeshift.dev
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 ```
 

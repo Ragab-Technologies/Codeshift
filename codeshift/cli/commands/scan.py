@@ -11,10 +11,7 @@ from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
-from codeshift.knowledge import (
-    generate_knowledge_base_sync,
-    is_tier_1_library,
-)
+from codeshift.knowledge import generate_knowledge_base_sync, is_tier_1_library
 from codeshift.scanner import DependencyParser
 from codeshift.utils.config import ProjectConfig
 
@@ -148,7 +145,7 @@ def scan(
         console.print(
             Panel(
                 "[bold]Scanning project for possible migrations[/]\n\n" f"Path: {project_path}",
-                title="PyResolve Scan",
+                title="Codeshift Scan",
             )
         )
 

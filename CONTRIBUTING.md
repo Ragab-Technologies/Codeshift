@@ -1,6 +1,6 @@
-# Contributing to PyResolve
+# Contributing to Codeshift
 
-Thank you for your interest in contributing to PyResolve! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Codeshift! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -22,12 +22,12 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a w
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/PyResolve.git
-   cd PyResolve
+   git clone https://github.com/YOUR_USERNAME/Codeshift.git
+   cd Codeshift
    ```
 3. **Add the upstream remote**:
    ```bash
-   git remote add upstream https://github.com/youssefragab/PyResolve.git
+   git remote add upstream https://github.com/youssefragab/Codeshift.git
    ```
 
 ## Development Setup
@@ -52,7 +52,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a w
 
 3. Verify the installation:
    ```bash
-   pyresolve --help
+   codeshift --help
    ```
 
 ### Environment Variables
@@ -86,7 +86,7 @@ export GITHUB_TOKEN="your-github-token"  # Optional, for higher rate limits
    ```bash
    ruff check .
    black --check .
-   mypy pyresolve --ignore-missing-imports
+   mypy codeshift --ignore-missing-imports
    ```
 
 6. **Commit your changes** with a descriptive message:
@@ -147,7 +147,7 @@ docs: update README with new scan command options
 ### Code Organization
 
 ```
-pyresolve/
+codeshift/
 ├── cli/            # CLI commands and argument parsing
 ├── scanner/        # Code scanning and import detection
 ├── analyzer/       # Risk assessment and change detection
@@ -166,7 +166,7 @@ pyresolve/
 pytest
 
 # Run with coverage
-pytest --cov=pyresolve --cov-report=term-missing
+pytest --cov=codeshift --cov-report=term-missing
 
 # Run specific test file
 pytest tests/test_pydantic_transforms.py
@@ -186,9 +186,9 @@ pytest tests/test_pydantic_transforms.py::test_dict_to_model_dump
 
 To add support for a new library migration:
 
-1. **Create a knowledge base file** in `pyresolve/knowledge_base/libraries/`:
+1. **Create a knowledge base file** in `codeshift/knowledge_base/libraries/`:
    ```yaml
-   # pyresolve/knowledge_base/libraries/newlib.yaml
+   # codeshift/knowledge_base/libraries/newlib.yaml
    library: newlib
    from_version: "1.0"
    to_version: "2.0"
@@ -202,7 +202,7 @@ To add support for a new library migration:
        confidence: high
    ```
 
-2. **Add AST transforms** in `pyresolve/migrator/ast_transforms.py` if deterministic transforms are possible
+2. **Add AST transforms** in `codeshift/migrator/ast_transforms.py` if deterministic transforms are possible
 
 3. **Add tests** in `tests/test_<library>_transforms.py`
 
@@ -212,7 +212,7 @@ To add support for a new library migration:
 
 If you have questions about contributing, feel free to:
 
-- Open a [Discussion](https://github.com/youssefragab/PyResolve/discussions)
-- Open an [Issue](https://github.com/youssefragab/PyResolve/issues)
+- Open a [Discussion](https://github.com/youssefragab/Codeshift/discussions)
+- Open an [Issue](https://github.com/youssefragab/Codeshift/issues)
 
-Thank you for contributing to PyResolve!
+Thank you for contributing to Codeshift!

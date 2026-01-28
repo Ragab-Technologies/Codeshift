@@ -76,10 +76,10 @@ dmypy.json
 # ruff
 .ruff_cache/
 
-# PyResolve specific
-.pyresolve/
-.pyresolve_cache/
-*.pyresolve.json
+# Codeshift specific
+.codeshift/
+.codeshift_cache/
+*.codeshift.json
 
 # Supabase local development
 supabase/.temp/
