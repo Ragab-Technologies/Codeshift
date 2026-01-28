@@ -1,4 +1,4 @@
-"""CLI module for PyResolve."""
+"""CLI module for Codeshift."""
 
 from codeshift.cli.main import cli
 
