@@ -55,7 +55,7 @@ def delete_credentials() -> None:
 def get_api_key() -> str | None:
     """Get API key from environment or saved credentials."""
     # Check environment first
-    api_key = os.environ.get("PYRESOLVE_API_KEY")
+    api_key = os.environ.get("CODESHIFT_API_KEY")
     if api_key:
         return api_key
 
@@ -99,7 +99,7 @@ def login(
     api_key: str | None,
     device: bool,
 ) -> None:
-    """Login to PyResolve to enable cloud features.
+    """Login to Codeshift to enable cloud features.
 
     \b
     Authentication methods:
@@ -148,7 +148,7 @@ def register(
     password: str | None,
     name: str | None,
 ) -> None:
-    """Create a new PyResolve account.
+    """Create a new Codeshift account.
 
     \b
     Example:
@@ -228,7 +228,7 @@ def _register_account(email: str, password: str, full_name: str | None) -> None:
                         f"[green]Account created successfully![/]\n\n"
                         f"Email: [cyan]{data['user']['email']}[/]\n"
                         f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n\n"
-                        f"[dim]You are now logged in and ready to use PyResolve.[/]",
+                        f"[dim]You are now logged in and ready to use Codeshift.[/]",
                         title="Registration Successful",
                     )
                 )
@@ -466,7 +466,7 @@ def _login_with_device_code() -> None:
 
 @click.command()
 def logout() -> None:
-    """Logout from PyResolve and remove saved credentials."""
+    """Logout from Codeshift and remove saved credentials."""
     creds = load_credentials()
 
     if not creds:

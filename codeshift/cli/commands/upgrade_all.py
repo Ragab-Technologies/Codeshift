@@ -234,7 +234,7 @@ def upgrade_all(
     console.print(
         Panel(
             "[bold]Scanning project for upgradeable dependencies[/]\n\n" f"Path: {project_path}",
-            title="PyResolve Upgrade All",
+            title="Codeshift Upgrade All",
         )
     )
 

@@ -1,6 +1,6 @@
-"""PyResolve API client for LLM-powered migrations.
+"""Codeshift API client for LLM-powered migrations.
 
-This client calls the PyResolve API instead of Anthropic directly,
+This client calls the Codeshift API instead of Anthropic directly,
 ensuring that LLM features are gated behind the subscription model.
 """
 
@@ -13,7 +13,7 @@ from codeshift.cli.commands.auth import get_api_key, get_api_url
 
 @dataclass
 class APIResponse:
-    """Response from the PyResolve API."""
+    """Response from the Codeshift API."""
 
     success: bool
     content: str
@@ -22,10 +22,10 @@ class APIResponse:
     cached: bool = False
 
 
-class PyResolveAPIClient:
-    """Client for interacting with the PyResolve API for LLM migrations.
+class CodeshiftAPIClient:
+    """Client for interacting with the Codeshift API for LLM migrations.
 
-    This client routes all LLM calls through the PyResolve API,
+    This client routes all LLM calls through the Codeshift API,
     which handles:
     - Authentication and authorization
     - Quota checking and billing
@@ -41,7 +41,7 @@ class PyResolveAPIClient:
         """Initialize the API client.
 
         Args:
-            api_key: PyResolve API key. Defaults to stored credentials.
+            api_key: Codeshift API key. Defaults to stored credentials.
             api_url: API base URL. Defaults to stored URL.
             timeout: Request timeout in seconds.
         """
@@ -89,7 +89,7 @@ class PyResolveAPIClient:
         to_version: str,
         context: str | None = None,
     ) -> APIResponse:
-        """Migrate code using the PyResolve API.
+        """Migrate code using the Codeshift API.
 
         Args:
             code: Source code to migrate
@@ -249,14 +249,14 @@ class PyResolveAPIClient:
 
 
 # Singleton instance
-_default_client: PyResolveAPIClient | None = None
+_default_client: CodeshiftAPIClient | None = None
 
 
-def get_api_client() -> PyResolveAPIClient:
+def get_api_client() -> CodeshiftAPIClient:
     """Get the default API client instance."""
     global _default_client
     if _default_client is None:
-        _default_client = PyResolveAPIClient()
+        _default_client = CodeshiftAPIClient()
     return _default_client
 
 
