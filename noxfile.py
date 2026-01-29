@@ -9,8 +9,8 @@ nox.options.sessions = ["lint", "test"]
 def lint(session: nox.Session) -> None:
     """Run linting and auto-fix issues (ruff, black, mypy)."""
     session.install("-e", ".[dev]")
-    session.run("ruff", "check", "--fix", "--exclude", "tests/stress_tests", ".")
-    session.run("black", "--exclude", "tests/stress_tests", ".")
+    session.run("ruff", "check", "--fix", "codeshift", "tests")
+    session.run("black", "codeshift", "tests")
     session.run("mypy", "codeshift", "--ignore-missing-imports")
 
 
@@ -32,4 +32,4 @@ def test_cov(session: nox.Session) -> None:
 def format(session: nox.Session) -> None:
     """Format code with black."""
     session.install("black==24.*")
-    session.run("black", "--exclude", "tests/stress_tests", ".")
+    session.run("black", "codeshift", "tests")
