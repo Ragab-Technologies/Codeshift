@@ -11,9 +11,11 @@ from codeshift.migrator.engine import (
     get_migration_engine,
     run_migration,
 )
+from codeshift.migrator.llm_migrator import DirectLLMAccessError
 
 __all__ = [
     "BaseTransformer",
+    "DirectLLMAccessError",
     "TransformChange",
     "TransformResult",
     "TransformStatus",

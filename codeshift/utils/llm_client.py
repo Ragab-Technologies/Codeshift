@@ -1,14 +1,29 @@
-"""Anthropic Claude client wrapper for LLM-based migrations."""
+"""Anthropic Claude client wrapper for LLM-based migrations.
+
+WARNING: This module is INTERNAL ONLY. Do not import or use directly.
+
+All LLM access must go through the Codeshift API to ensure proper
+authentication, billing, and quota management. Direct use of these
+classes bypasses the subscription model and is not supported.
+
+Use codeshift.migrator.LLMMigrator for migrations instead.
+"""
 
 import os
 from dataclasses import dataclass
 
 from anthropic import Anthropic
 
+# Explicitly mark nothing as public - this is an internal module
+__all__: list[str] = []
+
 
 @dataclass
-class LLMResponse:
-    """Response from the LLM."""
+class _LLMResponse:
+    """Response from the LLM.
+
+    WARNING: Internal class. Do not use directly.
+    """
 
     content: str
     model: str
@@ -17,8 +32,14 @@ class LLMResponse:
     error: str | None = None
 
 
-class LLMClient:
-    """Client for interacting with Anthropic's Claude API."""
+class _LLMClient:
+    """Client for interacting with Anthropic's Claude API.
+
+    WARNING: Internal class. Do not use directly.
+
+    All LLM access should go through the Codeshift API via LLMMigrator.
+    Direct instantiation of this class bypasses authentication and billing.
+    """
 
     DEFAULT_MODEL = "claude-sonnet-4-20250514"
     MAX_TOKENS = 4096
@@ -29,6 +50,8 @@ class LLMClient:
         model: str | None = None,
     ):
         """Initialize the LLM client.
+
+        WARNING: Internal method. Do not call directly.
 
         Args:
             api_key: Anthropic API key. Defaults to ANTHROPIC_API_KEY env var.
@@ -45,7 +68,7 @@ class LLMClient:
             if not self.api_key:
                 raise ValueError(
                     "Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable "
-                    "or pass api_key to LLMClient."
+                    "or pass api_key to _LLMClient."
                 )
             self._client = Anthropic(api_key=self.api_key)
         return self._client
@@ -61,7 +84,7 @@ class LLMClient:
         system_prompt: str | None = None,
         max_tokens: int | None = None,
         temperature: float = 0.0,
-    ) -> LLMResponse:
+    ) -> _LLMResponse:
         """Generate a response from the LLM.
 
         Args:
@@ -71,10 +94,10 @@ class LLMClient:
             temperature: Sampling temperature (0.0 for deterministic)
 
         Returns:
-            LLMResponse with the generated content
+            _LLMResponse with the generated content
         """
         if not self.is_available:
-            return LLMResponse(
+            return _LLMResponse(
                 content="",
                 model=self.model,
                 usage={},
@@ -96,7 +119,7 @@ class LLMClient:
                 if hasattr(block, "text"):
                     content += block.text
 
-            return LLMResponse(
+            return _LLMResponse(
                 content=content,
                 model=response.model,
                 usage={
@@ -107,7 +130,7 @@ class LLMClient:
             )
 
         except Exception as e:
-            return LLMResponse(
+            return _LLMResponse(
                 content="",
                 model=self.model,
                 usage={},
@@ -122,7 +145,7 @@ class LLMClient:
         from_version: str,
         to_version: str,
         context: str | None = None,
-    ) -> LLMResponse:
+    ) -> _LLMResponse:
         """Use the LLM to migrate code.
 
         Args:
@@ -133,7 +156,7 @@ class LLMClient:
             context: Optional context about the migration
 
         Returns:
-            LLMResponse with the migrated code
+            _LLMResponse with the migrated code
         """
         system_prompt = f"""You are an expert Python developer specializing in code migrations.
 Your task is to migrate Python code from {library} v{from_version} to v{to_version}.
@@ -177,7 +200,7 @@ Return only the migrated Python code:"""
         original: str,
         transformed: str,
         library: str,
-    ) -> LLMResponse:
+    ) -> _LLMResponse:
         """Use the LLM to explain a migration change.
 
         Args:
@@ -186,7 +209,7 @@ Return only the migrated Python code:"""
             library: The library being upgraded
 
         Returns:
-            LLMResponse with the explanation
+            _LLMResponse with the explanation
         """
         system_prompt = """You are an expert Python developer.
 Explain code changes clearly and concisely for other developers.
@@ -209,13 +232,18 @@ Provide a brief explanation (2-3 sentences) of what changed and why:"""
         return self.generate(prompt, system_prompt=system_prompt, max_tokens=500)
 
 
-# Singleton instance for convenience
-_default_client: LLMClient | None = None
+# Singleton instance for convenience (internal use only)
+_default_client: _LLMClient | None = None
 
 
-def get_llm_client() -> LLMClient:
-    """Get the default LLM client instance."""
+def _get_llm_client() -> _LLMClient:
+    """Get the default LLM client instance.
+
+    WARNING: Internal function. Do not call directly.
+
+    All LLM access should go through the Codeshift API via LLMMigrator.
+    """
     global _default_client
     if _default_client is None:
-        _default_client = LLMClient()
+        _default_client = _LLMClient()
     return _default_client

@@ -5,8 +5,12 @@ which handles authentication, quota checking, and billing.
 Users must have a Pro or Unlimited subscription to use LLM features.
 
 Tier 1 (deterministic AST transforms) remains free and local.
+
+SECURITY: Direct LLM access is blocked. All LLM calls must go through
+the Codeshift API to ensure proper authentication and billing.
 """
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +19,22 @@ from codeshift.migrator.ast_transforms import TransformChange, TransformResult, 
 from codeshift.utils.api_client import CodeshiftAPIClient, get_api_client
 from codeshift.utils.cache import LLMCache, get_llm_cache
 from codeshift.validator.syntax_checker import quick_syntax_check
+
+
+class DirectLLMAccessError(Exception):
+    """Raised when attempting to bypass the Codeshift API for LLM access.
+
+    All LLM migrations must go through the Codeshift API to ensure proper
+    authentication, billing, and quota management. Direct use of API keys
+    is not supported.
+
+    To use LLM features:
+    1. Run 'codeshift login' to authenticate
+    2. Upgrade to Pro or Unlimited tier at https://codeshift.dev/pricing
+    3. Use LLMMigrator without passing api_key parameters
+    """
+
+    pass
 
 
 @dataclass
@@ -49,6 +69,7 @@ class LLMMigrator:
         cache: LLMCache | None = None,
         use_cache: bool = True,
         validate_output: bool = True,
+        **kwargs: object,
     ):
         """Initialize the LLM migrator.
 
@@ -57,7 +78,31 @@ class LLMMigrator:
             cache: Cache to use. Defaults to singleton.
             use_cache: Whether to use caching
             validate_output: Whether to validate migrated code syntax
+            **kwargs: Rejected keyword arguments (security check)
+
+        Raises:
+            DirectLLMAccessError: If attempting to pass API keys directly
         """
+        # Security check: Block attempts to pass API keys directly
+        blocked_kwargs = {"api_key", "anthropic_api_key", "openai_api_key", "llm_api_key"}
+        passed_blocked = blocked_kwargs & set(kwargs.keys())
+        if passed_blocked:
+            raise DirectLLMAccessError(
+                f"Direct API key access is not allowed. "
+                f"Blocked parameters: {', '.join(passed_blocked)}. "
+                f"All LLM migrations must go through the Codeshift API. "
+                f"Run 'codeshift login' to authenticate and upgrade to Pro tier."
+            )
+
+        # Security check: Warn if ANTHROPIC_API_KEY is set without Codeshift auth
+        if os.environ.get("ANTHROPIC_API_KEY") and not os.environ.get("CODESHIFT_API_KEY"):
+            raise DirectLLMAccessError(
+                "ANTHROPIC_API_KEY environment variable detected without Codeshift authentication. "
+                "Direct LLM access is not supported. All LLM migrations must go through "
+                "the Codeshift API for proper billing and quota management. "
+                "Run 'codeshift login' to authenticate, then unset ANTHROPIC_API_KEY."
+            )
+
         self.client = client or get_api_client()
         self.cache = cache or get_llm_cache() if use_cache else None
         self.use_cache = use_cache

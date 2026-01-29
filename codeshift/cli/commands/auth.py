@@ -1,11 +1,11 @@
 """Authentication commands for Codeshift CLI."""
 
-import json
+import logging
 import os
 import time
 import webbrowser
-from pathlib import Path
-from typing import Any, cast
+from typing import Any
+from urllib.parse import urlparse
 
 import click
 import httpx
@@ -15,41 +15,95 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from codeshift.utils.credential_store import (
+    CredentialDecryptionError,
+    get_credential_store,
+)
+
+logger = logging.getLogger(__name__)
+
 console = Console()
 
-# Config directory for storing credentials
-CONFIG_DIR = Path.home() / ".config" / "codeshift"
-CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
+# Hosts allowed to use HTTP (development only)
+ALLOWED_DEV_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+
+
+class InsecureURLError(Exception):
+    """Raised when an insecure (HTTP) URL is used for a remote host."""
+
+    pass
+
+
+def validate_api_url(url: str) -> str:
+    """Validate the API URL for security.
+
+    Ensures HTTPS is used for remote hosts to prevent MITM attacks.
+    HTTP is only allowed for local development hosts.
+
+    Args:
+        url: The API URL to validate.
+
+    Returns:
+        The validated URL.
+
+    Raises:
+        InsecureURLError: If HTTP is used with a non-local host.
+    """
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    hostname = parsed.hostname or ""
+
+    if scheme == "http":
+        if hostname in ALLOWED_DEV_HOSTS:
+            logger.warning(
+                "Using insecure HTTP connection to %s. "
+                "This is only acceptable for local development.",
+                hostname,
+            )
+            return url
+        else:
+            raise InsecureURLError(
+                f"Insecure HTTP URL detected for remote host '{hostname}'. "
+                f"HTTPS is required for remote API connections to prevent MITM attacks. "
+                f"Please use https:// instead of http://"
+            )
+
+    return url
 
 
 def get_api_url() -> str:
-    """Get the API URL from environment or default."""
-    return os.environ.get("CODESHIFT_API_URL", "https://py-resolve.replit.app")
+    """Get the API URL from environment or default.
+
+    Returns:
+        The validated API URL.
+
+    Raises:
+        InsecureURLError: If the URL uses HTTP with a non-local host.
+    """
+    url = os.environ.get("CODESHIFT_API_URL", "https://py-resolve.replit.app")
+    return validate_api_url(url)
 
 
 def load_credentials() -> dict[str, Any] | None:
-    """Load saved credentials from disk."""
-    if not CREDENTIALS_FILE.exists():
-        return None
+    """Load saved credentials from encrypted storage."""
     try:
-        return cast(dict[str, Any], json.loads(CREDENTIALS_FILE.read_text()))
-    except (OSError, json.JSONDecodeError):
+        store = get_credential_store()
+        return store.load_credentials()
+    except CredentialDecryptionError as e:
+        console.print(f"[yellow]Warning: {e}[/]")
         return None
 
 
-def save_credentials(credentials: dict) -> None:
-    """Save credentials to disk."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Set restrictive permissions
-    CREDENTIALS_FILE.write_text(json.dumps(credentials, indent=2))
-    os.chmod(CREDENTIALS_FILE, 0o600)
+def save_credentials(credentials: dict[str, Any]) -> None:
+    """Save credentials to encrypted storage."""
+    store = get_credential_store()
+    store.save_credentials(credentials)
 
 
 def delete_credentials() -> None:
     """Delete saved credentials."""
-    if CREDENTIALS_FILE.exists():
-        CREDENTIALS_FILE.unlink()
+    store = get_credential_store()
+    store.clear_credentials()
 
 
 def get_api_key() -> str | None:
