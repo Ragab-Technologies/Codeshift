@@ -18,12 +18,8 @@ from codeshift.knowledge import (
     is_tier_1_library,
 )
 from codeshift.knowledge_base import KnowledgeBaseLoader
-from codeshift.migrator.ast_transforms import TransformChange, TransformResult, TransformStatus
-from codeshift.migrator.transforms.fastapi_transformer import transform_fastapi
-from codeshift.migrator.transforms.pandas_transformer import transform_pandas
-from codeshift.migrator.transforms.pydantic_v1_to_v2 import transform_pydantic_v1_to_v2
-from codeshift.migrator.transforms.requests_transformer import transform_requests
-from codeshift.migrator.transforms.sqlalchemy_transformer import transform_sqlalchemy
+from codeshift.knowledge_base.models import LibraryKnowledge
+from codeshift.migrator.ast_transforms import TransformResult, TransformStatus
 from codeshift.scanner import CodeScanner, DependencyParser
 from codeshift.utils.config import ProjectConfig
 
@@ -81,6 +77,11 @@ def save_state(project_path: Path, state: dict) -> None:
     is_flag=True,
     help="Show detailed output",
 )
+@click.option(
+    "--force-llm",
+    is_flag=True,
+    help="Force LLM migration even for libraries with AST transforms",
+)
 def upgrade(
     library: str,
     target: str,
@@ -88,6 +89,7 @@ def upgrade(
     file: str | None,
     dry_run: bool,
     verbose: bool,
+    force_llm: bool,
 ) -> None:
     """Analyze your codebase and propose changes for a library upgrade.
 
@@ -100,34 +102,44 @@ def upgrade(
     project_path = Path(path).resolve()
     project_config = ProjectConfig.from_pyproject(project_path)
 
-    # Check quota before starting (allow offline for Tier 1 libraries)
+    # Check quota before starting (allow offline for Tier 1 libraries unless force-llm)
     is_tier1 = is_tier_1_library(library)
     try:
-        check_quota("file_migrated", quantity=1, allow_offline=is_tier1)
+        check_quota("file_migrated", quantity=1, allow_offline=is_tier1 and not force_llm)
     except QuotaError as e:
         show_quota_exceeded_message(e)
         raise SystemExit(1) from e
 
-    # Load knowledge base
+    # Load knowledge base (optional - YAML may not exist for all libraries)
     loader = KnowledgeBaseLoader()
+    knowledge: LibraryKnowledge | None = None
 
     try:
         knowledge = loader.load(library)
-    except FileNotFoundError as e:
-        console.print(f"[red]Error:[/] {e}")
-        console.print(f"\nSupported libraries: {', '.join(loader.get_supported_libraries())}")
-        raise SystemExit(1) from e
+    except FileNotFoundError:
+        if verbose:
+            console.print(
+                f"[dim]No knowledge base YAML for {library} - using generated knowledge[/]"
+            )
 
-    # Check if migration is supported
-    # For now, we'll allow any version since we're doing a general migration
-    console.print(
-        Panel(
-            f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
-            f"{knowledge.description}\n"
-            f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
-            title="Codeshift Migration",
+    # Display migration info with fallback for missing YAML
+    if knowledge:
+        console.print(
+            Panel(
+                f"[bold]Upgrading {knowledge.display_name}[/] to version [cyan]{target}[/]\n\n"
+                f"{knowledge.description}\n"
+                f"Migration guide: {knowledge.migration_guide_url or 'N/A'}",
+                title="Codeshift Migration",
+            )
         )
-    )
+    else:
+        console.print(
+            Panel(
+                f"[bold]Upgrading {library}[/] to version [cyan]{target}[/]\n\n"
+                "Using AI-powered migration (no static knowledge base available)",
+                title="Codeshift Migration",
+            )
+        )
 
     # Step 1: Parse dependencies
     with Progress(
@@ -271,7 +283,25 @@ def upgrade(
         console.print(f"\n[yellow]No {library} imports found in the codebase.[/]")
         return
 
-    # Step 4: Apply transforms
+    # Step 4: Apply transforms using MigrationEngine
+    # Import here to avoid circular dependency (upgrade.py -> migrator -> llm_migrator -> api_client -> auth -> cli -> upgrade.py)
+    from codeshift.migrator import get_migration_engine
+
+    engine = get_migration_engine()
+
+    # Check auth for non-Tier1 libraries or force-llm mode
+    llm_required = force_llm or not is_tier1
+    if llm_required and not engine.llm_migrator.is_available:
+        console.print(
+            Panel(
+                f"[yellow]LLM migration required for {library}[/]\n\n"
+                "Run [cyan]codeshift login[/] and upgrade to Pro tier for LLM features.",
+                title="Authentication Required",
+            )
+        )
+        if not is_tier1:
+            raise SystemExit(1)
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -286,45 +316,28 @@ def upgrade(
 
         results: list[TransformResult] = []
 
+        def migration_progress(msg: str) -> None:
+            progress.update(task, description=msg)
+
         for file_path in files_to_transform:
             try:
                 source_code = file_path.read_text()
 
-                # Select transformer based on library
-                transform_func = {
-                    "pydantic": transform_pydantic_v1_to_v2,
-                    "fastapi": transform_fastapi,
-                    "sqlalchemy": transform_sqlalchemy,
-                    "pandas": transform_pandas,
-                    "requests": transform_requests,
-                }.get(library)
-
-                if transform_func:
-                    transformed_code, changes = transform_func(source_code)
-                    # Create TransformResult from the function output
-                    result = TransformResult(
-                        file_path=file_path,
-                        status=TransformStatus.SUCCESS if changes else TransformStatus.NO_CHANGES,
-                        original_code=source_code,
-                        transformed_code=transformed_code,
-                        changes=[
-                            TransformChange(
-                                description=c.description,
-                                line_number=c.line_number,
-                                original=c.original,
-                                replacement=c.replacement,
-                                transform_name=c.transform_name,
-                                confidence=getattr(c, "confidence", 1.0),
-                            )
-                            for c in changes
-                        ],
-                    )
-                else:
-                    console.print(f"[yellow]Warning:[/] No transformer available for {library}")
-                    continue
+                result = engine.run_migration(
+                    code=source_code,
+                    file_path=file_path,
+                    library=library,
+                    old_version=current_version or "1.0",
+                    new_version=target,
+                    knowledge_base=generated_kb,
+                    progress_callback=migration_progress if verbose else None,
+                )
 
                 if result.has_changes:
                     results.append(result)
+                elif result.errors:
+                    for error in result.errors:
+                        console.print(f"[yellow]Warning ({file_path.name}):[/] {error}")
 
             except Exception as e:
                 console.print(f"[red]Error processing {file_path}:[/] {e}")

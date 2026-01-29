@@ -65,9 +65,7 @@ class ImportVisitor(cst.CSTVisitor):
     def __init__(self, target_library: str):
         self.target_library = target_library
         # Get all possible import names for this library
-        self.import_names = PACKAGE_IMPORT_ALIASES.get(
-            target_library.lower(), [target_library]
-        )
+        self.import_names = PACKAGE_IMPORT_ALIASES.get(target_library.lower(), [target_library])
         self.imports: list[ImportInfo] = []
         self._imported_names: set[str] = set()
 
