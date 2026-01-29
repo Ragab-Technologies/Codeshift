@@ -69,7 +69,7 @@ breaking_changes:
 
   # connector_owner default change
   - symbol: "ClientSession(connector=..., connector_owner=None)"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: medium
     from_version: "3.7"
     to_version: "3.9"
@@ -133,7 +133,7 @@ breaking_changes:
 
   # Middleware signature changes (old-style to new-style)
   - symbol: "@middleware"
-    change_type: signature_change
+    change_type: signature_changed
     severity: high
     from_version: "3.7"
     to_version: "3.9"
@@ -154,7 +154,7 @@ breaking_changes:
     transform_name: ws_connect_timeout_rename
 
   - symbol: "ws_connect(receive_timeout=...)"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: low
     from_version: "3.7"
     to_version: "3.9"

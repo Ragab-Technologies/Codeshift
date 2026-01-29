@@ -182,7 +182,7 @@ breaking_changes:
 
   # pytest.importorskip exc_type
   - symbol: "pytest.importorskip()"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: low
     from_version: "8.0"
     to_version: "8.2"
