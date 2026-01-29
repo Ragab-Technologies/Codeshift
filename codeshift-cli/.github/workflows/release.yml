@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches pyproject.toml
+        run: |
+          pip install toml
+          python << 'EOF'
+          import toml
+          import os
+
+          with open('pyproject.toml', 'r') as f:
+              config = toml.load(f)
+
+          pyproject_version = config['project']['version']
+          tag_version = os.environ['TAG_VERSION']
+
+          if pyproject_version != tag_version:
+              print(f"ERROR: Tag version ({tag_version}) does not match pyproject.toml ({pyproject_version})")
+              exit(1)
+
+          print(f"Version verified: {pyproject_version}")
+          EOF
+        env:
+          TAG_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          pip install packaging
+          python << 'EOF'
+          import subprocess
+          import os
+
+          # Get commits since last tag
+          try:
+              tags = subprocess.check_output(
+                  ['git', 'tag', '--sort=-creatordate'],
+                  stderr=subprocess.DEVNULL
+              ).decode().strip().split('\n')
+
+              # Find previous tag (skip current)
+              current_tag = os.environ['GITHUB_REF'].replace('refs/tags/', '')
+              prev_tag = None
+              for tag in tags:
+                  if tag and tag != current_tag:
+                      prev_tag = tag
+                      break
+
+              if prev_tag:
+                  commit_range = f"{prev_tag}..{current_tag}"
+              else:
+                  commit_range = current_tag
+          except subprocess.CalledProcessError:
+              commit_range = "HEAD"
+
+          # Get commit messages
+          commits = subprocess.check_output(
+              ['git', 'log', commit_range, '--pretty=format:%s']
+          ).decode().strip().split('\n')
+
+          # Generate changelog
+          changelog_lines = ["## What's Changed\n"]
+          features = []
+          fixes = []
+          others = []
+
+          for msg in commits:
+              if not msg:
+                  continue
+              if msg.lower().startswith('feat'):
+                  features.append(f"- {msg}")
+              elif msg.lower().startswith('fix'):
+                  fixes.append(f"- {msg}")
+              elif msg.lower().startswith(('docs', 'chore', 'ci', 'refactor', 'test', 'perf', 'build')):
+                  others.append(f"- {msg}")
+
+          if features:
+              changelog_lines.append("### Features\n" + "\n".join(features) + "\n")
+          if fixes:
+              changelog_lines.append("### Bug Fixes\n" + "\n".join(fixes) + "\n")
+          if others:
+              changelog_lines.append("### Other Changes\n" + "\n".join(others) + "\n")
+
+          changelog = "\n".join(changelog_lines)
+
+          with open('/tmp/changelog.md', 'w') as f:
+              f.write(changelog)
+
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          body_path: /tmp/changelog.md
+          generate_release_notes: false
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

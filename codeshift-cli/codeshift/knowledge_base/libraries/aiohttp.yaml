@@ -1,0 +1,186 @@
+# aiohttp Knowledge Base
+# Breaking changes from v3.7 to v3.9+
+
+name: aiohttp
+display_name: aiohttp
+description: Async HTTP client/server framework for asyncio
+migration_guide_url: https://docs.aiohttp.org/en/stable/changes.html
+
+supported_migrations:
+  - from: "3.7"
+    to: "3.9"
+
+breaking_changes:
+  # Loop parameter removal - ClientSession
+  - symbol: "ClientSession(loop=...)"
+    change_type: removed
+    severity: high
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "loop parameter removed from ClientSession constructor"
+    replacement: "ClientSession()"
+    has_deterministic_transform: true
+    transform_name: remove_loop_param_client_session
+    notes: "Event loop is now obtained automatically via asyncio.get_event_loop()"
+
+  # Loop parameter removal - TCPConnector
+  - symbol: "TCPConnector(loop=...)"
+    change_type: removed
+    severity: high
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "loop parameter removed from TCPConnector constructor"
+    replacement: "TCPConnector()"
+    has_deterministic_transform: true
+    transform_name: remove_loop_param_tcp_connector
+
+  # Loop parameter removal - UnixConnector
+  - symbol: "UnixConnector(loop=...)"
+    change_type: removed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "loop parameter removed from UnixConnector constructor"
+    replacement: "UnixConnector()"
+    has_deterministic_transform: true
+    transform_name: remove_loop_param_unix_connector
+
+  # Loop parameter removal - web.Application
+  - symbol: "web.Application(loop=...)"
+    change_type: removed
+    severity: high
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "loop parameter removed from web.Application constructor"
+    replacement: "web.Application()"
+    has_deterministic_transform: true
+    transform_name: remove_loop_param_web_application
+
+  # Loop parameter removal - ClientTimeout
+  - symbol: "ClientTimeout(loop=...)"
+    change_type: removed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "loop parameter removed from ClientTimeout constructor"
+    replacement: "ClientTimeout()"
+    has_deterministic_transform: true
+    transform_name: remove_loop_param_client_timeout
+
+  # connector_owner default change
+  - symbol: "ClientSession(connector=..., connector_owner=None)"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "connector_owner now defaults to True; explicitly set to False if connector is shared"
+    replacement: "ClientSession(connector=..., connector_owner=False)"
+    has_deterministic_transform: false
+    notes: "Manual review needed - depends on whether connector is shared across sessions"
+
+  # BasicAuth.encode() removal
+  - symbol: "BasicAuth.encode()"
+    change_type: removed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "BasicAuth.encode() method removed"
+    replacement: "str(BasicAuth(...))"
+    has_deterministic_transform: true
+    transform_name: basicauth_encode_to_str
+
+  # Deprecated timeout parameters
+  - symbol: "ClientSession(read_timeout=...)"
+    change_type: removed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "read_timeout parameter deprecated, use ClientTimeout instead"
+    replacement: "ClientSession(timeout=ClientTimeout(total=...))"
+    has_deterministic_transform: true
+    transform_name: read_timeout_to_client_timeout
+
+  - symbol: "ClientSession(conn_timeout=...)"
+    change_type: removed
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "conn_timeout parameter deprecated, use ClientTimeout instead"
+    replacement: "ClientSession(timeout=ClientTimeout(connect=...))"
+    has_deterministic_transform: true
+    transform_name: conn_timeout_to_client_timeout
+
+  # app.loop, request.loop, client.loop deprecation
+  - symbol: "app.loop"
+    change_type: deprecated
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "app.loop property deprecated"
+    replacement: "asyncio.get_event_loop()"
+    has_deterministic_transform: true
+    transform_name: app_loop_to_get_event_loop
+
+  - symbol: "request.app.loop"
+    change_type: deprecated
+    severity: medium
+    from_version: "3.7"
+    to_version: "3.8"
+    description: "request.app.loop property deprecated"
+    replacement: "asyncio.get_event_loop()"
+    has_deterministic_transform: true
+    transform_name: request_loop_to_get_event_loop
+
+  # Middleware signature changes (old-style to new-style)
+  - symbol: "@middleware"
+    change_type: signature_changed
+    severity: high
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "Old-style middleware decorator deprecated; use @web.middleware with async def(request, handler)"
+    replacement: "@web.middleware async def middleware(request, handler)"
+    has_deterministic_transform: false
+    notes: "Middleware function signature changed; manual review recommended"
+
+  # ws_connect timeout deprecation
+  - symbol: "ws_connect(timeout=...)"
+    change_type: deprecated
+    severity: low
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "timeout parameter in ws_connect deprecated"
+    replacement: "ws_connect(receive_timeout=...)"
+    has_deterministic_transform: true
+    transform_name: ws_connect_timeout_rename
+
+  - symbol: "ws_connect(receive_timeout=...)"
+    change_type: behavior_changed
+    severity: low
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "Default websocket receive_timeout changed from None to 10.0 seconds"
+    replacement: "ws_connect(receive_timeout=None)"
+    has_deterministic_transform: false
+    notes: "Set receive_timeout=None explicitly if you want no timeout"
+
+  # Response URL attribute change
+  - symbol: "response.url_obj"
+    change_type: renamed
+    severity: low
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "url_obj attribute renamed to url (now returns yarl.URL)"
+    replacement: "response.url"
+    has_deterministic_transform: true
+    transform_name: url_obj_to_url
+
+  # WebSocket protocol attribute rename
+  - symbol: "ws_response.protocol"
+    change_type: renamed
+    severity: low
+    from_version: "3.7"
+    to_version: "3.9"
+    description: "WebSocketResponse.protocol renamed to ws_protocol"
+    replacement: "ws_response.ws_protocol"
+    has_deterministic_transform: true
+    transform_name: ws_protocol_rename

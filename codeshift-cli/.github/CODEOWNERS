@@ -1,0 +1,16 @@
+# CODEOWNERS for Codeshift
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files - requires approval for all PRs
+* @youssefragab99
+
+# Core modules require owner approval
+/codeshift/ @youssefragab99
+
+# Configuration and CI
+/.github/ @youssefragab99
+pyproject.toml @youssefragab99
+
+# Documentation
+/docs/ @youssefragab99
+README.md @youssefragab99

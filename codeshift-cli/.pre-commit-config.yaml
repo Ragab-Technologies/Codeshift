@@ -1,0 +1,64 @@
+# Pre-commit hooks that mirror GitHub Actions CI
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Run tests: pre-commit run --hook-stage manual --all-files
+
+repos:
+  # Ruff - fast Python linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # Black - code formatter
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  # Mypy - static type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        args: [--ignore-missing-imports]
+        additional_dependencies:
+          - types-toml>=0.10
+          - types-PyYAML>=6.0
+          - supabase>=2.3.0
+        files: ^codeshift/
+
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # Pytest - run tests (manual stage, run with: pre-commit run pytest --hook-stage manual)
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [manual]
+        args: [--tb=short, -q]
+
+      # Quick test - runs only on changed test files (for pre-push)
+      - id: pytest-changed
+        name: pytest (changed files)
+        entry: pytest
+        language: system
+        types: [python]
+        files: ^tests/
+        stages: [pre-push]
+        args: [--tb=short, -q]

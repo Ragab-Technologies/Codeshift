@@ -1,0 +1,190 @@
+# FastAPI Knowledge Base
+# Breaking changes from 0.x to 0.100+/1.0
+
+name: fastapi
+display_name: FastAPI
+description: Modern, fast web framework for building APIs with Python based on type hints
+migration_guide_url: https://fastapi.tiangolo.com/release-notes/
+
+supported_migrations:
+  - from: "0.99"
+    to: "0.100"
+  - from: "0.x"
+    to: "1.0"
+
+breaking_changes:
+  # Pydantic v2 compatibility changes (0.100+)
+  - symbol: "response_model_exclude_unset"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Pydantic v2 changes how unset fields are handled in response models"
+    replacement: "Use response_model_exclude_unset=True explicitly"
+    has_deterministic_transform: false
+    notes: "Behavior may differ between Pydantic v1 and v2"
+
+  - symbol: "Field(regex=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Pydantic Field regex parameter renamed to pattern"
+    replacement: "Field(pattern=...)"
+    has_deterministic_transform: true
+    transform_name: field_regex_to_pattern
+
+  - symbol: "Body(regex=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Body regex parameter renamed to pattern"
+    replacement: "Body(pattern=...)"
+    has_deterministic_transform: true
+    transform_name: body_regex_to_pattern
+
+  - symbol: "Query(regex=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Query regex parameter renamed to pattern"
+    replacement: "Query(pattern=...)"
+    has_deterministic_transform: true
+    transform_name: query_regex_to_pattern
+
+  - symbol: "Path(regex=...)"
+    change_type: renamed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Path regex parameter renamed to pattern"
+    replacement: "Path(pattern=...)"
+    has_deterministic_transform: true
+    transform_name: path_regex_to_pattern
+
+  # Deprecated features
+  - symbol: "from starlette.responses import JSONResponse"
+    change_type: deprecated
+    severity: low
+    from_version: "0.x"
+    to_version: "1.0"
+    description: "Import JSONResponse directly from fastapi.responses instead"
+    replacement: "from fastapi.responses import JSONResponse"
+    has_deterministic_transform: true
+    transform_name: starlette_to_fastapi_responses
+
+  - symbol: "from starlette.requests import Request"
+    change_type: deprecated
+    severity: low
+    from_version: "0.x"
+    to_version: "1.0"
+    description: "Import Request directly from fastapi instead"
+    replacement: "from fastapi import Request"
+    has_deterministic_transform: true
+    transform_name: starlette_to_fastapi_request
+
+  - symbol: "from starlette.status import *"
+    change_type: deprecated
+    severity: low
+    from_version: "0.x"
+    to_version: "1.0"
+    description: "Import status from fastapi instead"
+    replacement: "from fastapi import status"
+    has_deterministic_transform: true
+    transform_name: starlette_to_fastapi_status
+
+  - symbol: "from starlette.websockets import WebSocket"
+    change_type: deprecated
+    severity: low
+    from_version: "0.x"
+    to_version: "1.0"
+    description: "Import WebSocket directly from fastapi instead"
+    replacement: "from fastapi import WebSocket"
+    has_deterministic_transform: true
+    transform_name: starlette_to_fastapi_websocket
+
+  # OpenAPI schema changes
+  - symbol: "openapi_prefix"
+    change_type: removed
+    severity: medium
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "openapi_prefix parameter removed from FastAPI app"
+    replacement: "Use root_path parameter instead"
+    has_deterministic_transform: true
+    transform_name: openapi_prefix_to_root_path
+
+  - symbol: "app.openapi_schema"
+    change_type: behavior_changed
+    severity: low
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "OpenAPI schema generation updated for Pydantic v2 compatibility"
+    replacement: "Review generated schema for Pydantic v2 format"
+    has_deterministic_transform: false
+    notes: "Schema structure may differ slightly"
+
+  # Dependency Injection changes
+  - symbol: "Depends(use_cache=False)"
+    change_type: renamed
+    severity: low
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "use_cache parameter renamed to use_cached"
+    replacement: "Depends(use_cached=False)"
+    has_deterministic_transform: true
+    transform_name: depends_use_cache_rename
+
+  # Response model changes
+  - symbol: "response_model_by_alias"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "0.99"
+    to_version: "0.100"
+    description: "Pydantic v2 changes alias behavior in response models"
+    replacement: "Use model_config = ConfigDict(populate_by_name=True) in Pydantic models"
+    has_deterministic_transform: false
+    notes: "May require updates to Pydantic models"
+
+  # Form and File handling
+  - symbol: "UploadFile.file"
+    change_type: behavior_changed
+    severity: low
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "UploadFile.file is now a SpooledTemporaryFile with async methods"
+    replacement: "Use await file.read() instead of file.file.read()"
+    has_deterministic_transform: false
+    notes: "Async methods preferred for file operations"
+
+  # Security utilities
+  - symbol: "OAuth2PasswordRequestForm"
+    change_type: behavior_changed
+    severity: low
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "OAuth2PasswordRequestForm scopes parameter handling changed"
+    replacement: "Check scopes handling in your authentication flow"
+    has_deterministic_transform: false
+
+  # Background tasks
+  - symbol: "BackgroundTasks.add_task"
+    change_type: behavior_changed
+    severity: low
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "BackgroundTasks now uses anyio for better async handling"
+    replacement: "No code changes required, but behavior may differ"
+    has_deterministic_transform: false
+
+  # Middleware changes
+  - symbol: "app.add_middleware"
+    change_type: behavior_changed
+    severity: medium
+    from_version: "0.x"
+    to_version: "0.100"
+    description: "Middleware execution order and exception handling improved"
+    replacement: "Review middleware order and exception handling"
+    has_deterministic_transform: false
