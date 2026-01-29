@@ -191,6 +191,10 @@ class MarshmallowTransformer(BaseTransformer):
         - default -> dump_default
         - load_from -> data_key
         - dump_to -> data_key
+
+        Special handling: When both load_from and dump_to are present, only one data_key
+        is kept (preferring load_from) and a warning comment is added about the removed
+        dump_to value.
         """
         # Check if this is a fields.* call or a Field-like call
         func_name = self._get_call_func_name(node.func)
@@ -232,6 +236,27 @@ class MarshmallowTransformer(BaseTransformer):
         if func_name not in field_types:
             return node
 
+        # First pass: detect if both load_from and dump_to are present
+        load_from_arg = None
+        dump_to_arg = None
+        load_from_value = None
+        dump_to_value = None
+
+        for arg in node.args:
+            if isinstance(arg.keyword, cst.Name):
+                if arg.keyword.value == "load_from":
+                    load_from_arg = arg
+                    # Extract the value for comparison/warning
+                    if isinstance(arg.value, cst.SimpleString):
+                        load_from_value = arg.value.value
+                elif arg.keyword.value == "dump_to":
+                    dump_to_arg = arg
+                    # Extract the value for comparison/warning
+                    if isinstance(arg.value, cst.SimpleString):
+                        dump_to_value = arg.value.value
+
+        has_both_load_from_and_dump_to = load_from_arg is not None and dump_to_arg is not None
+
         new_args = []
         changed = False
         param_mappings = {
@@ -245,6 +270,31 @@ class MarshmallowTransformer(BaseTransformer):
             if isinstance(arg.keyword, cst.Name) and arg.keyword.value in param_mappings:
                 old_name = arg.keyword.value
                 new_name = param_mappings[old_name]
+
+                # Special case: skip dump_to when both load_from and dump_to exist
+                if old_name == "dump_to" and has_both_load_from_and_dump_to:
+                    changed = True
+                    # Record that dump_to was removed due to conflict
+                    self.record_change(
+                        description=(
+                            f"Remove '{old_name}' parameter - Marshmallow 3.x uses single "
+                            f"data_key for both load/dump. load_from value kept, dump_to="
+                            f"{dump_to_value} removed. Manual review may be needed if "
+                            f"load_from ({load_from_value}) != dump_to ({dump_to_value})."
+                        ),
+                        line_number=1,
+                        original=f"{func_name}(load_from=..., dump_to=...)",
+                        replacement=f"{func_name}(data_key=...)",
+                        transform_name="remove_dump_to_conflict",
+                        notes=(
+                            f"dump_to={dump_to_value} was removed because load_from="
+                            f"{load_from_value} was also present. In Marshmallow 3.x, "
+                            "data_key serves both purposes."
+                        ),
+                    )
+                    # Skip adding this arg
+                    continue
+
                 new_arg = arg.with_changes(keyword=cst.Name(new_name))
                 new_args.append(new_arg)
                 changed = True
