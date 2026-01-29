@@ -1,4 +1,8 @@
-"""LLM-based changelog parser for extracting breaking changes."""
+"""LLM-based changelog parser for extracting breaking changes.
+
+NOTE: This module uses internal LLM client for changelog parsing.
+This is a Tier 2 feature that requires Pro subscription.
+"""
 
 import json
 import re
@@ -10,11 +14,15 @@ from codeshift.knowledge.models import (
     ChangelogSource,
     Confidence,
 )
-from codeshift.utils.llm_client import LLMClient, get_llm_client
+from codeshift.utils.llm_client import _LLMClient, _get_llm_client
 
 
 class ChangelogParser:
-    """Parses changelog content using LLM to extract breaking changes."""
+    """Parses changelog content using LLM to extract breaking changes.
+
+    NOTE: This is an internal component used by Codeshift's knowledge system.
+    Direct instantiation is supported only for internal use.
+    """
 
     SYSTEM_PROMPT = """You are an expert at analyzing Python library changelogs and migration guides.
 Your task is to extract breaking changes from the provided changelog content.
@@ -46,13 +54,13 @@ Respond with a JSON array of breaking changes. Example:
 
 If there are no breaking changes, respond with an empty array: []"""
 
-    def __init__(self, client: LLMClient | None = None):
+    def __init__(self, client: _LLMClient | None = None):
         """Initialize the parser.
 
         Args:
-            client: LLM client to use. Defaults to singleton.
+            client: Internal LLM client to use. Defaults to singleton.
         """
-        self.client = client or get_llm_client()
+        self.client = client or _get_llm_client()
 
     @property
     def is_available(self) -> bool:

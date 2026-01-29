@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import httpx
 
-from codeshift.cli.commands.auth import get_api_key, get_api_url
+from codeshift.cli.commands.auth import get_api_key, get_api_url, validate_api_url
 
 
 @dataclass
@@ -37,6 +37,7 @@ class CodeshiftAPIClient:
         api_key: str | None = None,
         api_url: str | None = None,
         timeout: int = 180,
+        verify_ssl: bool = True,
     ):
         """Initialize the API client.
 
@@ -44,10 +45,17 @@ class CodeshiftAPIClient:
             api_key: Codeshift API key. Defaults to stored credentials.
             api_url: API base URL. Defaults to stored URL.
             timeout: Request timeout in seconds (default 180 for LLM calls).
+            verify_ssl: Whether to verify SSL certificates (default True).
+                       Only set to False for local development with self-signed certs.
+
+        Raises:
+            InsecureURLError: If the URL uses HTTP with a non-local host.
         """
         self.api_key = api_key or get_api_key()
-        self.api_url = api_url or get_api_url()
+        # Validate URL to prevent MITM attacks - raises InsecureURLError if invalid
+        self.api_url = validate_api_url(api_url) if api_url else get_api_url()
         self.timeout = timeout
+        self.verify_ssl = verify_ssl
 
     @property
     def is_available(self) -> bool:
@@ -79,6 +87,7 @@ class CodeshiftAPIClient:
             headers={"X-API-Key": self.api_key},
             json=payload,
             timeout=self.timeout,
+            verify=self.verify_ssl,
         )
 
     def migrate_code(
