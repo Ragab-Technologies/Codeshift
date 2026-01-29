@@ -6,6 +6,17 @@ from pathlib import Path
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 
+# Mapping of package names to their actual import names
+# Some packages have different import names than their package names
+PACKAGE_IMPORT_ALIASES: dict[str, list[str]] = {
+    "attrs": ["attr", "attrs"],  # attrs package can be imported as "attr" or "attrs"
+    "pillow": ["PIL"],  # pillow package is imported as PIL
+    "scikit-learn": ["sklearn"],  # scikit-learn is imported as sklearn
+    "beautifulsoup4": ["bs4"],  # beautifulsoup4 is imported as bs4
+    "pyyaml": ["yaml"],  # pyyaml is imported as yaml
+    "python-dateutil": ["dateutil"],  # python-dateutil is imported as dateutil
+}
+
 
 @dataclass
 class ImportInfo:
@@ -53,15 +64,26 @@ class ImportVisitor(cst.CSTVisitor):
 
     def __init__(self, target_library: str):
         self.target_library = target_library
+        # Get all possible import names for this library
+        self.import_names = PACKAGE_IMPORT_ALIASES.get(
+            target_library.lower(), [target_library]
+        )
         self.imports: list[ImportInfo] = []
         self._imported_names: set[str] = set()
+
+    def _matches_target_library(self, module_name: str) -> bool:
+        """Check if a module name matches the target library or its aliases."""
+        for import_name in self.import_names:
+            if module_name == import_name or module_name.startswith(f"{import_name}."):
+                return True
+        return False
 
     def visit_Import(self, node: cst.Import) -> None:
         """Visit import statements like 'import pydantic'."""
         for name in node.names if isinstance(node.names, tuple) else []:
             if isinstance(name, cst.ImportAlias):
                 module_name = self._get_name_value(name.name)
-                if module_name and module_name.startswith(self.target_library):
+                if module_name and self._matches_target_library(module_name):
                     alias = None
                     if name.asname and isinstance(name.asname, cst.AsName):
                         alias = self._get_name_value(name.asname.name)
@@ -84,7 +106,7 @@ class ImportVisitor(cst.CSTVisitor):
             return
 
         module_name = self._get_name_value(node.module)
-        if not module_name or not module_name.startswith(self.target_library):
+        if not module_name or not self._matches_target_library(module_name):
             return
 
         names = []
