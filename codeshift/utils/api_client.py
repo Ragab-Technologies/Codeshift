@@ -4,11 +4,108 @@ This client calls the Codeshift API instead of Anthropic directly,
 ensuring that LLM features are gated behind the subscription model.
 """
 
+import logging
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 import httpx
 
 from codeshift.cli.commands.auth import get_api_key, get_api_url
+
+logger = logging.getLogger(__name__)
+
+
+class InsecureURLError(Exception):
+    """Raised when an insecure (non-HTTPS) URL is used for API communication.
+
+    HTTPS is required to protect API keys and sensitive data in transit.
+    Man-in-the-middle attacks could intercept API keys if HTTP is used.
+    """
+
+    def __init__(self, url: str, message: str | None = None):
+        self.url = url
+        default_msg = (
+            f"Insecure URL detected: {url}. "
+            "HTTPS is required for API communication to protect your API key. "
+            "Use HTTPS or set CODESHIFT_ALLOW_INSECURE=true for local development only."
+        )
+        super().__init__(message or default_msg)
+
+
+def validate_api_url(url: str) -> str:
+    """Validate and normalize the API URL.
+
+    Enforces HTTPS for all non-localhost hosts to prevent API key interception.
+
+    Args:
+        url: The API URL to validate
+
+    Returns:
+        The validated and normalized URL
+
+    Raises:
+        InsecureURLError: If the URL uses HTTP for a non-localhost host
+        ValueError: If the URL is malformed
+    """
+    if not url:
+        raise ValueError("API URL cannot be empty")
+
+    # Parse the URL
+    try:
+        parsed = urlparse(url)
+    except Exception as e:
+        raise ValueError(f"Malformed URL: {url}") from e
+
+    if not parsed.scheme:
+        raise ValueError(f"URL must include a scheme (http/https): {url}")
+
+    if not parsed.netloc:
+        raise ValueError(f"URL must include a host: {url}")
+
+    # Define localhost patterns
+    localhost_patterns = (
+        "localhost",
+        "127.0.0.1",
+        "::1",
+        "0.0.0.0",
+    )
+
+    host = parsed.hostname or ""
+    is_localhost = any(
+        host == pattern or host.startswith(f"{pattern}:") for pattern in localhost_patterns
+    )
+
+    # Allow HTTP only for localhost (development)
+    if parsed.scheme == "http":
+        # Check for explicit override (development only)
+        import os
+
+        allow_insecure = os.environ.get("CODESHIFT_ALLOW_INSECURE", "").lower() == "true"
+
+        if is_localhost:
+            logger.warning(
+                "Using HTTP for localhost development. " "This should not be used in production."
+            )
+        elif allow_insecure:
+            logger.warning(
+                "SECURITY WARNING: CODESHIFT_ALLOW_INSECURE is set. "
+                "HTTP is being used for API communication. "
+                "Your API key may be exposed to network interception. "
+                "This should ONLY be used for local testing."
+            )
+        else:
+            raise InsecureURLError(
+                url,
+                f"HTTP is not allowed for non-localhost hosts: {host}. "
+                "Use HTTPS to protect your API key from interception.",
+            )
+
+    # Validate HTTPS URLs
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"URL scheme must be http or https, got: {parsed.scheme}")
+
+    # Remove trailing slash for consistency
+    return url.rstrip("/")
 
 
 @dataclass
@@ -30,6 +127,11 @@ class CodeshiftAPIClient:
     - Authentication and authorization
     - Quota checking and billing
     - Server-side Anthropic API calls
+
+    Security features:
+    - HTTPS enforcement for all non-localhost URLs
+    - API key protection via secure headers
+    - SSL verification enabled by default
     """
 
     def __init__(
@@ -37,6 +139,7 @@ class CodeshiftAPIClient:
         api_key: str | None = None,
         api_url: str | None = None,
         timeout: int = 180,
+        verify_ssl: bool = True,
     ):
         """Initialize the API client.
 
@@ -44,10 +147,26 @@ class CodeshiftAPIClient:
             api_key: Codeshift API key. Defaults to stored credentials.
             api_url: API base URL. Defaults to stored URL.
             timeout: Request timeout in seconds (default 180 for LLM calls).
+            verify_ssl: Whether to verify SSL certificates (default True).
+
+        Raises:
+            InsecureURLError: If the URL uses HTTP for a non-localhost host.
         """
         self.api_key = api_key or get_api_key()
-        self.api_url = api_url or get_api_url()
+
+        # Validate and normalize the API URL
+        raw_url = api_url or get_api_url()
+        self.api_url = validate_api_url(raw_url)
+
         self.timeout = timeout
+        self.verify_ssl = verify_ssl
+
+        # Log SSL verification status
+        if not verify_ssl:
+            logger.warning(
+                "SSL verification is disabled. "
+                "This exposes the connection to man-in-the-middle attacks."
+            )
 
     @property
     def is_available(self) -> bool:
@@ -76,9 +195,13 @@ class CodeshiftAPIClient:
 
         return httpx.post(
             f"{self.api_url}{endpoint}",
-            headers={"X-API-Key": self.api_key},
+            headers={
+                "X-API-Key": self.api_key,
+                "Content-Type": "application/json",
+            },
             json=payload,
             timeout=self.timeout,
+            verify=self.verify_ssl,
         )
 
     def migrate_code(
@@ -157,6 +280,15 @@ class CodeshiftAPIClient:
                     error="LLM migrations require Pro tier or higher. Run 'codeshift upgrade-plan' to upgrade.",
                 )
 
+            elif response.status_code == 429:
+                # Rate limited
+                retry_after = response.headers.get("Retry-After", "60")
+                return APIResponse(
+                    success=False,
+                    content=code,
+                    error=f"Rate limited. Please wait {retry_after} seconds before retrying.",
+                )
+
             elif response.status_code == 503:
                 return APIResponse(
                     success=False,
@@ -231,6 +363,14 @@ class CodeshiftAPIClient:
                     success=False,
                     content="",
                     error="This feature requires Pro tier or higher.",
+                )
+
+            elif response.status_code == 429:
+                retry_after = response.headers.get("Retry-After", "60")
+                return APIResponse(
+                    success=False,
+                    content="",
+                    error=f"Rate limited. Please wait {retry_after} seconds before retrying.",
                 )
 
             else:
