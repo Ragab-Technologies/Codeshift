@@ -24,11 +24,150 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         self._current_class: str | None = None
         # Track position info
         self._line_offset = 0
+        # Track Pydantic model classes defined in this file
+        self._pydantic_model_classes: set[str] = set()
+        # Track variables known to be Pydantic model instances
+        self._pydantic_instance_vars: set[str] = set()
+        # Track function parameters with Pydantic model type hints
+        self._pydantic_param_vars: set[str] = set()
+        # Track if BaseModel is imported from pydantic
+        self._has_basemodel_import = False
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool:
+        """Track Pydantic imports to identify model base classes."""
+        if node.module is None:
+            return True
+
+        module_name = self._get_module_name(node.module)
+        if module_name == "pydantic" or module_name.startswith("pydantic."):
+            if isinstance(node.names, cst.ImportStar):
+                # With star import, assume BaseModel is available
+                self._has_basemodel_import = True
+            elif isinstance(node.names, tuple):
+                for name in node.names:
+                    if isinstance(name, cst.ImportAlias):
+                        imported_name = self._get_name_value(name.name)
+                        if imported_name == "BaseModel":
+                            self._has_basemodel_import = True
+        return True
 
     def visit_ClassDef(self, node: cst.ClassDef) -> bool:
-        """Track the current class being visited."""
+        """Track the current class being visited and detect Pydantic models."""
         self._current_class = node.name.value
+
+        # Check if this class inherits from BaseModel or another known Pydantic model
+        for base in node.bases:
+            base_name = self._get_base_class_name(base.value)
+            if (
+                base_name in ("BaseModel", "pydantic.BaseModel")
+                or base_name in self._pydantic_model_classes
+            ):
+                self._pydantic_model_classes.add(node.name.value)
+                break
         return True
+
+    def _get_base_class_name(self, node: cst.BaseExpression) -> str:
+        """Get the name of a base class from its AST node."""
+        if isinstance(node, cst.Name):
+            return node.value
+        if isinstance(node, cst.Attribute):
+            return f"{self._get_base_class_name(node.value)}.{node.attr.value}"
+        if isinstance(node, cst.Subscript):
+            # Handle Generic[T] style - get the base
+            return self._get_base_class_name(node.value)
+        return ""
+
+    def visit_Assign(self, node: cst.Assign) -> bool:
+        """Track assignments of Pydantic model instances to variables."""
+        # Check if the value is a call to a Pydantic model class
+        if isinstance(node.value, cst.Call):
+            class_name = self._get_call_func_name(node.value.func)
+            if class_name in self._pydantic_model_classes:
+                # Track all assigned variable names
+                for target in node.targets:
+                    if isinstance(target.target, cst.Name):
+                        self._pydantic_instance_vars.add(target.target.value)
+        return True
+
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> bool:
+        """Track annotated assignments with Pydantic model type hints."""
+        if isinstance(node.target, cst.Name):
+            type_name = self._get_annotation_name(node.annotation.annotation)
+            if type_name in self._pydantic_model_classes:
+                self._pydantic_instance_vars.add(node.target.value)
+        return True
+
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
+        """Track function parameters with Pydantic model type annotations."""
+        for param in node.params.params:
+            if param.annotation is not None:
+                type_name = self._get_annotation_name(param.annotation.annotation)
+                if type_name in self._pydantic_model_classes:
+                    self._pydantic_param_vars.add(param.name.value)
+        return True
+
+    def leave_FunctionDef_params(self, node: cst.FunctionDef) -> None:
+        """Clear function-scoped parameter tracking when leaving function."""
+        # Note: This is a simplified approach - ideally we'd use proper scope analysis
+        pass
+
+    def _get_call_func_name(self, node: cst.BaseExpression) -> str:
+        """Get the function/class name from a Call's func attribute."""
+        if isinstance(node, cst.Name):
+            return node.value
+        if isinstance(node, cst.Attribute):
+            return node.attr.value  # Return just the class name part
+        return ""
+
+    def _get_annotation_name(self, node: cst.BaseExpression) -> str:
+        """Extract the type name from a type annotation."""
+        if isinstance(node, cst.Name):
+            return node.value
+        if isinstance(node, cst.Attribute):
+            return node.attr.value  # Return just the class name part
+        if isinstance(node, cst.Subscript):
+            # Handle Optional[Model], List[Model], etc.
+            return self._get_annotation_name(node.value)
+        return ""
+
+    def _is_pydantic_instance(self, node: cst.BaseExpression) -> bool:
+        """Check if an expression is known to be a Pydantic model instance.
+
+        Returns True if we can confirm it's a Pydantic instance.
+        Returns False if we cannot confirm (either unknown or definitely not Pydantic).
+        """
+        if isinstance(node, cst.Name):
+            var_name = node.value
+            # Check if it's a known Pydantic instance variable
+            if var_name in self._pydantic_instance_vars:
+                return True
+            # Check if it's a function parameter with Pydantic type hint
+            if var_name in self._pydantic_param_vars:
+                return True
+            # Heuristic: variable name matches a model class name (case-insensitive)
+            for model_class in self._pydantic_model_classes:
+                if var_name.lower() == model_class.lower():
+                    return True
+            return False
+        if isinstance(node, cst.Call):
+            # Direct call like Model().json() - check if the function is a Pydantic class
+            func_name = self._get_call_func_name(node.func)
+            return func_name in self._pydantic_model_classes
+        if isinstance(node, cst.Attribute):
+            # Could be accessing an attribute that returns a Pydantic model
+            # This is harder to determine without full type analysis
+            return False
+        return False
+
+    def _is_class_method_call(self, node: cst.BaseExpression) -> bool:
+        """Check if this is a call on a class rather than an instance (e.g., Model.parse_obj).
+
+        Class methods like parse_obj, schema, etc. are called on the class itself.
+        """
+        if isinstance(node, cst.Name):
+            # Check if the name is a known Pydantic model class
+            return node.value in self._pydantic_model_classes
+        return False
 
     def leave_ClassDef(
         self, original_node: cst.ClassDef, updated_node: cst.ClassDef
@@ -372,11 +511,17 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         # Handle method calls on objects
         if isinstance(updated_node.func, cst.Attribute):
             method_name = updated_node.func.attr.value
+            obj = updated_node.func.value
 
-            method_mappings = {
+            # Methods that can only be called on instances
+            instance_method_mappings = {
                 "dict": "model_dump",
                 "json": "model_dump_json",
                 "copy": "model_copy",
+            }
+
+            # Methods that are typically called on the class (class methods)
+            class_method_mappings = {
                 "parse_obj": "model_validate",
                 "parse_raw": "model_validate_json",
                 "schema": "model_json_schema",
@@ -384,19 +529,40 @@ class PydanticV1ToV2Transformer(BaseTransformer):
                 "update_forward_refs": "model_rebuild",
             }
 
-            if method_name in method_mappings:
-                new_method = method_mappings[method_name]
-                new_attr = updated_node.func.with_changes(attr=cst.Name(new_method))
+            # Handle instance methods - need to verify the object is a Pydantic instance
+            if method_name in instance_method_mappings:
+                # Only transform if we can confirm this is a Pydantic model instance
+                if self._is_pydantic_instance(obj):
+                    new_method = instance_method_mappings[method_name]
+                    new_attr = updated_node.func.with_changes(attr=cst.Name(new_method))
 
-                self.record_change(
-                    description=f"Convert .{method_name}() to .{new_method}()",
-                    line_number=1,
-                    original=f".{method_name}()",
-                    replacement=f".{new_method}()",
-                    transform_name=f"{method_name}_to_{new_method}",
-                )
+                    self.record_change(
+                        description=f"Convert .{method_name}() to .{new_method}()",
+                        line_number=1,
+                        original=f".{method_name}()",
+                        replacement=f".{new_method}()",
+                        transform_name=f"{method_name}_to_{new_method}",
+                    )
 
-                return updated_node.with_changes(func=new_attr)
+                    return updated_node.with_changes(func=new_attr)
+                # If we can't confirm it's a Pydantic instance, skip transformation
+                # This prevents false positives like response.json() on requests.Response
+
+            # Handle class methods - verify the object is a Pydantic model class
+            if method_name in class_method_mappings:
+                if self._is_class_method_call(obj):
+                    new_method = class_method_mappings[method_name]
+                    new_attr = updated_node.func.with_changes(attr=cst.Name(new_method))
+
+                    self.record_change(
+                        description=f"Convert .{method_name}() to .{new_method}()",
+                        line_number=1,
+                        original=f".{method_name}()",
+                        replacement=f".{new_method}()",
+                        transform_name=f"{method_name}_to_{new_method}",
+                    )
+
+                    return updated_node.with_changes(func=new_attr)
 
         # Handle Field(regex=...) -> Field(pattern=...)
         if isinstance(updated_node.func, cst.Name) and updated_node.func.value == "Field":
@@ -461,17 +627,20 @@ class PydanticV1ToV2Transformer(BaseTransformer):
         }
 
         if attr_name in attr_mappings:
-            new_attr = attr_mappings[attr_name]
+            # Only transform if the object is a known Pydantic model class
+            obj = updated_node.value
+            if self._is_class_method_call(obj):
+                new_attr = attr_mappings[attr_name]
 
-            self.record_change(
-                description=f"Convert {attr_name} to {new_attr}",
-                line_number=1,
-                original=attr_name,
-                replacement=new_attr,
-                transform_name=f"{attr_name}_rename",
-            )
+                self.record_change(
+                    description=f"Convert {attr_name} to {new_attr}",
+                    line_number=1,
+                    original=attr_name,
+                    replacement=new_attr,
+                    transform_name=f"{attr_name}_rename",
+                )
 
-            return updated_node.with_changes(attr=cst.Name(new_attr))
+                return updated_node.with_changes(attr=cst.Name(new_attr))
 
         return updated_node
 
