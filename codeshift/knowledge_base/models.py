@@ -9,6 +9,7 @@ class ChangeType(Enum):
 
     RENAMED = "renamed"
     REMOVED = "removed"
+    MOVED = "moved"
     SIGNATURE_CHANGED = "signature_changed"
     BEHAVIOR_CHANGED = "behavior_changed"
     DEPRECATED = "deprecated"
