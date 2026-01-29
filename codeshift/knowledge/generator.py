@@ -172,6 +172,12 @@ TIER_1_LIBRARIES = {
     "pytest",
     "marshmallow",
     "flask",
+    "celery",
+    "httpx",
+    "aiohttp",
+    "click",
+    "attrs",
+    "django",
 }
 
 
