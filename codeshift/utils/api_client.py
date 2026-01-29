@@ -36,14 +36,14 @@ class CodeshiftAPIClient:
         self,
         api_key: str | None = None,
         api_url: str | None = None,
-        timeout: int = 60,
+        timeout: int = 180,
     ):
         """Initialize the API client.
 
         Args:
             api_key: Codeshift API key. Defaults to stored credentials.
             api_url: API base URL. Defaults to stored URL.
-            timeout: Request timeout in seconds.
+            timeout: Request timeout in seconds (default 180 for LLM calls).
         """
         self.api_key = api_key or get_api_key()
         self.api_url = api_url or get_api_url()
