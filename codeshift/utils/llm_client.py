@@ -1,9 +1,37 @@
-"""Anthropic Claude client wrapper for LLM-based migrations."""
+"""Anthropic Claude client wrapper for LLM-based migrations.
 
+SECURITY NOTE: This module is intended for internal use only.
+Direct access to the LLM client bypasses quota and billing controls.
+Use the Codeshift API client (api_client.py) for all LLM operations.
+"""
+
+import logging
 import os
+import sys
 from dataclasses import dataclass
 
 from anthropic import Anthropic
+
+# Prevent any exports from this module
+__all__: list[str] = []
+
+logger = logging.getLogger(__name__)
+
+
+class DirectLLMAccessError(Exception):
+    """Raised when code attempts to bypass the Codeshift API and access LLM directly.
+
+    The LLMClient is for internal server-side use only. Client applications
+    should use the Codeshift API which enforces quotas, billing, and access control.
+    """
+
+    def __init__(self, message: str | None = None):
+        default_msg = (
+            "Direct LLM access is not permitted. "
+            "Use the Codeshift API client for LLM operations. "
+            "Run 'codeshift login' to authenticate."
+        )
+        super().__init__(message or default_msg)
 
 
 @dataclass
@@ -17,8 +45,54 @@ class LLMResponse:
     error: str | None = None
 
 
-class LLMClient:
-    """Client for interacting with Anthropic's Claude API."""
+def _check_direct_access_attempt() -> None:
+    """Check if this is an unauthorized direct access attempt.
+
+    Raises:
+        DirectLLMAccessError: If direct access is detected from external code.
+    """
+    # Check if ANTHROPIC_API_KEY is set by the user (potential bypass attempt)
+    # This is allowed only for internal server use or development
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        # Check if this is being called from within the codeshift package
+        frame = sys._getframe(2)  # Caller's caller
+        caller_file = frame.f_code.co_filename
+
+        # Allow internal codeshift modules and tests
+        allowed_paths = (
+            "codeshift/",
+            "codeshift\\",  # Windows path
+            "tests/",
+            "tests\\",
+            "<stdin>",  # Interactive Python
+            "<string>",  # exec/eval
+        )
+
+        is_internal = any(path in caller_file for path in allowed_paths)
+
+        # Also check for environment flag indicating authorized server use
+        is_authorized_server = os.environ.get("CODESHIFT_SERVER_MODE") == "true"
+
+        if not is_internal and not is_authorized_server:
+            logger.warning(
+                "Direct LLM access attempt detected from: %s. "
+                "This bypasses quota and billing controls.",
+                caller_file,
+            )
+            raise DirectLLMAccessError(
+                "Direct use of ANTHROPIC_API_KEY detected. "
+                "This bypasses Codeshift's quota and billing system. "
+                "Use 'codeshift upgrade' commands which route through the API."
+            )
+
+
+class _LLMClient:
+    """Internal client for interacting with Anthropic's Claude API.
+
+    SECURITY: This class is private (prefixed with _) and should not be
+    instantiated directly by external code. All LLM operations should go
+    through the Codeshift API which enforces access controls.
+    """
 
     DEFAULT_MODEL = "claude-sonnet-4-20250514"
     MAX_TOKENS = 4096
@@ -27,13 +101,19 @@ class LLMClient:
         self,
         api_key: str | None = None,
         model: str | None = None,
+        _bypass_check: bool = False,
     ):
         """Initialize the LLM client.
 
         Args:
             api_key: Anthropic API key. Defaults to ANTHROPIC_API_KEY env var.
             model: Model to use. Defaults to claude-sonnet-4-20250514.
+            _bypass_check: Internal flag to bypass access check (for server use).
         """
+        # Security check for unauthorized direct access
+        if not _bypass_check:
+            _check_direct_access_attempt()
+
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.model = model or self.DEFAULT_MODEL
         self._client: Anthropic | None = None
@@ -45,7 +125,7 @@ class LLMClient:
             if not self.api_key:
                 raise ValueError(
                     "Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable "
-                    "or pass api_key to LLMClient."
+                    "or pass api_key to _LLMClient."
                 )
             self._client = Anthropic(api_key=self.api_key)
         return self._client
@@ -209,13 +289,35 @@ Provide a brief explanation (2-3 sentences) of what changed and why:"""
         return self.generate(prompt, system_prompt=system_prompt, max_tokens=500)
 
 
-# Singleton instance for convenience
-_default_client: LLMClient | None = None
+# Keep backward compatibility alias but mark as deprecated
+# This will be removed in a future version
+LLMClient = _LLMClient
 
 
-def get_llm_client() -> LLMClient:
-    """Get the default LLM client instance."""
+# Singleton instance for internal use only
+_default_client: _LLMClient | None = None
+
+
+def _get_llm_client(_bypass_check: bool = False) -> _LLMClient:
+    """Get the default LLM client instance.
+
+    INTERNAL USE ONLY: This function is for internal codeshift server use.
+    External code should use the Codeshift API client.
+
+    Args:
+        _bypass_check: Internal flag to bypass access check (for server use).
+    """
     global _default_client
     if _default_client is None:
-        _default_client = LLMClient()
+        _default_client = _LLMClient(_bypass_check=_bypass_check)
     return _default_client
+
+
+# Keep backward compatibility but with security check
+def get_llm_client() -> _LLMClient:
+    """Get the default LLM client instance.
+
+    DEPRECATED: Use the Codeshift API client (api_client.py) instead.
+    This function will be removed in a future version.
+    """
+    return _get_llm_client(_bypass_check=False)

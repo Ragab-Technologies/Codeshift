@@ -1,11 +1,10 @@
 """Authentication commands for Codeshift CLI."""
 
-import json
 import os
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import click
 import httpx
@@ -15,11 +14,16 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from codeshift.utils.credential_store import (
+    CredentialDecryptionError,
+    get_credential_store,
+)
+
 console = Console()
 
-# Config directory for storing credentials
+# Config directory for storing credentials (kept for backward compatibility reference)
 CONFIG_DIR = Path.home() / ".config" / "codeshift"
-CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
+CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"  # Legacy path
 
 
 def get_api_url() -> str:
@@ -28,28 +32,38 @@ def get_api_url() -> str:
 
 
 def load_credentials() -> dict[str, Any] | None:
-    """Load saved credentials from disk."""
-    if not CREDENTIALS_FILE.exists():
-        return None
+    """Load saved credentials from secure storage.
+
+    Automatically handles migration from plaintext to encrypted storage.
+
+    Returns:
+        Dictionary of credentials, or None if not found.
+    """
+    store = get_credential_store()
     try:
-        return cast(dict[str, Any], json.loads(CREDENTIALS_FILE.read_text()))
-    except (OSError, json.JSONDecodeError):
+        return store.load()
+    except CredentialDecryptionError as e:
+        console.print(
+            Panel(
+                f"[red]Could not decrypt credentials:[/] {e}\n\n"
+                "This may happen if credentials were created on a different machine.\n"
+                "Please run [cyan]codeshift login[/] to re-authenticate.",
+                title="Credential Error",
+            )
+        )
         return None
 
 
 def save_credentials(credentials: dict) -> None:
-    """Save credentials to disk."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Set restrictive permissions
-    CREDENTIALS_FILE.write_text(json.dumps(credentials, indent=2))
-    os.chmod(CREDENTIALS_FILE, 0o600)
+    """Save credentials to secure encrypted storage."""
+    store = get_credential_store()
+    store.save(credentials)
 
 
 def delete_credentials() -> None:
-    """Delete saved credentials."""
-    if CREDENTIALS_FILE.exists():
-        CREDENTIALS_FILE.unlink()
+    """Delete saved credentials securely."""
+    store = get_credential_store()
+    store.delete()
 
 
 def get_api_key() -> str | None:
@@ -107,7 +121,8 @@ def login(
     2. API key: codeshift login -k pyr_xxxxx
     3. Device flow: codeshift login --device
 
-    Your credentials are stored in ~/.config/codeshift/credentials.json
+    Your credentials are stored securely in ~/.config/codeshift/credentials.enc
+    using AES encryption.
 
     Don't have an account? Run: codeshift register
     """
@@ -154,7 +169,8 @@ def register(
     Example:
       codeshift register -e user@example.com -p yourpassword
 
-    Your credentials are stored in ~/.config/codeshift/credentials.json
+    Your credentials are stored securely in ~/.config/codeshift/credentials.enc
+    using AES encryption.
     """
     # Check if already logged in
     existing = load_credentials()
@@ -211,7 +227,7 @@ def _register_account(email: str, password: str, full_name: str | None) -> None:
             if response.status_code == 200:
                 data = response.json()
 
-                # Save credentials
+                # Save credentials securely
                 save_credentials(
                     {
                         "api_key": data["api_key"],
@@ -275,7 +291,7 @@ def _login_with_api_key(api_key: str) -> None:
             if response.status_code == 200:
                 user = response.json()
 
-                # Save credentials
+                # Save credentials securely
                 save_credentials(
                     {
                         "api_key": api_key,
@@ -327,7 +343,7 @@ def _login_with_password(email: str, password: str) -> None:
             if response.status_code == 200:
                 data = response.json()
 
-                # Save credentials
+                # Save credentials securely
                 save_credentials(
                     {
                         "api_key": data["api_key"],
@@ -422,7 +438,7 @@ def _login_with_device_code() -> None:
                     if response.status_code == 200:
                         data = response.json()
 
-                        # Save credentials
+                        # Save credentials securely
                         save_credentials(
                             {
                                 "api_key": data["api_key"],
@@ -487,7 +503,7 @@ def logout() -> None:
         except httpx.RequestError:
             pass
 
-    # Delete local credentials
+    # Delete local credentials securely
     delete_credentials()
 
     console.print("[green]Successfully logged out[/]")
