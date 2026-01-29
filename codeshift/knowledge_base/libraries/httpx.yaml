@@ -119,7 +119,7 @@ breaking_changes:
 
   # Response.iter_lines() behavior change
   - symbol: "Response.iter_lines()"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: medium
     from_version: "0.23"
     to_version: "0.24"
@@ -130,7 +130,7 @@ breaking_changes:
 
   # NetRC authentication change
   - symbol: "trust_env=True"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: medium
     from_version: "0.23"
     to_version: "0.24"
@@ -141,7 +141,7 @@ breaking_changes:
 
   # Query parameter encoding change
   - symbol: "params encoding"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: low
     from_version: "0.23"
     to_version: "0.24"
@@ -173,7 +173,7 @@ breaking_changes:
 
   # Follow redirects default change
   - symbol: "follow_redirects"
-    change_type: behavior_change
+    change_type: behavior_changed
     severity: high
     from_version: "0.19"
     to_version: "0.20"
