@@ -145,6 +145,85 @@ class UserSchema(Schema):
         assert "missing=" not in transformed
         assert "load_from=" not in transformed
 
+    def test_load_from_and_dump_to_both_present_different_values(self):
+        """Test that having both load_from and dump_to doesn't produce duplicate data_key.
+
+        This is a critical bug fix: when both load_from and dump_to are present,
+        naive transformation would produce `data_key=..., data_key=...` which is
+        invalid Python syntax. The fix keeps only load_from's value as data_key.
+        """
+        code = """
+from marshmallow import Schema, fields
+
+class AddressSchema(Schema):
+    zip_code = fields.String(load_from="zipCode", dump_to="postalCode")
+"""
+        transformed, changes = transform_marshmallow(code)
+
+        # Verify the output is valid Python syntax
+        compile(transformed, "<string>", "exec")
+
+        # Should have exactly one data_key
+        assert transformed.count("data_key=") == 1
+        # load_from value should be kept
+        assert 'data_key="zipCode"' in transformed
+        # Both old params should be removed
+        assert "load_from=" not in transformed
+        assert "dump_to=" not in transformed
+        # postalCode should NOT be in the transformed code (dump_to value removed)
+        assert "postalCode" not in transformed
+
+        # Should have a change recorded about removing dump_to
+        change_descriptions = [c.description for c in changes]
+        assert any("dump_to" in d and "removed" in d.lower() for d in change_descriptions)
+
+    def test_load_from_and_dump_to_same_value(self):
+        """Test that when load_from and dump_to have the same value, only one data_key is used."""
+        code = """
+from marshmallow import Schema, fields
+
+class UserSchema(Schema):
+    user_name = fields.String(load_from="userName", dump_to="userName")
+"""
+        transformed, changes = transform_marshmallow(code)
+
+        # Verify the output is valid Python syntax
+        compile(transformed, "<string>", "exec")
+
+        # Should have exactly one data_key
+        assert transformed.count("data_key=") == 1
+        assert 'data_key="userName"' in transformed
+        assert "load_from=" not in transformed
+        assert "dump_to=" not in transformed
+
+    def test_load_from_and_dump_to_with_other_params(self):
+        """Test that other params are preserved when both load_from and dump_to exist."""
+        code = """
+from marshmallow import Schema, fields
+
+class UserSchema(Schema):
+    zip_code = fields.String(
+        required=True,
+        load_from="zipCode",
+        dump_to="postalCode",
+        missing="00000"
+    )
+"""
+        transformed, changes = transform_marshmallow(code)
+
+        # Verify the output is valid Python syntax
+        compile(transformed, "<string>", "exec")
+
+        # Should have exactly one data_key
+        assert transformed.count("data_key=") == 1
+        # Other params should be preserved/transformed
+        assert "required=True" in transformed
+        assert "load_default=" in transformed
+        # Old params should be gone
+        assert "load_from=" not in transformed
+        assert "dump_to=" not in transformed
+        assert "missing=" not in transformed
+
 
 class TestDecoratorPassManyRemoval:
     """Tests for pass_many parameter removal from decorators."""
