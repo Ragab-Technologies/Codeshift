@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from codeshift.health.metrics import BaseMetricCalculator
 from codeshift.health.models import DependencyHealth, MetricCategory, MetricResult
@@ -32,7 +33,7 @@ class MigrationReadinessCalculator(BaseMetricCalculator):
         self,
         project_path: Path,
         dependencies: list[DependencyHealth] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> MetricResult:
         """Calculate the migration readiness score.
 
@@ -55,7 +56,9 @@ class MigrationReadinessCalculator(BaseMetricCalculator):
             )
 
         tier1_count = sum(1 for d in dependencies if d.has_tier1_support)
-        tier2_count = sum(1 for d in dependencies if d.has_tier2_support and not d.has_tier1_support)
+        tier2_count = sum(
+            1 for d in dependencies if d.has_tier2_support and not d.has_tier1_support
+        )
         no_support_count = len(dependencies) - tier1_count - tier2_count
 
         total = len(dependencies)
@@ -66,14 +69,18 @@ class MigrationReadinessCalculator(BaseMetricCalculator):
         recommendations: list[str] = []
 
         if no_support_count > 0:
-            unsupported = [d.name for d in dependencies if not d.has_tier1_support and not d.has_tier2_support]
+            unsupported = [
+                d.name for d in dependencies if not d.has_tier1_support and not d.has_tier2_support
+            ]
             recommendations.append(
                 f"Consider requesting Tier 1 support for: {', '.join(unsupported[:3])}"
                 + (f" (+{len(unsupported) - 3} more)" if len(unsupported) > 3 else "")
             )
 
         if tier2_count > 0:
-            tier2_deps = [d.name for d in dependencies if d.has_tier2_support and not d.has_tier1_support]
+            tier2_deps = [
+                d.name for d in dependencies if d.has_tier2_support and not d.has_tier1_support
+            ]
             recommendations.append(
                 f"Libraries with Tier 2 (LLM) support: {', '.join(tier2_deps[:3])}"
             )

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import libcst as cst
 
@@ -27,7 +28,7 @@ class DocumentationCalculator(BaseMetricCalculator):
     def weight(self) -> float:
         return 0.10
 
-    def calculate(self, project_path: Path, **kwargs) -> MetricResult:
+    def calculate(self, project_path: Path, **kwargs: Any) -> MetricResult:
         """Calculate the documentation score.
 
         Args:
@@ -54,8 +55,7 @@ class DocumentationCalculator(BaseMetricCalculator):
         ]
 
         python_files = [
-            f for f in python_files
-            if not any(pattern in str(f) for pattern in excluded_patterns)
+            f for f in python_files if not any(pattern in str(f) for pattern in excluded_patterns)
         ]
 
         if not python_files:

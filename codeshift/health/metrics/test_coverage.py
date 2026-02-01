@@ -3,6 +3,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from codeshift.health.metrics import BaseMetricCalculator
 from codeshift.health.models import MetricCategory, MetricResult
@@ -25,7 +26,7 @@ class TestCoverageCalculator(BaseMetricCalculator):
     def weight(self) -> float:
         return 0.15
 
-    def calculate(self, project_path: Path, **kwargs) -> MetricResult:
+    def calculate(self, project_path: Path, **kwargs: Any) -> MetricResult:
         """Calculate the test coverage score.
 
         Args:
@@ -138,7 +139,7 @@ class TestCoverageCalculator(BaseMetricCalculator):
             if row and row[0] and row[0] > 0:
                 total_lines = row[0]
                 covered_lines = row[1] or 0
-                return covered_lines / total_lines
+                return float(covered_lines / total_lines) if total_lines > 0 else None
 
         except Exception as e:
             logger.debug(f"Failed to read .coverage database: {e}")
@@ -159,7 +160,7 @@ class TestCoverageCalculator(BaseMetricCalculator):
 
             content = index_path.read_text()
             # Look for patterns like "85%" or "coverage: 85"
-            match = re.search(r'(\d+(?:\.\d+)?)\s*%', content)
+            match = re.search(r"(\d+(?:\.\d+)?)\s*%", content)
             if match:
                 return float(match.group(1)) / 100
         except Exception as e:

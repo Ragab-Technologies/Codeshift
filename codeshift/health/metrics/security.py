@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -43,7 +44,7 @@ class SecurityCalculator(BaseMetricCalculator):
         self,
         project_path: Path,
         dependencies: list[DependencyHealth] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> MetricResult:
         """Calculate the security score.
 
@@ -80,9 +81,7 @@ class SecurityCalculator(BaseMetricCalculator):
                 vuln_counts[vuln.severity] += 1
 
         # Calculate penalty
-        total_penalty = sum(
-            count * severity.penalty for severity, count in vuln_counts.items()
-        )
+        total_penalty = sum(count * severity.penalty for severity, count in vuln_counts.items())
         score = max(0, 100 - total_penalty)
 
         # Build recommendations
@@ -110,7 +109,11 @@ class SecurityCalculator(BaseMetricCalculator):
 
         return self._create_result(
             score=score,
-            description=f"{len(all_vulns)} vulnerabilities found" if all_vulns else "No known vulnerabilities",
+            description=(
+                f"{len(all_vulns)} vulnerabilities found"
+                if all_vulns
+                else "No known vulnerabilities"
+            ),
             details={
                 "total_vulnerabilities": len(all_vulns),
                 "critical": vuln_counts[VulnerabilitySeverity.CRITICAL],
@@ -188,7 +191,9 @@ class SecurityCalculator(BaseMetricCalculator):
                             package=package_name,
                             vulnerability_id=vuln_data.get("id", "unknown"),
                             severity=severity,
-                            description=vuln_data.get("summary", vuln_data.get("details", ""))[:200],
+                            description=vuln_data.get("summary", vuln_data.get("details", ""))[
+                                :200
+                            ],
                             fixed_in=fixed_in,
                             url=vuln_data.get("link"),
                         )

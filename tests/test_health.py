@@ -28,7 +28,6 @@ from codeshift.health.models import (
 )
 from codeshift.health.report import generate_html_report, generate_json_report
 
-
 # ==============================================================================
 # Model Tests
 # ==============================================================================
@@ -373,9 +372,7 @@ class TestTestCoverageCalculator:
     def test_calculate_with_coverage_json(self, tmp_path: Path) -> None:
         """Test with coverage.json file."""
         coverage_file = tmp_path / "coverage.json"
-        coverage_file.write_text(
-            json.dumps({"totals": {"percent_covered": 85.5}})
-        )
+        coverage_file.write_text(json.dumps({"totals": {"percent_covered": 85.5}}))
 
         calc = TestCoverageCalculator()
         result = calc.calculate(tmp_path)
@@ -401,11 +398,13 @@ class TestDocumentationCalculator:
     def test_calculate_with_typed_function(self, tmp_path: Path) -> None:
         """Test with typed function."""
         py_file = tmp_path / "example.py"
-        py_file.write_text('''
+        py_file.write_text(
+            '''
 def typed_func(x: int) -> str:
     """Docstring."""
     return str(x)
-''')
+'''
+        )
 
         calc = DocumentationCalculator()
         result = calc.calculate(tmp_path)
@@ -415,9 +414,11 @@ def typed_func(x: int) -> str:
     def test_calculate_with_untyped_function(self, tmp_path: Path) -> None:
         """Test with untyped function."""
         py_file = tmp_path / "example.py"
-        py_file.write_text("""def untyped_func(x):
+        py_file.write_text(
+            """def untyped_func(x):
     return str(x)
-""")
+"""
+        )
 
         calc = DocumentationCalculator()
         result = calc.calculate(tmp_path)
@@ -443,11 +444,13 @@ class TestHealthCalculator:
 
         # Create a minimal pyproject.toml
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text('''
+        pyproject.write_text(
+            """
 [project]
 name = "test"
 dependencies = []
-''')
+"""
+        )
 
         calculator = HealthCalculator()
         score = calculator.calculate(tmp_path)
@@ -575,9 +578,7 @@ class TestHealthCLI:
         pyproject.write_text('[project]\nname = "test"\ndependencies = []\n')
 
         runner = CliRunner()
-        result = runner.invoke(
-            health, ["--path", str(tmp_path), "--ci", "--threshold", "0"]
-        )
+        result = runner.invoke(health, ["--path", str(tmp_path), "--ci", "--threshold", "0"])
 
         assert result.exit_code == 0
         assert "CI Check Passed" in result.output
@@ -593,9 +594,7 @@ class TestHealthCLI:
         pyproject.write_text('[project]\nname = "test"\ndependencies = []\n')
 
         runner = CliRunner()
-        result = runner.invoke(
-            health, ["--path", str(tmp_path), "--ci", "--threshold", "100"]
-        )
+        result = runner.invoke(health, ["--path", str(tmp_path), "--ci", "--threshold", "100"])
 
         assert result.exit_code == 1
         assert "CI Check Failed" in result.output

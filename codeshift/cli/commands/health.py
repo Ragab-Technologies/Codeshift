@@ -9,12 +9,8 @@ from rich.panel import Panel
 from rich.table import Table
 
 from codeshift.health.calculator import HealthCalculator
-from codeshift.health.models import HealthGrade, MetricCategory
-from codeshift.health.report import (
-    generate_json_report,
-    save_html_report,
-    save_json_report,
-)
+from codeshift.health.models import HealthGrade, HealthScore, MetricCategory
+from codeshift.health.report import generate_json_report, save_html_report, save_json_report
 
 console = Console()
 
@@ -119,7 +115,7 @@ def health(
             sys.exit(0)
 
 
-def _display_health_summary(score, verbose: bool) -> None:
+def _display_health_summary(score: HealthScore, verbose: bool) -> None:
     """Display the health score summary in the terminal.
 
     Args:

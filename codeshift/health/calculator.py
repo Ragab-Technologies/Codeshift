@@ -170,7 +170,11 @@ class HealthCalculator:
                                     vulnerability_id=vuln_data.get("id", "unknown"),
                                     severity=severity,
                                     description=vuln_data.get("summary", "")[:200],
-                                    fixed_in=vuln_data.get("fixed_in", [None])[0] if vuln_data.get("fixed_in") else None,
+                                    fixed_in=(
+                                        vuln_data.get("fixed_in", [None])[0]
+                                        if vuln_data.get("fixed_in")
+                                        else None
+                                    ),
                                     url=vuln_data.get("link"),
                                 )
                             )

@@ -57,7 +57,9 @@ def generate_html_report(report: HealthReport | HealthScore) -> str:
         if report.previous:
             delta = report.score_delta or 0
             sign = "+" if delta >= 0 else ""
-            trend_info = f'<span class="trend {report.trend}">{report.trend_emoji} {sign}{delta:.1f}</span>'
+            trend_info = (
+                f'<span class="trend {report.trend}">{report.trend_emoji} {sign}{delta:.1f}</span>'
+            )
         else:
             trend_info = '<span class="trend new">New baseline</span>'
 
