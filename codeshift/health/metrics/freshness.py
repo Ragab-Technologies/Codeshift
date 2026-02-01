@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import httpx
 from packaging.version import Version
@@ -36,7 +37,7 @@ class FreshnessCalculator(BaseMetricCalculator):
         self,
         project_path: Path,
         dependencies: list[DependencyHealth] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> MetricResult:
         """Calculate the freshness score.
 

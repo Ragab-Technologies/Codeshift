@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from codeshift.health.models import MetricCategory, MetricResult
 
@@ -22,7 +23,7 @@ class BaseMetricCalculator(ABC):
         ...
 
     @abstractmethod
-    def calculate(self, project_path: Path, **kwargs) -> MetricResult:
+    def calculate(self, project_path: Path, **kwargs: Any) -> MetricResult:
         """Calculate the metric score.
 
         Args:
