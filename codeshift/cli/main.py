@@ -15,6 +15,7 @@ from codeshift.cli.commands.auth import (
     whoami,
 )
 from codeshift.cli.commands.diff import diff
+from codeshift.cli.commands.health import health
 from codeshift.cli.commands.scan import scan
 from codeshift.cli.commands.upgrade import upgrade
 from codeshift.cli.commands.upgrade_all import upgrade_all
@@ -46,6 +47,7 @@ cli.add_command(upgrade)
 cli.add_command(upgrade_all)
 cli.add_command(diff)
 cli.add_command(apply)
+cli.add_command(health)
 
 # Auth commands
 cli.add_command(register)
