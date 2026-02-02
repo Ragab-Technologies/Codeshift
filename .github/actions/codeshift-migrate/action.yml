@@ -1,0 +1,152 @@
+name: 'Codeshift Migrate'
+description: 'Automated dependency migration with Codeshift - creates PRs with detailed changelogs and risk assessments'
+author: 'Ragab Technologies'
+
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'
+
+inputs:
+  codeshift-api-key:
+    description: 'Codeshift API key for Tier 2/3 migrations. Not required for Tier 1 (deterministic) migrations.'
+    required: false
+  github-token:
+    description: 'GitHub token for creating PRs and branches'
+    required: true
+    default: ${{ github.token }}
+  libraries:
+    description: 'Comma-separated list of libraries to migrate (e.g., "pydantic,fastapi"). Leave empty for all.'
+    required: false
+    default: ''
+  auto-apply:
+    description: 'Automatically apply changes if risk is below max-risk-level'
+    required: false
+    default: 'true'
+  create-pr:
+    description: 'Create a pull request with the changes'
+    required: false
+    default: 'true'
+  run-tests:
+    description: 'Run tests after migration'
+    required: false
+    default: 'true'
+  test-command:
+    description: 'Command to run tests'
+    required: false
+    default: 'pytest'
+  max-risk-level:
+    description: 'Maximum risk level for auto-apply (low, medium, high)'
+    required: false
+    default: 'medium'
+  base-branch:
+    description: 'Base branch for the PR'
+    required: false
+    default: 'main'
+  branch-prefix:
+    description: 'Prefix for migration branches'
+    required: false
+    default: 'codeshift/migration'
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  tier1-only:
+    description: 'Only run Tier 1 (deterministic) migrations - no API key required'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Working directory for the migration'
+    required: false
+    default: '.'
+
+outputs:
+  pr-url:
+    description: 'URL of the created pull request'
+    value: ${{ steps.create-pr.outputs.pr-url }}
+  pr-number:
+    description: 'Number of the created pull request'
+    value: ${{ steps.create-pr.outputs.pr-number }}
+  migrations-count:
+    description: 'Number of migrations performed'
+    value: ${{ steps.run-migration.outputs.migrations-count }}
+  files-changed:
+    description: 'Number of files changed'
+    value: ${{ steps.run-migration.outputs.files-changed }}
+  risk-level:
+    description: 'Overall risk level of the migration'
+    value: ${{ steps.run-migration.outputs.risk-level }}
+  test-passed:
+    description: 'Whether tests passed after migration'
+    value: ${{ steps.run-tests.outputs.test-passed }}
+  json-report:
+    description: 'Path to the JSON report file'
+    value: ${{ steps.run-migration.outputs.json-report }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Codeshift
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install codeshift
+
+    - name: Configure Codeshift API Key
+      if: inputs.codeshift-api-key != ''
+      shell: bash
+      run: |
+        mkdir -p ~/.config/codeshift
+        echo '{"api_key": "${{ inputs.codeshift-api-key }}"}' > ~/.config/codeshift/auth.json
+      env:
+        CODESHIFT_API_KEY: ${{ inputs.codeshift-api-key }}
+
+    - name: Run Migration
+      id: run-migration
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        python "${{ github.action_path }}/scripts/run_migration.py"
+      env:
+        INPUT_LIBRARIES: ${{ inputs.libraries }}
+        INPUT_TIER1_ONLY: ${{ inputs.tier1-only }}
+        INPUT_MAX_RISK_LEVEL: ${{ inputs.max-risk-level }}
+        INPUT_AUTO_APPLY: ${{ inputs.auto-apply }}
+        GITHUB_OUTPUT: ${{ github.output }}
+
+    - name: Run Tests
+      id: run-tests
+      if: inputs.run-tests == 'true' && steps.run-migration.outputs.files-changed != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      continue-on-error: true
+      run: |
+        set +e
+        ${{ inputs.test-command }}
+        TEST_EXIT_CODE=$?
+        if [ $TEST_EXIT_CODE -eq 0 ]; then
+          echo "test-passed=true" >> $GITHUB_OUTPUT
+        else
+          echo "test-passed=false" >> $GITHUB_OUTPUT
+        fi
+        exit 0
+
+    - name: Create Pull Request
+      id: create-pr
+      if: inputs.create-pr == 'true' && steps.run-migration.outputs.files-changed != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        python "${{ github.action_path }}/scripts/create_pr.py"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_BASE_BRANCH: ${{ inputs.base-branch }}
+        INPUT_BRANCH_PREFIX: ${{ inputs.branch-prefix }}
+        INPUT_TEST_PASSED: ${{ steps.run-tests.outputs.test-passed }}
+        INPUT_TEST_COMMAND: ${{ inputs.test-command }}
+        INPUT_RUN_TESTS: ${{ inputs.run-tests }}
+        GITHUB_OUTPUT: ${{ github.output }}
