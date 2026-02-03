@@ -42,9 +42,7 @@ def write_github_output(name: str, value: str) -> None:
         print(f"::set-output name={name}::{value}")
 
 
-def run_command(
-    cmd: list[str], capture: bool = True, check: bool = False
-) -> tuple[int, str, str]:
+def run_command(cmd: list[str], capture: bool = True, check: bool = False) -> tuple[int, str, str]:
     """Run a command and return exit code, stdout, stderr."""
     print(f"Running: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=capture, text=True)
@@ -124,9 +122,7 @@ def create_pr(title: str, body: str, base_branch: str) -> tuple[str, str]:
     pr_url = stdout.strip()
 
     # Get PR number
-    exit_code, stdout, _ = run_command(
-        ["gh", "pr", "view", "--json", "number", "--jq", ".number"]
-    )
+    exit_code, stdout, _ = run_command(["gh", "pr", "view", "--json", "number", "--jq", ".number"])
     pr_number = stdout.strip() if exit_code == 0 else ""
 
     return pr_url, pr_number
@@ -176,9 +172,7 @@ def generate_pr_body(
 
     # Footer
     sections.append("\n---\n")
-    sections.append(
-        "Generated with [Codeshift](https://github.com/Ragab-Technologies/codeshift)"
-    )
+    sections.append("Generated with [Codeshift](https://github.com/Ragab-Technologies/codeshift)")
 
     return "\n".join(sections)
 

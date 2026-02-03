@@ -157,9 +157,7 @@ def format_test_results(test_passed: bool | None, test_command: str) -> str:
         lines.append("")
         lines.append(f"Command: `{test_command}`")
         lines.append("")
-        lines.append(
-            "> **Note:** Please review the test failures before merging this PR."
-        )
+        lines.append("> **Note:** Please review the test failures before merging this PR.")
 
     return "\n".join(lines)
 
@@ -302,8 +300,8 @@ def generate_github_step_summary(
         [
             "## Quick Stats",
             "",
-            f"| Metric | Value |",
-            f"|--------|-------|",
+            "| Metric | Value |",
+            "|--------|-------|",
             f"| Migrations | {len(migrations_info)} |",
             f"| Files Changed | {total_files} |",
             f"| Total Changes | {total_changes} |",
