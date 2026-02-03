@@ -64,9 +64,7 @@ def run_scan() -> dict:
         return {"outdated": [], "migrations": []}
 
 
-def filter_migrations(
-    migrations: list[dict], libraries: list[str], tier1_only: bool
-) -> list[dict]:
+def filter_migrations(migrations: list[dict], libraries: list[str], tier1_only: bool) -> list[dict]:
     """Filter migrations by library list and tier settings."""
     filtered = []
 
@@ -128,7 +126,7 @@ def load_state() -> dict | None:
 def assess_risk(state: dict) -> dict:
     """Assess risk using RiskAssessor."""
     try:
-        from codeshift.analyzer.risk_assessor import RiskAssessor, RiskLevel
+        from codeshift.analyzer.risk_assessor import RiskAssessor
         from codeshift.migrator.ast_transforms import TransformResult, TransformStatus
 
         # Reconstruct TransformResults from state
