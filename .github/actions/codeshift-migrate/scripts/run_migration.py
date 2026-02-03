@@ -64,9 +64,7 @@ def run_scan() -> dict:
         return {"outdated": [], "migrations": []}
 
 
-def filter_migrations(
-    migrations: list[dict], libraries: list[str], tier1_only: bool
-) -> list[dict]:
+def filter_migrations(migrations: list[dict], libraries: list[str], tier1_only: bool) -> list[dict]:
     """Filter migrations by library list and tier settings."""
     filtered = []
 
