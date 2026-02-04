@@ -1,6 +1,9 @@
 # Codeshift
 
-[![PyPI version](https://badge.fury.io/py/codeshift.svg)](https://pypi.org/project/codeshift/)
+[![CI](https://github.com/Ragab-Technologies/codeshift/actions/workflows/ci.yml/badge.svg)](https://github.com/Ragab-Technologies/codeshift/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Ragab-Technologies/codeshift/branch/main/graph/badge.svg)](https://codecov.io/gh/Ragab-Technologies/codeshift)
+[![PyPI version](https://img.shields.io/pypi/v/codeshift)](https://pypi.org/project/codeshift/)
+[![Downloads](https://static.pepy.tech/badge/codeshift/month)](https://pepy.tech/project/codeshift)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -74,25 +77,29 @@ codeshift --help
 ## Quick Start
 
 ```bash
-# 1. Scan your project for outdated dependencies
-codeshift scan
-
-# 2. Upgrade a specific library
+pip install codeshift
 codeshift upgrade pydantic --target 2.5.0
-
-# 3. Review the proposed changes
-codeshift diff
-
-# 4. Apply the changes
-codeshift apply
-
-# 5. Run your tests to verify
-pytest
+codeshift diff && codeshift apply
 ```
 
-Or upgrade everything at once:
+That's it! Codeshift scans your code, transforms it, and shows exactly what changed.
+
+### Before / After
+
+| Pydantic v1 | Pydantic v2 |
+|-------------|-------------|
+| `class Config:` | `model_config = ConfigDict()` |
+| `@validator` | `@field_validator` |
+| `.dict()` | `.model_dump()` |
+| `parse_obj()` | `model_validate()` |
+
+### More Options
 
 ```bash
+# Scan your project for all outdated dependencies
+codeshift scan
+
+# Or upgrade everything at once
 codeshift upgrade-all
 ```
 
