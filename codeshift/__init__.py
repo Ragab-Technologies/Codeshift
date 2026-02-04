@@ -4,5 +4,5 @@ Codeshift - AI-powered CLI tool for migrating Python code to handle breaking dep
 Don't just flag the update. Fix the break.
 """
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 __author__ = "Codeshift Team"
