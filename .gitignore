@@ -78,6 +78,7 @@ dmypy.json
 
 # Codeshift specific
 .codeshift/
+docs/
 .codeshift_cache/
 *.codeshift.json
 
