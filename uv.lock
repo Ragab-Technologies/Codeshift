@@ -215,7 +215,7 @@ wheels = [
 
 [[package]]
 name = "codeshift"
-version = "0.4.1"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -226,6 +226,7 @@ dependencies = [
     { name = "libcst" },
     { name = "nox" },
     { name = "packaging" },
+    { name = "pacta" },
     { name = "pyyaml" },
     { name = "rich" },
     { name = "toml" },
@@ -263,6 +264,7 @@ requires-dist = [
     { name = "nox", specifier = ">=2025.11.12" },
     { name = "nox", marker = "extra == 'dev'", specifier = ">=2024.0" },
     { name = "packaging", specifier = ">=23.0" },
+    { name = "pacta", specifier = ">=0.0.7" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
@@ -949,6 +951,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/65/ee/299d360cdc32edc7d2cf530f3accf79c4fca01e96ffc950d8a52213bd8e4/packaging-26.0.tar.gz", hash = "sha256:00243ae351a257117b6a241061796684b084ed1c516a08c48a3f7e147a9d80b4", size = 143416, upload-time = "2026-01-21T20:50:39.064Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl", hash = "sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529", size = 74366, upload-time = "2026-01-21T20:50:37.788Z" },
+]
+
+[[package]]
+name = "pacta"
+version = "0.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2d/45/56516ed6fbfeef2ff94b3d963fa8e706ad2c7c575a200e94e03c2659a0c2/pacta-0.0.7.tar.gz", hash = "sha256:542566ddbeb7d5c9d2097680657ebf6b575253c6e87a4c286f69b57591e03b3c", size = 880415, upload-time = "2026-01-29T10:33:10.22Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/09/3f/9f1b41dfa86b2ba31f4ccea78c1c47f188ff0cef26eb35a2050e41af8a43/pacta-0.0.7-py3-none-any.whl", hash = "sha256:86fd573bcf34cfd98d3b72e63bab6c975d032cd2579da9f8806a587fd62651bd", size = 103871, upload-time = "2026-01-29T10:33:09.004Z" },
 ]
 
 [[package]]
