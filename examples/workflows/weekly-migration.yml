@@ -1,0 +1,34 @@
+# Run Codeshift migrations weekly on Monday mornings.
+# Only Tier 1 (deterministic) transforms are applied — no API key required.
+# Creates a PR with migration changes if any are found.
+
+name: Weekly Dependency Migration
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Ragab-Technologies/codeshift@v1
+        id: codeshift
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tier1-only: 'true'
+          run-tests: 'true'
+          test-command: 'pytest'
+
+      - name: Summary
+        if: steps.codeshift.outputs.migrations-count != '0'
+        run: |
+          echo "Migrations: ${{ steps.codeshift.outputs.migrations-count }}"
+          echo "Files changed: ${{ steps.codeshift.outputs.files-changed }}"
+          echo "Risk level: ${{ steps.codeshift.outputs.risk-level }}"
+          echo "PR: ${{ steps.codeshift.outputs.pr-url }}"
