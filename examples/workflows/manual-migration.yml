@@ -1,0 +1,49 @@
+# Trigger Codeshift migrations manually from the Actions tab.
+# Provides configurable inputs for libraries, tier, and risk level.
+
+name: Manual Migration
+on:
+  workflow_dispatch:
+    inputs:
+      libraries:
+        description: 'Libraries to migrate (comma-separated, empty for all)'
+        required: false
+        default: ''
+      tier1-only:
+        description: 'Tier 1 only (deterministic transforms)'
+        type: boolean
+        default: true
+      max-risk-level:
+        description: 'Maximum risk level'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+        default: medium
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Ragab-Technologies/codeshift@v1
+        id: codeshift
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          libraries: ${{ github.event.inputs.libraries }}
+          tier1-only: ${{ github.event.inputs.tier1-only }}
+          max-risk-level: ${{ github.event.inputs.max-risk-level }}
+
+      - name: Summary
+        if: steps.codeshift.outputs.migrations-count != '0'
+        run: |
+          echo "Migrations: ${{ steps.codeshift.outputs.migrations-count }}"
+          echo "Files changed: ${{ steps.codeshift.outputs.files-changed }}"
+          echo "Risk level: ${{ steps.codeshift.outputs.risk-level }}"
+          echo "PR: ${{ steps.codeshift.outputs.pr-url }}"

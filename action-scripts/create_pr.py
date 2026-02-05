@@ -12,6 +12,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Ensure sibling modules are importable regardless of working directory
+sys.path.insert(0, str(Path(__file__).parent))
+
 from generate_report import (
     format_breaking_changes,
     format_files_changed,

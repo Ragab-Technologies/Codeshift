@@ -1,0 +1,30 @@
+name: Update Major Version Tag
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update v1 tag
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+
+          # Only update for v1.x.x releases
+          if [[ "$VERSION" != v1.* ]]; then
+            echo "Skipping: $VERSION is not a v1.x.x release"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Move the v1 tag to point to this release
+          git tag -fa v1 -m "Update v1 tag to $VERSION"
+          git push origin v1 --force

@@ -393,6 +393,20 @@ use_llm = true
 # anthropic_api_key = "sk-..."
 ```
 
+## GitHub Action
+
+Run Codeshift automatically in CI with the official GitHub Action:
+
+```yaml
+- uses: Ragab-Technologies/codeshift@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+This will scan for outdated dependencies, run Tier 1 deterministic migrations, and open a PR with the changes. No API key required for Tier 1 transforms.
+
+See [docs/github-action.md](docs/github-action.md) for full documentation, all inputs/outputs, and example workflows.
+
 ## Environment Variables
 
 | Variable | Required | Description |
