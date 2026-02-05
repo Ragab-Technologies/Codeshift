@@ -96,15 +96,6 @@ runs:
         python -m pip install --upgrade pip
         pip install codeshift
 
-    - name: Configure Codeshift API Key
-      if: inputs.codeshift-api-key != ''
-      shell: bash
-      run: |
-        mkdir -p ~/.config/codeshift
-        echo '{"api_key": "${{ inputs.codeshift-api-key }}"}' > ~/.config/codeshift/auth.json
-      env:
-        CODESHIFT_API_KEY: ${{ inputs.codeshift-api-key }}
-
     - name: Run Migration
       id: run-migration
       shell: bash
@@ -112,6 +103,7 @@ runs:
       run: |
         python "${{ github.action_path }}/action-scripts/run_migration.py"
       env:
+        CODESHIFT_API_KEY: ${{ inputs.codeshift-api-key }}
         INPUT_LIBRARIES: ${{ inputs.libraries }}
         INPUT_TIER1_ONLY: ${{ inputs.tier1-only }}
         INPUT_MAX_RISK_LEVEL: ${{ inputs.max-risk-level }}
