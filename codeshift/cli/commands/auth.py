@@ -31,6 +31,19 @@ def get_api_url() -> str:
     return os.environ.get("CODESHIFT_API_URL", "https://py-resolve.replit.app")
 
 
+def _format_api_key_hint(api_key: str) -> str:
+    """Format an API key display with masked preview and CI/CD usage hint."""
+    if len(api_key) > 10:
+        masked = f"{api_key[:7]}...{api_key[-4:]}"
+    else:
+        masked = api_key
+    return (
+        f"API Key: [yellow]{masked}[/]\n\n"
+        "[dim]Use this key for CI/CD integrations (e.g., GitHub Actions).\n"
+        "Add it as CODESHIFT_API_KEY in your GitHub repo secrets.[/]"
+    )
+
+
 def load_credentials() -> dict[str, Any] | None:
     """Load saved credentials from secure storage.
 
@@ -243,7 +256,8 @@ def _register_account(email: str, password: str, full_name: str | None) -> None:
                     Panel(
                         f"[green]Account created successfully![/]\n\n"
                         f"Email: [cyan]{data['user']['email']}[/]\n"
-                        f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n\n"
+                        f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n"
+                        f"{_format_api_key_hint(data['api_key'])}\n\n"
                         f"[dim]You are now logged in and ready to use Codeshift.[/]",
                         title="Registration Successful",
                     )
@@ -307,7 +321,8 @@ def _login_with_api_key(api_key: str) -> None:
                     Panel(
                         f"[green]Successfully logged in![/]\n\n"
                         f"Email: [cyan]{user.get('email')}[/]\n"
-                        f"Tier: [cyan]{user.get('tier', 'free')}[/]",
+                        f"Tier: [cyan]{user.get('tier', 'free')}[/]\n"
+                        f"{_format_api_key_hint(api_key)}",
                         title="Login Successful",
                     )
                 )
@@ -359,7 +374,8 @@ def _login_with_password(email: str, password: str) -> None:
                     Panel(
                         f"[green]Successfully logged in![/]\n\n"
                         f"Email: [cyan]{data['user']['email']}[/]\n"
-                        f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]",
+                        f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n"
+                        f"{_format_api_key_hint(data['api_key'])}",
                         title="Login Successful",
                     )
                 )
@@ -454,7 +470,8 @@ def _login_with_device_code() -> None:
                             Panel(
                                 f"[green]Successfully logged in![/]\n\n"
                                 f"Email: [cyan]{data['user']['email']}[/]\n"
-                                f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]",
+                                f"Tier: [cyan]{data['user'].get('tier', 'free')}[/]\n"
+                                f"{_format_api_key_hint(data['api_key'])}",
                                 title="Login Successful",
                             )
                         )
@@ -478,6 +495,32 @@ def _login_with_device_code() -> None:
     except httpx.RequestError as e:
         console.print(f"[red]Connection error: {e}[/]")
         raise SystemExit(1) from e
+
+
+@click.command("api-key")
+def api_key_cmd() -> None:
+    """Display your API key for use in CI/CD integrations."""
+    creds = load_credentials()
+
+    if not creds or not creds.get("api_key"):
+        console.print(
+            Panel(
+                "[yellow]Not logged in[/]\n\n"
+                "Run [cyan]codeshift login[/] to authenticate first.",
+                title="API Key",
+            )
+        )
+        return
+
+    api_key = creds["api_key"]
+    console.print(
+        Panel(
+            f"[green]Your API Key:[/]\n\n"
+            f"  [yellow]{api_key}[/]\n\n"
+            "[dim]Add this as CODESHIFT_API_KEY in your GitHub repo secrets.[/]",
+            title="API Key",
+        )
+    )
 
 
 @click.command()
