@@ -1,0 +1,53 @@
+name: Test Action
+on:
+  pull_request:
+    paths:
+      - 'action.yml'
+      - 'action-scripts/**'
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create test fixture
+        run: |
+          mkdir -p test-project
+          cat > test-project/requirements.txt << 'REQS'
+          pydantic==1.10.0
+          REQS
+          cat > test-project/models.py << 'CODE'
+          from pydantic import BaseModel, validator
+
+          class User(BaseModel):
+              name: str
+
+              class Config:
+                  orm_mode = True
+
+              @validator("name")
+              def validate_name(cls, v):
+                  return v.strip()
+
+          user = User(name="test")
+          print(user.dict())
+          CODE
+
+      - name: Run action (no PR, no tests, tier1 only)
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          create-pr: 'false'
+          run-tests: 'false'
+          tier1-only: 'true'
+          working-directory: test-project
+
+      - name: Verify action completed
+        run: echo "Action smoke test passed"

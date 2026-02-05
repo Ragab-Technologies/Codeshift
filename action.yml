@@ -110,13 +110,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        python "${{ github.action_path }}/.github/actions/codeshift-migrate/scripts/run_migration.py"
+        python "${{ github.action_path }}/action-scripts/run_migration.py"
       env:
         INPUT_LIBRARIES: ${{ inputs.libraries }}
         INPUT_TIER1_ONLY: ${{ inputs.tier1-only }}
         INPUT_MAX_RISK_LEVEL: ${{ inputs.max-risk-level }}
         INPUT_AUTO_APPLY: ${{ inputs.auto-apply }}
-        GITHUB_OUTPUT: ${{ github.output }}
 
     - name: Run Tests
       id: run-tests
@@ -141,7 +140,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        python "${{ github.action_path }}/.github/actions/codeshift-migrate/scripts/create_pr.py"
+        python "${{ github.action_path }}/action-scripts/create_pr.py"
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_BASE_BRANCH: ${{ inputs.base-branch }}
@@ -149,4 +148,12 @@ runs:
         INPUT_TEST_PASSED: ${{ steps.run-tests.outputs.test-passed }}
         INPUT_TEST_COMMAND: ${{ inputs.test-command }}
         INPUT_RUN_TESTS: ${{ inputs.run-tests }}
-        GITHUB_OUTPUT: ${{ github.output }}
+
+    - name: Write Step Summary
+      if: always() && steps.run-migration.outputs.migrations-count != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: python "${{ github.action_path }}/action-scripts/write_summary.py"
+      env:
+        INPUT_TEST_PASSED: ${{ steps.run-tests.outputs.test-passed }}
+        INPUT_PR_URL: ${{ steps.create-pr.outputs.pr-url }}
