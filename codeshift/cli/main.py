@@ -6,6 +6,7 @@ from rich.console import Console
 from codeshift import __version__
 from codeshift.cli.commands.apply import apply
 from codeshift.cli.commands.auth import (
+    api_key_cmd,
     billing,
     login,
     logout,
@@ -55,6 +56,7 @@ cli.add_command(login)
 cli.add_command(logout)
 cli.add_command(whoami)
 cli.add_command(quota)
+cli.add_command(api_key_cmd)
 cli.add_command(upgrade_plan)
 cli.add_command(billing)
 
