@@ -142,9 +142,7 @@ class TestRunner:
             command.extend(self._validate_extra_args(extra_args))
 
         if specific_tests:
-            command.extend(
-                self._validate_specific_tests(specific_tests, self.project_path)
-            )
+            command.extend(self._validate_specific_tests(specific_tests, self.project_path))
 
         try:
             result = subprocess.run(
