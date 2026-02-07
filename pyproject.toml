@@ -11,18 +11,18 @@ requires-python = ">=3.10"
 keywords = [ "migration", "dependencies", "ast", "refactoring", "pydantic",]
 classifiers = [ "Development Status :: 3 - Alpha", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Topic :: Software Development :: Libraries :: Python Modules",]
 dependencies = [
- "click>=8.0",
- "libcst>=1.0",
- "anthropic>=0.20",
- "pyyaml>=6.0",
- "rich>=13.0",
- "toml>=0.10",
- "packaging>=23.0",
- "httpx>=0.25",
- "black>=24.10.0",
- "cryptography>=41.0",
- "nox>=2025.11.12",
- "pacta>=0.0.7",
+ "click>=8.0,<9.0",
+ "libcst>=1.0,<2.0",
+ "anthropic>=0.20,<1.0",
+ "pyyaml>=6.0.1,<7.0",
+ "rich>=13.0,<15.0",
+ "toml>=0.10,<1.0",
+ "packaging>=23.0,<25.0",
+ "httpx>=0.25,<1.0",
+ "black>=24.10.0,<26.0",
+ "cryptography>=41.0,<44.0",
+ "nox>=2025.11.12,<2027.0",
+ "pacta>=0.0.7,<1.0",
 ]
 [[project.authors]]
 name = "Ragab Technologies"
