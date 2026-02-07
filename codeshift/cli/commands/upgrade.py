@@ -1,6 +1,8 @@
 """Upgrade command for analyzing and preparing migrations."""
 
 import json
+import logging
+import os
 from pathlib import Path
 from typing import Any, cast
 
@@ -26,23 +28,73 @@ from codeshift.utils.config import ProjectConfig
 console = Console()
 
 
+_log = logging.getLogger(__name__)
+
+_REQUIRED_STATE_KEYS = {"library", "target_version", "results"}
+_REQUIRED_RESULT_KEYS = {"file_path", "transformed_code"}
+
+
+def _validate_state(state: dict[str, Any], project_path: Path) -> dict[str, Any] | None:
+    """Validate state structure and file paths.
+
+    Returns the state if valid, or None if validation fails.
+    """
+    # Check required top-level keys
+    if not _REQUIRED_STATE_KEYS.issubset(state.keys()):
+        _log.warning("State file missing required keys: %s", _REQUIRED_STATE_KEYS - state.keys())
+        return None
+
+    if not isinstance(state.get("results"), list):
+        _log.warning("State file 'results' is not a list")
+        return None
+
+    project_resolved = project_path.resolve()
+
+    for result in state["results"]:
+        if not isinstance(result, dict):
+            _log.warning("State file contains non-dict result entry")
+            return None
+
+        if not _REQUIRED_RESULT_KEYS.issubset(result.keys()):
+            _log.warning("State result missing required keys")
+            return None
+
+        # Validate file_path is within the project directory
+        try:
+            file_path = Path(result["file_path"]).resolve()
+            if not file_path.is_relative_to(project_resolved):
+                _log.warning("State file contains path outside project: %s", result["file_path"])
+                return None
+        except (TypeError, ValueError):
+            _log.warning("State file contains invalid path: %s", result.get("file_path"))
+            return None
+
+    return state
+
+
 def load_state(project_path: Path) -> dict[str, Any] | None:
-    """Load the current migration state if it exists."""
+    """Load and validate the current migration state if it exists."""
     state_file = project_path / ".codeshift" / "state.json"
     if state_file.exists():
         try:
-            return cast(dict[str, Any], json.loads(state_file.read_text()))
+            state = cast(dict[str, Any], json.loads(state_file.read_text()))
+            return _validate_state(state, project_path)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            _log.warning("Could not parse state file: %s", e)
+            return None
         except Exception:
             return None
     return None
 
 
 def save_state(project_path: Path, state: dict) -> None:
-    """Save the migration state."""
+    """Save the migration state with restrictive permissions."""
     state_dir = project_path / ".codeshift"
     state_dir.mkdir(parents=True, exist_ok=True)
+    os.chmod(state_dir, 0o700)
     state_file = state_dir / "state.json"
     state_file.write_text(json.dumps(state, indent=2, default=str))
+    os.chmod(state_file, 0o600)
 
 
 @click.command()

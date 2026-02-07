@@ -17,6 +17,7 @@ from codeshift.cli.quota import (
     record_usage,
     show_quota_exceeded_message,
 )
+from codeshift.utils.path_safety import validate_file_within_project
 
 console = Console()
 
@@ -143,6 +144,15 @@ def apply(
 
     for result in results:
         file_path = Path(result["file_path"])
+
+        # Security: validate file path is within project directory
+        try:
+            file_path = validate_file_within_project(file_path, project_path)
+        except ValueError as e:
+            console.print(f"[red]✗[/] Skipping unsafe path: {e}")
+            failed_count += 1
+            continue
+
         relative_path = (
             file_path.relative_to(project_path)
             if file_path.is_relative_to(project_path)

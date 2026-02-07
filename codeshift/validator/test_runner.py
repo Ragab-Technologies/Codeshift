@@ -1,5 +1,6 @@
 """Test runner for validating migrations."""
 
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -31,6 +32,19 @@ class TestResult:
 
 class TestRunner:
     """Runs project tests to validate migrations."""
+
+    # Allowed argument patterns for test runner extra_args
+    _SAFE_ARG_PATTERNS = [
+        re.compile(r"^-[vqsx]$"),  # Single-char flags
+        re.compile(r"^--tb=(short|long|line|no|auto)$"),  # Traceback style
+        re.compile(r"^--maxfail=\d+$"),  # Max failures
+        re.compile(r"^--(collect-only|co)$"),  # Collection only
+        re.compile(r"^--import-mode=(prepend|append|importlib)$"),  # Import mode
+        re.compile(r"^-k\s?.+$"),  # Test selection expression
+        re.compile(r"^-m\s?.+$"),  # Marker expression
+        re.compile(r"^--no-header$"),  # Suppress header
+        re.compile(r"^--timeout=\d+$"),  # Timeout
+    ]
 
     def __init__(
         self,
@@ -66,6 +80,48 @@ class TestRunner:
         # Default to pytest
         return [sys.executable, "-m", "pytest", "-v", "--tb=short"]
 
+    @classmethod
+    def _validate_extra_args(cls, extra_args: list[str]) -> list[str]:
+        """Validate that extra args match safe patterns.
+
+        Args:
+            extra_args: Arguments to validate.
+
+        Returns:
+            List of validated, safe arguments.
+        """
+        validated = []
+        for arg in extra_args:
+            # Reject args containing shell metacharacters
+            if any(c in arg for c in ";|&$`\\'\"\n\r"):
+                continue
+            # Check against safe patterns
+            if any(pattern.match(arg) for pattern in cls._SAFE_ARG_PATTERNS):
+                validated.append(arg)
+        return validated
+
+    @staticmethod
+    def _validate_specific_tests(specific_tests: list[str], project_path: Path) -> list[str]:
+        """Validate that specific test paths are within the project.
+
+        Args:
+            specific_tests: Test file paths or patterns to validate.
+            project_path: The project root directory.
+
+        Returns:
+            List of validated test paths.
+        """
+        validated = []
+        for test in specific_tests:
+            # Reject anything with shell metacharacters
+            if any(c in test for c in ";|&$`\\'\"\n\r"):
+                continue
+            # Resolve and check it's within the project
+            resolved = (project_path / test).resolve()
+            if resolved.is_relative_to(project_path.resolve()):
+                validated.append(test)
+        return validated
+
     def run(
         self,
         specific_tests: list[str] | None = None,
@@ -83,10 +139,10 @@ class TestRunner:
         command = self.test_command.copy()
 
         if extra_args:
-            command.extend(extra_args)
+            command.extend(self._validate_extra_args(extra_args))
 
         if specific_tests:
-            command.extend(specific_tests)
+            command.extend(self._validate_specific_tests(specific_tests, self.project_path))
 
         try:
             result = subprocess.run(
@@ -141,8 +197,6 @@ class TestRunner:
         Returns:
             Tuple of (total, passed, failed, skipped)
         """
-        import re
-
         # Look for pytest summary line like "5 passed, 2 failed, 1 skipped"
         # or "1 passed in 0.05s"
         passed = 0

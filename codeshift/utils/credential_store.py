@@ -118,18 +118,26 @@ class CredentialStore:
         try:
             if platform.system() == "Darwin":
                 # macOS: Use IOPlatformUUID
+                import re as _re
                 import subprocess
 
                 result = subprocess.run(
-                    ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+                    ["/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
                     capture_output=True,
                     text=True,
                     timeout=5,
+                    env={"PATH": "/usr/sbin:/usr/bin"},
                 )
                 for line in result.stdout.split("\n"):
                     if "IOPlatformUUID" in line:
                         uuid_str = line.split('"')[-2]
-                        components.append(uuid_str)
+                        # Validate UUID format before using
+                        if _re.match(
+                            r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}"
+                            r"-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
+                            uuid_str,
+                        ):
+                            components.append(uuid_str)
                         break
             elif platform.system() == "Linux":
                 # Linux: Try machine-id
