@@ -63,9 +63,7 @@ def _validate_state(state: dict[str, Any], project_path: Path) -> dict[str, Any]
         try:
             file_path = Path(result["file_path"]).resolve()
             if not file_path.is_relative_to(project_resolved):
-                _log.warning(
-                    "State file contains path outside project: %s", result["file_path"]
-                )
+                _log.warning("State file contains path outside project: %s", result["file_path"])
                 return None
         except (TypeError, ValueError):
             _log.warning("State file contains invalid path: %s", result.get("file_path"))
